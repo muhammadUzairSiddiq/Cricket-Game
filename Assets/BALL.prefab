@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6663494593483768084
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3264987356961644654}
+  - component: {fileID: 4634748096034638185}
+  - component: {fileID: 1048142585726588367}
+  - component: {fileID: 3411811250326060930}
+  - component: {fileID: 2308089765845687691}
+  - component: {fileID: 7037234990939765936}
+  m_Layer: 0
+  m_Name: BALL
+  m_TagString: Ball
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3264987356961644654
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 3.8258293, y: 1.8580371, z: 35.945946}
+  m_LocalScale: {x: 4.9227734, y: 4.9227734, z: 4.9227724}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &4634748096034638185
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  m_Mesh: {fileID: 70948873267775455, guid: 04ad256a366f95346b987b04d7222b4c, type: 3}
+--- !u!23 &1048142585726588367
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1331144291575188466, guid: 04ad256a366f95346b987b04d7222b4c, type: 3}
+  - {fileID: -3522955778539423533, guid: 04ad256a366f95346b987b04d7222b4c, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!54 &3411811250326060930
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  serializedVersion: 4
+  m_Mass: 0.16
+  m_Drag: 0.01
+  m_AngularDrag: 0.01
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_CollisionDetection: 1
+--- !u!135 &2308089765845687691
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.036
+  m_Center: {x: 0.0000683458, y: -0.0000061402093, z: 0.0000012007076}
+--- !u!114 &7037234990939765936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6663494593483768084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65ec40cf99d21b84691cc404fce7eb78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ballRadius: 0.036
+  ballMass: 0.16
+  ballBounciness: 0.8
+  ballFriction: 0.8
+  airResistance: 0.01
+  spinDecay: 0.95
+  velocityDecay: 0.999
+  maxBounceHeight: 8
+  pitchingAreaBounceHeight: 3
+  pitchingAreaBounceHeightFlat: 3
+  groundBounceHeight: 3
+  groundBounceHeightFast: 3
+  pitchingAreaImpulse: 0.2
+  groundImpulse: 0.1
+  bounceFactor: 0.3
+  energyLoss: 0.2
+  momentumBoost: 1
+  groundBounceFactor: 0.2
+  groundEnergyLoss: 0.3
+  minForwardSpeed: 20
+  speedBoostAfterPitch: 1
+  initialBallSpeed: 40
+  showAccuracyDebug: 1
+  showTrajectoryDebug: 0
+  debugLineColor: {r: 1, g: 1, b: 1, a: 1}
+  debugLineWidth: 0.02
+  ballTrail: {fileID: 0}
+  bounceEffect: {fileID: 0}
+  newBallMaterial: {fileID: 0}
+  oldBallMaterial: {fileID: 0}
+  ballAge: 0
+  isNewBall: 1
+  roughness: 0
