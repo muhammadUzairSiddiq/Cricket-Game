@@ -83,6 +83,7 @@ namespace CricketGame
          private Vector3 ballSpawnPosition; // Store spawn position
          private Vector3 currentTargetPosition; // Store the current target for prediction
          private bool hasLanded = false; // Flag to track if ball has landed
+         private bool needsNewTarget = false; // Flag to track if we need to generate a new target
         
         // Bowling enums
         public enum BowlingType
@@ -145,8 +146,8 @@ namespace CricketGame
              // Wait for setup to complete
              yield return new WaitForEndOfFrame();
              
-             // Show initial prediction
-             UpdatePredictionForNextBall();
+             // Initial prediction is handled by SetInitialTarget and UpdateInGamePrediction
+             // No need to call UpdatePredictionForNextBall here
          }
          
          /// <summary>
@@ -154,14 +155,32 @@ namespace CricketGame
          /// </summary>
          void UpdatePredictionForNextBall()
          {
-             if (!showInGamePrediction || pitchPredictionMarker == null) return;
-             
-             // Calculate and show prediction for next ball
-             UpdatePredictionVisuals();
-             
-             // Make sure prediction is visible
-             if (pitchPredictionMarker != null)
-                 pitchPredictionMarker.SetActive(true);
+            Debug.Log("🎯 UpdatePredictionForNextBall called");
+            
+            if (!showInGamePrediction || pitchPredictionMarker == null) 
+            {
+                Debug.Log("🎯 Prediction update skipped - showInGamePrediction: false or no marker");
+                return;
+            }
+            
+            // Only show prediction if we have a target
+            if (currentTargetPosition != Vector3.zero)
+            {
+                Debug.Log($"🎯 Showing prediction for existing target: {currentTargetPosition}");
+                // Calculate and show prediction for next ball
+                UpdatePredictionVisuals();
+                
+                // Make sure prediction is visible
+                if (pitchPredictionMarker != null)
+                    pitchPredictionMarker.SetActive(true);
+            }
+            else
+            {
+                Debug.Log("🎯 Hiding prediction - no target available");
+                // Hide prediction if no target
+                if (pitchPredictionMarker != null)
+                    pitchPredictionMarker.SetActive(false);
+            }
          }
          
          /// <summary>
@@ -217,16 +236,27 @@ namespace CricketGame
          /// </summary>
          void UpdatePredictionVisuals()
          {
-             if (pitchPredictionMarker == null) return;
-             
-             // Calculate pitch prediction using the CURRENT target (not old one)
-             Vector3 pitchPoint = CalculatePredictionFromCurrentTarget();
-             
-             // Position marker EXACTLY where ball will land (same Y as pitching area)
-             Vector3 markerPosition = pitchPoint;
-             markerPosition.y = pitchingArea.position.y + 0.02f; // Just above ground surface
-             pitchPredictionMarker.transform.position = markerPosition;
-         }
+            if (pitchPredictionMarker == null) return;
+            
+            // Check if we have a valid target position
+            if (currentTargetPosition == Vector3.zero)
+            {
+                // Hide prediction marker if no target
+                pitchPredictionMarker.SetActive(false);
+                return;
+            }
+            
+            // Calculate pitch prediction using the CURRENT target (not old one)
+            Vector3 pitchPoint = CalculatePredictionFromCurrentTarget();
+            
+            // Position marker EXACTLY where ball will land (same Y as pitching area)
+            Vector3 markerPosition = pitchPoint;
+            markerPosition.y = pitchingArea.position.y + 0.02f; // Just above ground surface
+            pitchPredictionMarker.transform.position = markerPosition;
+            
+            // Make sure prediction marker is visible
+            pitchPredictionMarker.SetActive(true);
+        }
          
 
          
@@ -284,6 +314,7 @@ namespace CricketGame
                  
                  // Store the target position
                  currentTargetPosition = targetPosition;
+                 needsNewTarget = false; // Initial target is set, no need for new one yet
                  Debug.Log($"🎯 Initial target set: {targetPosition}");
              }
          }
@@ -446,7 +477,8 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Handle user input
+        /// Handle input for bowling and variations
+        /// Note: Space key only bowls the ball. New targets are generated automatically after ball destruction.
         /// </summary>
         void HandleInput()
         {
@@ -478,8 +510,11 @@ namespace CricketGame
          {
              if (isBowling) return;
              
-             // Reset target position for new ball
-             currentTargetPosition = Vector3.zero;
+             // Don't clear target position - keep it visible while bowling
+             // currentTargetPosition will be cleared only when generating new target
+             needsNewTarget = true; // Will need a new target after this ball is destroyed
+             
+             Debug.Log($"🏏 Bowling ball to target: {currentTargetPosition}");
              
              StartCoroutine(BowlingSequence());
          }
@@ -527,7 +562,17 @@ namespace CricketGame
          IEnumerator DestroyBallAfterDelay(float delay)
          {
              yield return new WaitForSeconds(delay);
+             Debug.Log("🏏 Ball destroyed after delay");
              DestroyBall();
+             
+             // Generate new target after ball is destroyed
+             if (needsNewTarget)
+             {
+                 Debug.Log("🎯 Generating new target after ball destruction...");
+                 GenerateNewTarget();
+                 needsNewTarget = false;
+                 Debug.Log("🎯 New target generated successfully!");
+             }
              
              // Show prediction for next ball after current ball is destroyed
              UpdatePredictionForNextBall();
@@ -564,10 +609,11 @@ namespace CricketGame
         }
          
          /// <summary>
-         /// Show prediction again for next ball
+         /// Show prediction again for next ball (does NOT generate new targets)
          /// </summary>
          public void ShowPredictionForNextBall()
          {
+             // This method only shows existing predictions, doesn't generate new targets
              UpdatePredictionForNextBall();
          }
         
@@ -576,117 +622,125 @@ namespace CricketGame
          /// </summary>
          Vector3 CalculateTargetDirection()
          {
-             // FORCE the ball to hit within the pitching area - NO EXCEPTIONS!
-             Vector3 targetPosition;
-             
-             if (topLeftCorner != null && topRightCorner != null && bottomLeftCorner != null && bottomRightCorner != null)
-             {
-                 // Calculate the actual boundaries from corner positions
-                 float minX = Mathf.Min(topLeftCorner.position.x, bottomLeftCorner.position.x);
-                 float maxX = Mathf.Max(topRightCorner.position.x, bottomRightCorner.position.x);
-                 float minZ = Mathf.Min(bottomLeftCorner.position.z, bottomRightCorner.position.z);
-                 float maxZ = Mathf.Max(topLeftCorner.position.z, topRightCorner.position.z);
-                 
-                 // SAFETY CHECK: Fix backwards bounds
-                 if (minX > maxX)
-                 {
-                     Debug.LogError($"🎯 X BOUNDS ARE BACKWARDS! Swapping minX({minX:F2}) and maxX({maxX:F2})");
-                     float temp = minX;
-                     minX = maxX;
-                     maxX = temp;
-                 }
-                 
-                 if (minZ > maxZ)
-                 {
-                     Debug.LogError($"🎯 Z BOUNDS ARE BACKWARDS! Swapping minZ({minZ:F2}) and maxZ({maxZ:F2})");
-                     float temp = minZ;
-                     minZ = maxZ;
-                     maxZ = temp;
-                 }
-                 
-                 // Calculate center of the actual pitching area
-                 Vector3 areaCenter = new Vector3((minX + maxX) * 0.5f, pitchingArea.position.y, (minZ + maxZ) * 0.5f);
-                 
-                 // Use 80% of the actual area for GUARANTEED SAFE TARGETING
-                 float safeXRange = (maxX - minX) * 0.4f;
-                 float safeZRange = (maxZ - minZ) * 0.4f;
-                 
-                 // Random offset within the guaranteed hitting area
-                 float randomX = Random.Range(-safeXRange, safeXRange);
-                 float randomZ = Random.Range(-safeZRange, safeZRange);
-                 
-                 targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
-                 
-                 // VALIDATE: Ensure target is within pitching area bounds
-                 targetPosition = ClampTargetToPitchingArea(targetPosition, minX, maxX, minZ, maxZ);
-                 
-                 // DOUBLE CHECK: Verify target is within bounds
-                 if (targetPosition.x < minX || targetPosition.x > maxX || targetPosition.z < minZ || targetPosition.z > maxZ)
-                 {
-                     Debug.LogError($"🎯 TARGET OUT OF BOUNDS! Clamping to center. Target: {targetPosition}, Bounds: X[{minX:F2}, {maxX:F2}], Z[{minZ:F2}, {maxZ:F2}]");
-                     targetPosition = areaCenter; // Force to center if still out of bounds
-                 }
-                 
-                 Debug.Log($"🎯 Target: {targetPosition}");
-                 Debug.Log($"🎯 Bounds: X[{minX:F2}, {maxX:F2}], Z[{minZ:F2}, {maxZ:F2}]");
-             }
-             else if (pitchingArea != null)
-             {
-                 // Fallback to pitching area center with very tight bounds
-                 Vector3 areaCenter = pitchingArea.position;
-                 Vector3 areaSize = pitchingArea.localScale;
-                 
-                 // Use 80% of area size for GUARANTEED SAFE COVERAGE
-                 float safeXRange = areaSize.x * 0.4f;
-                 float safeZRange = areaSize.z * 0.4f;
-                 
-                 float randomX = Random.Range(-safeXRange, safeXRange);
-                 float randomZ = Random.Range(-safeZRange, safeZRange);
-                 
-                 targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
-                 Debug.LogWarning("Using pitching area fallback - assign corner GameObjects for better accuracy!");
-             }
-             else
-             {
-                 // NO FALLBACK TO WICKET - Force pitching area targeting
-                 Debug.LogError("NO PITCHING AREA FOUND! Ball cannot be targeted properly!");
-                 return Vector3.forward; // Default forward direction
-             }
-             
-             // STORE the target position for prediction to use
-             currentTargetPosition = targetPosition;
-             
-             Vector3 baseDirection = (targetPosition - ballSpawnPoint.position).normalized;
-             
-             // NO line variation - keep ball on target
-             float lineOffset = 0f;
-             
-             // Apply offset perpendicular to bowling direction (if any)
-             Vector3 rightDirection = Vector3.Cross(baseDirection, Vector3.up).normalized;
-             Vector3 finalTargetPosition = targetPosition + (rightDirection * lineOffset);
-             
-             return (finalTargetPosition - ballSpawnPoint.position).normalized;
-                  }
-         
-         /// <summary>
-         /// Clamp target position to ensure it's within pitching area bounds
-         /// </summary>
-         Vector3 ClampTargetToPitchingArea(Vector3 target, float minX, float maxX, float minZ, float maxZ)
-         {
-             // Add larger margin to ensure ball lands safely within bounds
-             float margin = 0.5f; // 50cm margin from edges for safety
-             
-             float clampedX = Mathf.Clamp(target.x, minX + margin, maxX - margin);
-             float clampedZ = Mathf.Clamp(target.z, minZ + margin, maxZ - margin);
-             
-             // Log if clamping was needed
-             if (target.x != clampedX || target.z != clampedZ)
-             {
-                 Debug.LogWarning($"🎯 Target clamped: {target} -> {new Vector3(clampedX, target.y, clampedZ)}");
-             }
-             
-             return new Vector3(clampedX, target.y, clampedZ);
-         }
+            // If we already have a target position, use it instead of generating a new one
+            if (currentTargetPosition != Vector3.zero)
+            {
+                Debug.Log($"🎯 Using existing target: {currentTargetPosition}");
+                Vector3 baseDirection = (currentTargetPosition - ballSpawnPoint.position).normalized;
+                return baseDirection;
+            }
+            
+            // FORCE the ball to hit within the pitching area - NO EXCEPTIONS!
+            Vector3 targetPosition;
+            
+            if (topLeftCorner != null && topRightCorner != null && bottomLeftCorner != null && bottomRightCorner != null)
+            {
+                // Calculate the actual boundaries from corner positions
+                float minX = Mathf.Min(topLeftCorner.position.x, bottomLeftCorner.position.x);
+                float maxX = Mathf.Max(topRightCorner.position.x, bottomRightCorner.position.x);
+                float minZ = Mathf.Min(bottomLeftCorner.position.z, bottomRightCorner.position.z);
+                float maxZ = Mathf.Max(topLeftCorner.position.z, topRightCorner.position.z);
+                
+                // SAFETY CHECK: Fix backwards bounds
+                if (minX > maxX)
+                {
+                    Debug.LogError($"🎯 X BOUNDS ARE BACKWARDS! Swapping minX({minX:F2}) and maxX({maxX:F2})");
+                    float temp = minX;
+                    minX = maxX;
+                    maxX = temp;
+                }
+                
+                if (minZ > maxZ)
+                {
+                    Debug.LogError($"🎯 Z BOUNDS ARE BACKWARDS! Swapping minZ({minZ:F2}) and maxZ({maxZ:F2})");
+                    float temp = minZ;
+                    minZ = maxZ;
+                    maxZ = temp;
+                }
+                
+                // Calculate center of the actual pitching area
+                Vector3 areaCenter = new Vector3((minX + maxX) * 0.5f, pitchingArea.position.y, (minZ + maxZ) * 0.5f);
+                
+                // Use 80% of the actual area for GUARANTEED SAFE TARGETING
+                float safeXRange = (maxX - minX) * 0.4f;
+                float safeZRange = (maxZ - minZ) * 0.4f;
+                
+                // Random offset within the guaranteed hitting area
+                float randomX = Random.Range(-safeXRange, safeXRange);
+                float randomZ = Random.Range(-safeXRange, safeZRange);
+                
+                targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
+                
+                // VALIDATE: Ensure target is within pitching area bounds
+                targetPosition = ClampTargetToPitchingArea(targetPosition, minX, maxX, minZ, maxZ);
+                
+                // DOUBLE CHECK: Verify target is within bounds
+                if (targetPosition.x < minX || targetPosition.x > maxX || targetPosition.z < minZ || targetPosition.z > maxZ)
+                {
+                    Debug.LogError($"🎯 TARGET OUT OF BOUNDS! Clamping to center. Target: {targetPosition}, Bounds: X[{minX:F2}, {maxX:F2}], Z[{minZ:F2}, {maxZ:F2}]");
+                    targetPosition = areaCenter; // Force to center if still out of bounds
+                }
+                
+                Debug.Log($"🎯 Target: {targetPosition}");
+                Debug.Log($"🎯 Bounds: X[{minX:F2}, {maxX:F2}], Z[{minZ:F2}, {maxZ:F2}]");
+            }
+            else if (pitchingArea != null)
+            {
+                // Fallback to pitching area center with very tight bounds
+                Vector3 areaCenter = pitchingArea.position;
+                Vector3 areaSize = pitchingArea.localScale;
+                
+                // Use 80% of area size for GUARANTEED SAFE COVERAGE
+                float safeXRange = areaSize.x * 0.4f;
+                float safeZRange = areaSize.z * 0.4f;
+                
+                float randomX = Random.Range(-safeXRange, safeXRange);
+                float randomZ = Random.Range(-safeXRange, safeZRange);
+                
+                targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
+                Debug.LogWarning("Using pitching area fallback - assign corner GameObjects for better accuracy!");
+            }
+            else
+            {
+                // NO FALLBACK TO WICKET - Force pitching area targeting
+                Debug.LogError("NO PITCHING AREA FOUND! Ball cannot be targeted properly!");
+                return Vector3.forward; // Default forward direction
+            }
+            
+            // STORE the target position for prediction to use
+            currentTargetPosition = targetPosition;
+            
+            Vector3 newBaseDirection = (targetPosition - ballSpawnPoint.position).normalized;
+            
+            // NO line variation - keep ball on target
+            float lineOffset = 0f;
+            
+            // Apply offset perpendicular to bowling direction (if any)
+            Vector3 rightDirection = Vector3.Cross(newBaseDirection, Vector3.up).normalized;
+            Vector3 finalTargetPosition = targetPosition + (rightDirection * lineOffset);
+            
+            return (finalTargetPosition - ballSpawnPoint.position).normalized;
+        }
+        
+        /// <summary>
+        /// Clamp target position to ensure it's within pitching area bounds
+        /// </summary>
+        Vector3 ClampTargetToPitchingArea(Vector3 target, float minX, float maxX, float minZ, float maxZ)
+        {
+            // Add larger margin to ensure ball lands safely within bounds
+            float margin = 0.5f; // 50cm margin from edges for safety
+            
+            float clampedX = Mathf.Clamp(target.x, minX + margin, maxX - margin);
+            float clampedZ = Mathf.Clamp(target.z, minZ + margin, maxZ - margin);
+            
+            // Log if clamping was needed
+            if (target.x != clampedX || target.z != clampedZ)
+            {
+                Debug.LogWarning($"🎯 Target clamped: {target} -> {new Vector3(clampedX, target.y, clampedZ)}");
+            }
+            
+            return new Vector3(clampedX, target.y, clampedZ);
+        }
          
          /// <summary>
          /// Calculate ball speed based on bowling type
@@ -2014,6 +2068,100 @@ namespace CricketGame
             {
                 Debug.LogError("🎯 Failed to create target marker!");
             }
+        }
+
+        /// <summary>
+        /// Generate a new random target position within the pitching area
+        /// </summary>
+        void GenerateNewTarget()
+        {
+            Debug.Log("🎯 GenerateNewTarget called - creating new target");
+            
+            // Clear the old target position first
+            currentTargetPosition = Vector3.zero;
+            
+            Vector3 targetPosition;
+            
+            if (topLeftCorner != null && topRightCorner != null && bottomLeftCorner != null && bottomRightCorner != null)
+            {
+                // Calculate the actual boundaries from corner positions
+                float minX = Mathf.Min(topLeftCorner.position.x, bottomLeftCorner.position.x);
+                float maxX = Mathf.Max(topRightCorner.position.x, bottomRightCorner.position.x);
+                float minZ = Mathf.Min(bottomLeftCorner.position.z, bottomRightCorner.position.z);
+                float maxZ = Mathf.Max(topLeftCorner.position.z, topRightCorner.position.z);
+                
+                // Calculate center of the actual pitching area
+                Vector3 areaCenter = new Vector3((minX + maxX) * 0.5f, pitchingArea.position.y, (minZ + maxZ) * 0.5f);
+                
+                // Use 98% of the actual area for MAXIMUM COVERAGE
+                float safeXRange = (maxX - minX) * 0.49f;
+                float safeZRange = (maxZ - minZ) * 0.49f;
+                
+                // Random offset within the guaranteed hitting area
+                float randomX = Random.Range(-safeXRange, safeXRange);
+                float randomZ = Random.Range(-safeXRange, safeZRange);
+                
+                targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
+            }
+            else if (pitchingArea != null)
+            {
+                // Fallback to pitching area center
+                Vector3 areaCenter = pitchingArea.position;
+                Vector3 areaSize = pitchingArea.localScale;
+                
+                float safeXRange = areaSize.x * 0.475f;
+                float safeZRange = areaSize.z * 0.475f;
+                
+                float randomX = Random.Range(-safeXRange, safeXRange);
+                float randomZ = Random.Range(-safeXRange, safeZRange);
+                
+                targetPosition = areaCenter + new Vector3(randomX, 0, randomZ);
+            }
+            else
+            {
+                targetPosition = Vector3.zero;
+            }
+            
+            // Store the new target position
+            currentTargetPosition = targetPosition;
+            Debug.Log($"🎯 New target generated successfully: {targetPosition}");
+        }
+        
+        /// <summary>
+        /// Manually generate a new target (for testing purposes)
+        /// </summary>
+        [ContextMenu("Generate New Target")]
+        public void ManualGenerateNewTarget()
+        {
+            GenerateNewTarget();
+            needsNewTarget = false;
+            Debug.Log("🎯 Manual target generation completed!");
+        }
+        
+        /// <summary>
+        /// Show current target status (for debugging)
+        /// </summary>
+        [ContextMenu("Show Target Status")]
+        public void ShowTargetStatus()
+        {
+            Debug.Log($"🎯 Target Status:");
+            Debug.Log($"   Current Target: {currentTargetPosition}");
+            Debug.Log($"   Needs New Target: {needsNewTarget}");
+            Debug.Log($"   Is Bowling: {isBowling}");
+            Debug.Log($"   Has Landed: {hasLanded}");
+        }
+        
+        /// <summary>
+        /// Force immediate target generation (for testing)
+        /// </summary>
+        [ContextMenu("Force New Target Now")]
+        public void ForceNewTargetNow()
+        {
+            Debug.Log("🎯 Force generating new target...");
+            GenerateNewTarget();
+            needsNewTarget = false;
+            UpdatePredictionForNextBall();
+            Debug.Log("🎯 Force target generation completed!");
         }
     }
 }

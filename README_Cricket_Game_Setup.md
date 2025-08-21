@@ -32,6 +32,13 @@ This is a comprehensive cricket game system designed for Android mobile with rea
 - **Physics configuration**
 - **Input system integration**
 
+### 🎯 **Target Generation System**
+- **Automatic Initial Target**: First target generated when game starts
+- **Sequential Generation**: New targets only appear after ball destruction
+- **No Manual Generation**: Space key only bowls, doesn't create targets
+- **Testing Tools**: Context menu options for manual target generation
+- **Status Monitoring**: Debug tools to check target generation state
+
 ## 🚀 Quick Setup (Recommended)
 
 ### Step 1: Add Setup Script
@@ -52,6 +59,10 @@ This is a comprehensive cricket game system designed for Android mobile with rea
 The `CricketGameSetup` script provides two context menu options:
 - **"Setup Cricket Game"**: Configures all components automatically
 - **"Reset Setup"**: Removes all added components for a clean slate
+
+The `CricketBowlingSystem` script provides additional context menu options:
+- **"Generate New Target"**: Manually generate a new target (for testing)
+- **"Show Target Status"**: Display current target generation state
 
 To access these:
 1. Right-click on the CricketGameSetup GameObject in the Hierarchy
@@ -107,6 +118,12 @@ To access these:
 - **Swipe Down**: Defensive shot
 - **Swipe Right**: Pull shot
 - **Release**: Bat returns to center position
+
+### Target Generation
+- **First Target**: Automatically generated when game starts
+- **New Targets**: Only generated after the current ball is destroyed
+- **Space Key**: Bowls the ball (does not generate new targets)
+- **Manual Generation**: Right-click → "Generate New Target" (for testing)
 
 ## ⚙️ Configuration Options
 
@@ -172,6 +189,12 @@ enableSmoothing = true;           // Enable input smoothing
 - Ensure Input Actions asset is assigned
 - Check if PlayerInput component is configured
 - Verify action map names match
+
+#### Target Generation Issues
+- **No New Targets**: Targets only generate after ball destruction
+- **Space Key Behavior**: Space bowls the ball, doesn't generate targets
+- **Manual Testing**: Use "Generate New Target" context menu for testing
+- **Status Check**: Use "Show Target Status" to debug target state
 
 ### Debug Mode
 Enable debug mode in `CricketGameSetup` to see detailed setup information in the Console.

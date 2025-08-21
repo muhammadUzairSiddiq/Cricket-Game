@@ -154,9 +154,9 @@ MonoBehaviour:
   ballMass: 0.16
   ballBounciness: 0.8
   ballFriction: 0.8
-  airResistance: 0.01
-  spinDecay: 0.95
-  velocityDecay: 0.999
+  airResistance: 0
+  spinDecay: 0
+  velocityDecay: 1
   maxBounceHeight: 8
   pitchingAreaBounceHeight: 3
   pitchingAreaBounceHeightFlat: 3
