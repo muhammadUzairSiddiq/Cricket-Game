@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 2308089765845687691}
   - component: {fileID: 7037234990939765936}
   m_Layer: 0
-  m_Name: BALL
+  m_Name: BALL old
   m_TagString: Ball
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -176,6 +176,7 @@ MonoBehaviour:
   showTrajectoryDebug: 0
   debugLineColor: {r: 1, g: 1, b: 1, a: 1}
   debugLineWidth: 0.02
+  enableBouncePhysics: 0
   ballTrail: {fileID: 0}
   bounceEffect: {fileID: 0}
   newBallMaterial: {fileID: 0}

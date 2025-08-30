@@ -2163,5 +2163,163 @@ namespace CricketGame
             UpdatePredictionForNextBall();
             Debug.Log("🎯 Force target generation completed!");
         }
+        
+        /// <summary>
+        /// Context menu function to test spawn position adjustment
+        /// </summary>
+        [ContextMenu("Test Spawn Position Adjustment")]
+        void TestSpawnPositionAdjustmentContext()
+        {
+            if (currentTargetPosition == Vector3.zero)
+            {
+                Debug.Log("❌ No target set! Press Space first to generate target.");
+                return;
+            }
+            
+            Debug.Log($"🎯 SPAWN POSITION ADJUSTMENT TEST:");
+            Debug.Log($"   Current spawn position: {ballSpawnPoint.position}");
+            Debug.Log($"   Current target: {currentTargetPosition}");
+            
+            // Test the adjustment
+            AdjustBallSpawnForTarget();
+            
+            Debug.Log($"   Spawn position adjustment test completed!");
+        }
+        
+        /// <summary>
+        /// Adjust ball spawn position to ensure accurate targeting
+        /// </summary>
+        void AdjustBallSpawnForTarget()
+        {
+            if (currentTargetPosition == Vector3.zero) return;
+            
+            // Calculate the direction from current spawn to target
+            Vector3 currentDirection = (currentTargetPosition - ballSpawnPoint.position).normalized;
+            
+            // Check if the current spawn position can reach the target
+            float horizontalDistance = Vector3.Distance(
+                new Vector3(ballSpawnPoint.position.x, 0, ballSpawnPoint.position.z),
+                new Vector3(currentTargetPosition.x, 0, currentTargetPosition.z)
+            );
+            
+            // If target is too far left/right, adjust spawn position
+            Vector3 targetHorizontal = new Vector3(currentTargetPosition.x, 0, currentTargetPosition.z);
+            Vector3 spawnHorizontal = new Vector3(ballSpawnPoint.position.x, 0, ballSpawnPoint.position.z);
+            
+            // Calculate how much we need to adjust spawn position
+            Vector3 adjustment = targetHorizontal - spawnHorizontal;
+            
+            // Only adjust if the target is significantly off-center
+            if (Mathf.Abs(adjustment.x) > 2.0f || Mathf.Abs(adjustment.z) > 2.0f)
+            {
+                Debug.Log($"🎯 ADJUSTING SPAWN POSITION for better targeting:");
+                Debug.Log($"   Original spawn: {ballSpawnPoint.position}");
+                Debug.Log($"   Target: {currentTargetPosition}");
+                Debug.Log($"   Adjustment needed: {adjustment}");
+                
+                // Store original position
+                Vector3 originalSpawnPos = ballSpawnPoint.position;
+                
+                // Adjust spawn position to be more aligned with target
+                Vector3 newSpawnPos = ballSpawnPoint.position;
+                newSpawnPos.x += adjustment.x * 0.3f; // Partial adjustment to avoid extreme positions
+                newSpawnPos.z += adjustment.z * 0.3f;
+                
+                // Ensure spawn position stays within reasonable bounds
+                if (pitchingArea != null)
+                {
+                    Vector3 areaCenter = pitchingArea.position;
+                    float maxOffset = 5.0f; // Maximum offset from center
+                    
+                    newSpawnPos.x = Mathf.Clamp(newSpawnPos.x, areaCenter.x - maxOffset, areaCenter.x + maxOffset);
+                    newSpawnPos.z = Mathf.Clamp(newSpawnPos.z, areaCenter.z - maxOffset, areaCenter.z + maxOffset);
+                }
+                
+                ballSpawnPoint.position = newSpawnPos;
+                
+                Debug.Log($"   New spawn position: {ballSpawnPoint.position}");
+                Debug.Log($"   This should improve targeting accuracy!");
+            }
+        }
+        
+        /// <summary>
+        /// Context menu function to test center targeting
+        /// </summary>
+        [ContextMenu("Test Center Targeting")]
+        void TestCenterTargetingContext()
+        {
+            Debug.Log($"🎯 CENTER TARGETING TEST:");
+            
+            // Force target generation to center
+            currentTargetPosition = Vector3.zero; // Clear current target
+            Vector3 direction = CalculateTargetDirection();
+            
+            Debug.Log($"   New target direction: {direction}");
+            Debug.Log($"   Target should now be at center of pitching area!");
+            
+            // Test trajectory calculation
+            if (currentTargetPosition != Vector3.zero)
+            {
+                float speed = CalculateBallSpeed();
+                Vector3 velocity = CalculateInitialVelocity(direction, speed);
+                
+                Debug.Log($"   Calculated Velocity: {velocity.magnitude:F1}m/s");
+                Debug.Log($"   Target Position: {currentTargetPosition}");
+                Debug.Log($"   Spawn Position: {ballSpawnPoint.position}");
+            }
+        }
+        
+        /// <summary>
+        /// Context menu function to debug targeting positions
+        /// </summary>
+        [ContextMenu("Debug Targeting Positions")]
+        void DebugTargetingPositionsContext()
+        {
+            Debug.Log($"🎯 TARGETING POSITIONS DEBUG:");
+            Debug.Log($"   Ball Spawn Point: {ballSpawnPoint.position}");
+            Debug.Log($"   Current Target: {currentTargetPosition}");
+            
+            if (pitchingArea != null)
+            {
+                Debug.Log($"   Pitching Area Center: {pitchingArea.position}");
+                Debug.Log($"   Pitching Area Scale: {pitchingArea.localScale}");
+            }
+            
+            if (topLeftCorner != null && topRightCorner != null && bottomLeftCorner != null && bottomRightCorner != null)
+            {
+                Debug.Log($"   Top Left Corner: {topLeftCorner.position}");
+                Debug.Log($"   Top Right Corner: {topRightCorner.position}");
+                Debug.Log($"   Bottom Left Corner: {bottomLeftCorner.position}");
+                Debug.Log($"   Bottom Right Corner: {bottomRightCorner.position}");
+                
+                // Calculate actual boundaries
+                float minX = Mathf.Min(topLeftCorner.position.x, bottomLeftCorner.position.x);
+                float maxX = Mathf.Max(topRightCorner.position.x, bottomRightCorner.position.x);
+                float minZ = Mathf.Min(bottomLeftCorner.position.z, bottomRightCorner.position.z);
+                float maxZ = Mathf.Max(topLeftCorner.position.z, topRightCorner.position.z);
+                
+                Vector3 calculatedCenter = new Vector3((minX + maxX) * 0.5f, pitchingArea.position.y, (minZ + maxZ) * 0.5f);
+                Debug.Log($"   Calculated Center: {calculatedCenter}");
+                Debug.Log($"   Bounds: X[{minX:F2}, {maxX:F2}], Z[{minZ:F2}, {maxZ:F2}]");
+            }
+            
+            // Calculate direction from spawn to target
+            if (currentTargetPosition != Vector3.zero)
+            {
+                Vector3 direction = (currentTargetPosition - ballSpawnPoint.position).normalized;
+                float distance = Vector3.Distance(ballSpawnPoint.position, currentTargetPosition);
+                Debug.Log($"   Direction to Target: {direction}");
+                Debug.Log($"   Distance to Target: {distance:F2}m");
+                
+                // Check if spawn point is aligned with target
+                Vector3 spawnHorizontal = new Vector3(ballSpawnPoint.position.x, 0, ballSpawnPoint.position.z);
+                Vector3 targetHorizontal = new Vector3(currentTargetPosition.x, 0, currentTargetPosition.z);
+                Vector3 horizontalDirection = (targetHorizontal - spawnHorizontal).normalized;
+                
+                Debug.Log($"   Horizontal Direction: {horizontalDirection}");
+                Debug.Log($"   Spawn X Offset: {ballSpawnPoint.position.x - pitchingArea.position.x:F2}m");
+                Debug.Log($"   Target X Offset: {currentTargetPosition.x - pitchingArea.position.x:F2}m");
+            }
+        }
     }
 }

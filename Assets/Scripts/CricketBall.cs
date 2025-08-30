@@ -16,27 +16,27 @@ namespace CricketGame
         [SerializeField] private float ballFriction = 0.8f; // Ground friction
         
         [Header("PHYSICS SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float airResistance = 0.01f; // Air resistance (higher = more drag)
-        [SerializeField] public float spinDecay = 0.95f; // How quickly spin decreases (0.95 = 5% loss per frame)
-        [SerializeField] public float velocityDecay = 0.999f; // Velocity decay per frame (0.999 = 0.1% loss per frame)
-        [SerializeField] public float maxBounceHeight = 8f; // Maximum bounce height allowed
+        [SerializeField] public float airResistance = 0.0f; // Air resistance (0.0 = NO AIR RESISTANCE for straight balls)
+        [SerializeField] public float spinDecay = 1.0f; // How quickly spin decreases (1.0 = NO SPIN DECAY for straight balls)
+        [SerializeField] public float velocityDecay = 1.0f; // Velocity decay per frame (1.0 = NO VELOCITY DECAY for straight balls)
+        [SerializeField] public float maxBounceHeight = 0.5f; // Maximum bounce height allowed - REDUCED for straight balls
         
         [Header("BOUNCE HEIGHT SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float pitchingAreaBounceHeight = 0.3f; // Pitching area bounce height (PERFECT CRICKET)
-        [SerializeField] public float pitchingAreaBounceHeightFlat = 0.4f; // Bounce height for flat deliveries (PERFECT CRICKET)
-        [SerializeField] public float groundBounceHeight = 0.15f; // Ground bounce height (PERFECT CRICKET)
-        [SerializeField] public float groundBounceHeightFast = 0.25f; // Ground bounce height for fast balls (PERFECT CRICKET)
+        [SerializeField] public float pitchingAreaBounceHeight = 0.05f; // Pitching area bounce height (MINIMAL for straight balls)
+        [SerializeField] public float pitchingAreaBounceHeightFlat = 0.05f; // Bounce height for flat deliveries (MINIMAL for straight balls)
+        [SerializeField] public float groundBounceHeight = 0.02f; // Ground bounce height (MINIMAL for straight balls)
+        [SerializeField] public float groundBounceHeightFast = 0.05f; // Ground bounce height for fast balls (MINIMAL for straight balls)
         
         [Header("BOUNCE FORCE SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float pitchingAreaImpulse = 0.2f; // Upward impulse for pitching area (PERFECT CRICKET)
-        [SerializeField] public float groundImpulse = 0.1f; // Upward impulse for ground (PERFECT CRICKET)
+        [SerializeField] public float pitchingAreaImpulse = 0.0f; // Upward impulse for pitching area (0.0 = NO IMPULSE for straight balls)
+        [SerializeField] public float groundImpulse = 0.0f; // Upward impulse for ground (0.0 = NO IMPULSE for straight balls)
         
         [Header("BOUNCE PHYSICS SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float bounceFactor = 0.3f; // Bounce factor for pitching area (0.3 = 30% bounce)
-        [SerializeField] public float energyLoss = 0.2f; // Energy loss on bounce (0.2 = 20% loss)
+        [SerializeField] public float bounceFactor = 0.0f; // Bounce factor for pitching area (0.0 = NO BOUNCE for straight balls)
+        [SerializeField] public float energyLoss = 0.0f; // Energy loss on bounce (0.0 = NO ENERGY LOSS for straight balls)
         [SerializeField] public float momentumBoost = 1.0f; // Momentum boost (1.0 = no change)
-        [SerializeField] public float groundBounceFactor = 0.2f; // Ground bounce factor (0.2 = 20% bounce)
-        [SerializeField] public float groundEnergyLoss = 0.3f; // Ground energy loss (0.3 = 30% loss)
+        [SerializeField] public float groundBounceFactor = 0.0f; // Ground bounce factor (0.0 = NO BOUNCE for straight balls)
+        [SerializeField] public float groundEnergyLoss = 0.0f; // Ground energy loss (0.0 = NO ENERGY LOSS for straight balls)
         
         [Header("BALL SPEED SETTINGS - ADJUST THESE IN INSPECTOR")]
         [SerializeField] public float minForwardSpeed = 35f; // Minimum forward speed after bounce (m/s)
@@ -46,8 +46,11 @@ namespace CricketGame
         [Header("ACCURACY DEBUG SETTINGS - ADJUST THESE IN INSPECTOR")]
         [SerializeField] public bool showAccuracyDebug = true; // Show accuracy debug info
         [SerializeField] public bool showTrajectoryDebug = false; // 🎯 DISABLED by default - no more yellow line!
-        [SerializeField] public Color debugLineColor = new Color(1f, 1f, 1f, 0.2f); // 🎯 WHITE with 20% transparency (very subtle)
+        [SerializeField] public Color debugLineColor = new Color(1f, 1f, 0.2f, 0.2f); // 🎯 WHITE with 20% transparency (very subtle)
         [SerializeField] public float debugLineWidth = 0.01f; // 🎯 Thinner line for subtlety
+        
+        [Header("🎯 PERFECT ACCURACY CONTROL SYSTEM")]
+        [SerializeField] public bool enableBouncePhysics = false; // Master switch for bounce physics (false = perfect accuracy)
         
         [Header("Visual Effects")]
         [SerializeField] private TrailRenderer ballTrail;
@@ -222,20 +225,21 @@ namespace CricketGame
         {
             if (rb == null) return;
             
+            // 🎯 PERFECT ACCURACY CONTROL: Apply physics effects only if enabled
             // Apply air resistance
-            if (rb.linearVelocity.magnitude > 0.1f)
+            if (rb.linearVelocity.magnitude > 0.1f && airResistance > 0)
             {
                 rb.AddForce(-rb.linearVelocity.normalized * airResistance * rb.linearVelocity.sqrMagnitude, ForceMode.Force);
             }
             
             // Decay spin over time
-            if (rb.angularVelocity.magnitude > 0.01f)
+            if (rb.angularVelocity.magnitude > 0.01f && spinDecay < 1.0f)
             {
                 rb.angularVelocity *= spinDecay;
             }
             
             // Decay velocity over time
-            if (rb.linearVelocity.magnitude > 0.01f)
+            if (rb.linearVelocity.magnitude > 0.01f && velocityDecay < 1.0f)
             {
                 rb.linearVelocity *= velocityDecay;
             }
@@ -318,15 +322,12 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Apply random movement for rough ball
+        /// NO RANDOM MOVEMENT: Rough ball physics disabled for straight balls
         /// </summary>
         void ApplyRandomMovement()
         {
-            if (rb != null && rb.linearVelocity.magnitude > 1f)
-            {
-                Vector3 randomForce = Random.insideUnitSphere * 0.5f;
-                rb.AddForce(randomForce, ForceMode.Impulse);
-            }
+            // 🎯 RANDOM MOVEMENT DISABLED: No unpredictable forces for straight balls
+            // The ball should follow the exact calculated trajectory
         }
         
         /// <summary>
@@ -411,49 +412,64 @@ namespace CricketGame
                 }
             }
             
-            // 🎯 MAINTAIN CALCULATED TRAJECTORY - Don't let bounce physics interfere!
+            // 🎯 PERFECT ACCURACY CONTROL: Apply bounce physics only if enabled
+            Vector3 newVelocity;
             
-            // Get current velocity and direction
-            Vector3 incomingVelocity = rb.linearVelocity;
-            Vector3 normal = contact.normal;
-            
-            // Calculate current speed and direction
-            float incomingSpeed = incomingVelocity.magnitude;
-            Vector3 forwardDirection = new Vector3(incomingVelocity.x, 0, incomingVelocity.z).normalized;
-            
-            // 🎯 CRITICAL: Use MINIMAL bounce to maintain trajectory accuracy
-            // The ball should bounce but not deviate significantly from its calculated path
-            
-            // Calculate new velocity with MINIMAL energy loss to maintain accuracy
-            float baseSpeed = incomingSpeed * (1f - this.energyLoss) * this.momentumBoost;
-            
-            // Ensure minimum forward speed to reach wickets
-            if (baseSpeed < this.minForwardSpeed)
+            if (enableBouncePhysics)
             {
-                baseSpeed = this.minForwardSpeed;
-                Debug.Log($"🎯 BOOSTED ball speed to {this.minForwardSpeed} m/s to maintain trajectory accuracy!");
+                // 🎯 MAINTAIN CALCULATED TRAJECTORY - Don't let bounce physics interfere!
+                
+                // Get current velocity and direction
+                Vector3 incomingVelocity = rb.linearVelocity;
+                Vector3 normal = contact.normal;
+                
+                // Calculate current speed and direction
+                float incomingSpeed = incomingVelocity.magnitude;
+                Vector3 forwardDirection = new Vector3(incomingVelocity.x, 0, incomingVelocity.z).normalized;
+                
+                // 🎯 CRITICAL: Use MINIMAL bounce to maintain trajectory accuracy
+                // The ball should bounce but not deviate significantly from its calculated path
+                
+                // Calculate new velocity with MINIMAL energy loss to maintain accuracy
+                float baseSpeed = incomingSpeed * (1f - this.energyLoss) * this.momentumBoost;
+                
+                // Ensure minimum forward speed to reach wickets
+                if (baseSpeed < this.minForwardSpeed)
+                {
+                    baseSpeed = this.minForwardSpeed;
+                    Debug.Log($"🎯 BOOSTED ball speed to {this.minForwardSpeed} m/s to maintain trajectory accuracy!");
+                }
+                
+                newVelocity = forwardDirection * baseSpeed;
+                
+                // 🎯 PERFECT CRICKET BOUNCE - Low and controlled
+                // Use inspector values for easy adjustment
+                newVelocity.y = pitchingAreaBounceHeight; // Use inspector value
+                
+                // If ball is coming in too flat, use flat delivery bounce height
+                if (Mathf.Abs(incomingVelocity.y) < 3.0f)
+                {
+                    newVelocity.y = pitchingAreaBounceHeightFlat; // Use inspector value
+                }
+                
+                Debug.Log($"🎯 TRAJECTORY MAINTENANCE: Speed after pitch: {baseSpeed:F1} → {newVelocity.magnitude:F1} m/s");
+                Debug.Log($"🎯 Bounce height: {newVelocity.y:F2}m (incoming Y: {incomingVelocity.y:F2}m)");
+                
+                // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
+                rb.linearVelocity = newVelocity;
+                
+                // Add minimal upward impulse for realistic bounce (use inspector value)
+                rb.AddForce(Vector3.up * pitchingAreaImpulse, ForceMode.Impulse);
             }
-            
-            Vector3 newVelocity = forwardDirection * baseSpeed;
-            
-            // 🎯 PERFECT CRICKET BOUNCE - Low and controlled
-            // Use inspector values for easy adjustment
-            newVelocity.y = pitchingAreaBounceHeight; // Use inspector value
-            
-            // If ball is coming in too flat, use flat delivery bounce height
-            if (Mathf.Abs(incomingVelocity.y) < 3.0f)
+            else
             {
-                newVelocity.y = pitchingAreaBounceHeightFlat; // Use inspector value
+                // 🎯 PERFECT ACCURACY: No bounce physics - maintain exact trajectory
+                newVelocity = rb.linearVelocity;
+                newVelocity.y = 0.01f; // Minimal bounce height for perfect accuracy
+                rb.linearVelocity = newVelocity;
+                
+                Debug.Log($"🎯 PERFECT ACCURACY: No bounce physics applied - trajectory maintained exactly!");
             }
-            
-            Debug.Log($"🎯 TRAJECTORY MAINTENANCE: Speed after pitch: {baseSpeed:F1} → {newVelocity.magnitude:F1} m/s");
-            Debug.Log($"🎯 Bounce height: {newVelocity.y:F2}m (incoming Y: {incomingVelocity.y:F2}m)");
-            
-            // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
-            rb.linearVelocity = newVelocity;
-            
-            // Add minimal upward impulse for realistic bounce (use inspector value)
-            rb.AddForce(Vector3.up * pitchingAreaImpulse, ForceMode.Impulse);
             
             // Update ball condition (gets rougher with bounces)
             UpdateBallCondition();
@@ -488,46 +504,61 @@ namespace CricketGame
             lastBounceTime = Time.time;
             bounceCount++;
             
-            // 🎯 MINIMAL GROUND BOUNCE - Don't interfere with trajectory accuracy
+            // 🎯 PERFECT ACCURACY CONTROL: Apply ground bounce physics only if enabled
+            Vector3 newVelocity;
             
-            // Get current velocity and direction
-            Vector3 velocity = rb.linearVelocity;
-            Vector3 forwardDirection = new Vector3(velocity.x, 0, velocity.z).normalized;
-            float forwardSpeed = new Vector3(velocity.x, 0, velocity.z).magnitude;
-            
-            // 🎯 CRITICAL: Use MINIMAL bounce to maintain trajectory accuracy
-            // The ball should bounce but not deviate significantly from its calculated path
-            
-            // Calculate new velocity with MINIMAL energy loss to maintain accuracy
-            float newForwardSpeed = forwardSpeed * (1f - this.groundEnergyLoss);
-            
-            // Ensure minimum forward speed to reach wickets
-            if (newForwardSpeed < this.minForwardSpeed * 0.8f) // Allow some reduction but not too much
+            if (enableBouncePhysics)
             {
-                newForwardSpeed = this.minForwardSpeed * 0.8f;
-                Debug.Log($"🎯 GROUND BOUNCE: Maintained forward speed at {newForwardSpeed:F1} m/s for trajectory accuracy!");
+                // 🎯 MINIMAL GROUND BOUNCE - Don't interfere with trajectory accuracy
+                
+                // Get current velocity and direction
+                Vector3 velocity = rb.linearVelocity;
+                Vector3 forwardDirection = new Vector3(velocity.x, 0, velocity.z).normalized;
+                float forwardSpeed = new Vector3(velocity.x, 0, velocity.z).magnitude;
+                
+                // 🎯 CRITICAL: Use MINIMAL bounce to maintain trajectory accuracy
+                // The ball should bounce but not deviate significantly from its calculated path
+                
+                // Calculate new velocity with MINIMAL energy loss to maintain accuracy
+                float newForwardSpeed = forwardSpeed * (1f - this.groundEnergyLoss);
+                
+                // Ensure minimum forward speed to reach wickets
+                if (newForwardSpeed < this.minForwardSpeed * 0.8f) // Allow some reduction but not too much
+                {
+                    newForwardSpeed = this.minForwardSpeed * 0.8f;
+                    Debug.Log($"🎯 GROUND BOUNCE: Maintained forward speed at {newForwardSpeed:F1} m/s for trajectory accuracy!");
+                }
+                
+                // Create new velocity with perfect bounce
+                newVelocity = forwardDirection * newForwardSpeed;
+                
+                // 🎯 PERFECT GROUND BOUNCE - Low and controlled
+                // Use inspector values for easy adjustment
+                newVelocity.y = groundBounceHeight; // Use inspector value
+                
+                // If ball is moving fast, use fast ball bounce height
+                if (newForwardSpeed > 15f)
+                {
+                    newVelocity.y = groundBounceHeightFast; // Use inspector value
+                }
+                
+                Debug.Log($"🎯 GROUND BOUNCE: Speed maintained at {newForwardSpeed:F1} m/s, bounce height: {newVelocity.y:F2}m");
+                
+                // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
+                rb.linearVelocity = newVelocity;
+                
+                // Add minimal upward impulse for realistic bounce (use inspector value)
+                rb.AddForce(Vector3.up * groundImpulse, ForceMode.Impulse);
             }
-            
-            // Create new velocity with perfect bounce
-            Vector3 newVelocity = forwardDirection * newForwardSpeed;
-            
-            // 🎯 PERFECT GROUND BOUNCE - Low and controlled
-            // Use inspector values for easy adjustment
-            newVelocity.y = groundBounceHeight; // Use inspector value
-            
-            // If ball is moving fast, use fast ball bounce height
-            if (newForwardSpeed > 15f)
+            else
             {
-                newVelocity.y = groundBounceHeightFast; // Use inspector value
+                // 🎯 PERFECT ACCURACY: No ground bounce physics - maintain exact trajectory
+                newVelocity = rb.linearVelocity;
+                newVelocity.y = 0.01f; // Minimal bounce height for perfect accuracy
+                rb.linearVelocity = newVelocity;
+                
+                Debug.Log($"🎯 PERFECT ACCURACY: No ground bounce physics applied - trajectory maintained exactly!");
             }
-            
-            Debug.Log($"🎯 GROUND BOUNCE: Speed maintained at {newForwardSpeed:F1} m/s, bounce height: {newVelocity.y:F2}m");
-            
-            // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
-            rb.linearVelocity = newVelocity;
-            
-            // Add minimal upward impulse for realistic bounce (use inspector value)
-            rb.AddForce(Vector3.up * groundImpulse, ForceMode.Impulse);
             
             // Reduce angular velocity on bounce to maintain stability
             rb.angularVelocity *= 0.8f;
