@@ -23,7 +23,7 @@ namespace CricketGame
         [SerializeField] private Transform bottomRightCorner; // Bottom right corner of pitching area
         
         [Header("Bowling Physics")]
-        [SerializeField] private float ballSpeed = 50f; // m/s (180 km/h fast bowling) - Increased for wicket reachability
+        [SerializeField] private float ballSpeed = 90f; // m/s (324 km/h) - MAXIMUM SPEED for ultimate reach
         [SerializeField] private float spinRate = 0f; // RPM
         [SerializeField] private float swingAmount = 0f; // meters
         [SerializeField] private float seamMovement = 0f; // meters
@@ -155,18 +155,18 @@ namespace CricketGame
          /// </summary>
          void UpdatePredictionForNextBall()
          {
-            Debug.Log("🎯 UpdatePredictionForNextBall called");
+            // UpdatePredictionForNextBall called
             
             if (!showInGamePrediction || pitchPredictionMarker == null) 
             {
-                Debug.Log("🎯 Prediction update skipped - showInGamePrediction: false or no marker");
+                // Prediction update skipped
                 return;
             }
             
             // Only show prediction if we have a target
             if (currentTargetPosition != Vector3.zero)
             {
-                Debug.Log($"🎯 Showing prediction for existing target: {currentTargetPosition}");
+                // Showing prediction for existing target
                 // Calculate and show prediction for next ball
                 UpdatePredictionVisuals();
                 
@@ -176,7 +176,7 @@ namespace CricketGame
             }
             else
             {
-                Debug.Log("🎯 Hiding prediction - no target available");
+                // Hiding prediction - no target available
                 // Hide prediction if no target
                 if (pitchPredictionMarker != null)
                     pitchPredictionMarker.SetActive(false);
@@ -506,18 +506,48 @@ namespace CricketGame
                  /// <summary>
          /// Main bowling function
          /// </summary>
-         public void BowlBall()
-         {
-             if (isBowling) return;
-             
-             // Don't clear target position - keep it visible while bowling
-             // currentTargetPosition will be cleared only when generating new target
-             needsNewTarget = true; // Will need a new target after this ball is destroyed
-             
-             Debug.Log($"🏏 Bowling ball to target: {currentTargetPosition}");
-             
-             StartCoroutine(BowlingSequence());
-         }
+                 public void BowlBall()
+        {
+            if (isBowling) return;
+            
+            // Ensure previous ball is completely destroyed before creating new one
+            if (currentBall != null)
+            {
+                Debug.Log("🎯 Previous ball still exists - destroying it first");
+                DestroyBall();
+                return; // Exit and let the next attempt proceed
+            }
+            
+            // Check if system is ready for new ball
+            if (!IsSystemReadyForNewBall())
+            {
+                Debug.Log("🎯 System not ready for new ball - please wait");
+                return;
+            }
+            
+            // Generate new target position for each bowling attempt
+            GenerateNewTarget();
+            
+            Debug.Log($"🏏 Bowling ball to NEW target: {currentTargetPosition}");
+            
+            StartCoroutine(BowlingSequence());
+        }
+        
+        /// <summary>
+        /// Check if system is ready for a new ball
+        /// </summary>
+        bool IsSystemReadyForNewBall()
+        {
+            // Check if any balls still exist in the scene
+            CricketBall[] existingBalls = FindObjectsOfType<CricketBall>();
+            if (existingBalls.Length > 0)
+            {
+                Debug.Log($"🎯 Found {existingBalls.Length} existing balls - system not ready");
+                return false;
+            }
+            
+            return true;
+        }
         
                  /// <summary>
          /// Complete bowling sequence
@@ -543,11 +573,12 @@ namespace CricketGame
              // Trigger events
              OnBallBowled?.Invoke(currentBall);
              
-             // Allow immediate new ball generation
-             isBowling = false;
-             
-             // Destroy the ball after 5 seconds (but don't block new balls)
-             StartCoroutine(DestroyBallAfterDelay(5f));
+                         // Destroy the ball after 5 seconds
+            StartCoroutine(DestroyBallAfterDelay(5f));
+            
+            // Allow new ball generation after a small delay to ensure cleanup
+            yield return new WaitForSeconds(0.1f);
+            isBowling = false;
              
              // Update overs
              currentOvers += 0.1f;
@@ -752,22 +783,22 @@ namespace CricketGame
             switch (currentBowlingType)
             {
                 case BowlingType.FastBowl:
-                    baseSpeed = Random.Range(45f, 60f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(85f, 100f); // MAXIMUM SPEED for ultimate reach
                     break;
                 case BowlingType.MediumPace:
-                    baseSpeed = Random.Range(40f, 55f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(80f, 95f); // MAXIMUM SPEED for ultimate reach
                     break;
                 case BowlingType.SpinBowl:
-                    baseSpeed = Random.Range(35f, 50f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(75f, 90f); // MAXIMUM SPEED for ultimate reach
                     break;
                 case BowlingType.Yorker:
-                    baseSpeed = Random.Range(42f, 58f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(82f, 98f); // MAXIMUM SPEED for ultimate reach
                     break;
                 case BowlingType.Bouncer:
-                    baseSpeed = Random.Range(48f, 65f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(88f, 105f); // MAXIMUM SPEED for ultimate reach
                     break;
                 case BowlingType.SlowerBall:
-                    baseSpeed = Random.Range(30f, 45f); // Increased for wicket reachability
+                    baseSpeed = Random.Range(70f, 85f); // MAXIMUM SPEED for ultimate reach
                     break;
             }
             
@@ -799,12 +830,12 @@ namespace CricketGame
             // Start with ideal calculation
             float idealTimeToReach = horizontalDistance / speed;
             
-            // 🎯 EXPANDED COMPENSATION RANGE: Test from 0.5 to 2.0 (300% range)
+            // 🎯 OPTIMIZED COMPENSATION RANGE: Focus on most reliable range
             float bestCompensation = 1.0f;
             float bestAccuracy = float.MaxValue;
             
-            // Test compensation values from 0.5 to 2.0 with finer granularity
-            for (float comp = 0.5f; comp <= 2.0f; comp += 0.005f) // 300 test values
+            // Test compensation values in the most reliable range (0.8 to 1.2)
+            for (float comp = 0.8f; comp <= 1.2f; comp += 0.01f) // 40 test values - more focused
             {
                 float testTimeToReach = horizontalDistance / (speed * comp);
                 
@@ -893,6 +924,14 @@ namespace CricketGame
             }
             
             // 🎯 APPLY BEST COMPENSATION: Use the compensation value that gives best accuracy
+            // If accuracy is still poor, use a more conservative approach
+            if (bestAccuracy > 0.5f)
+            {
+                // Fallback: Use a more conservative compensation for better reliability
+                bestCompensation = 0.95f; // Slightly slower for better accuracy
+                Debug.LogWarning($"🎯 COMPENSATION FALLBACK: Using conservative value {bestCompensation} for better reliability");
+            }
+            
             float compensatedTimeToReach = horizontalDistance / (speed * bestCompensation);
             
             // Calculate final velocity with best compensation
@@ -1126,37 +1165,65 @@ namespace CricketGame
                  /// <summary>
          /// Create new ball from prefab
          /// </summary>
-         void CreateNewBall()
-         {
-             if (ballPrefab == null || ballSpawnPoint == null) return;
-             
-             // Reset landing flag for new ball
-             hasLanded = false;
-             
-             // Instantiate new ball at spawn point with proper positioning
-             Vector3 spawnPosition = ballSpawnPoint.position;
-             spawnPosition.y = Mathf.Max(spawnPosition.y, 0.1f); // Ensure ball is above ground
-             
-             currentBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
-             
-             // Setup ball physics
-             SetupBallPhysics();
-             
-             Debug.Log($"🎯 Ball created at {spawnPosition}");
-         }
+                 void CreateNewBall()
+        {
+            if (ballPrefab == null || ballSpawnPoint == null) return;
+            
+            // Reset landing flag for new ball
+            hasLanded = false;
+            
+            // Instantiate new ball at spawn point with proper positioning
+            Vector3 spawnPosition = ballSpawnPoint.position;
+            spawnPosition.y = Mathf.Max(spawnPosition.y, 0.1f); // Ensure ball is above ground
+            
+            currentBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
+            
+            // Setup ball physics
+            SetupBallPhysics();
+            
+            // Reset ball state for clean start
+            CricketBall cricketBall = currentBall.GetComponent<CricketBall>();
+            if (cricketBall != null)
+            {
+                cricketBall.ResetBallState();
+            }
+            
+            // Ensure ball is at exact spawn position
+            currentBall.transform.position = spawnPosition;
+            if (ballRigidbody != null)
+            {
+                ballRigidbody.linearVelocity = Vector3.zero;
+                ballRigidbody.angularVelocity = Vector3.zero;
+                ballRigidbody.isKinematic = false;
+            }
+            
+            Debug.Log($"🎯 Ball created at {spawnPosition} with clean state");
+        }
         
         /// <summary>
-        /// Destroy the current ball
+        /// Destroy the current ball with complete cleanup
         /// </summary>
         void DestroyBall()
         {
             if (currentBall != null)
             {
+                // Get ball component and reset state before destruction
+                CricketBall cricketBall = currentBall.GetComponent<CricketBall>();
+                if (cricketBall != null)
+                {
+                    cricketBall.ResetBallState();
+                }
+                
+                // Destroy the ball
                 Destroy(currentBall);
                 currentBall = null;
                 ballRigidbody = null;
                 ballTrail = null;
-                Debug.Log("Ball destroyed");
+                
+                // Reset bowling system state
+                hasLanded = false;
+                
+                Debug.Log("🎯 Ball destroyed with complete cleanup");
             }
         }
         

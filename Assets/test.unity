@@ -132,12 +132,12 @@ GameObject:
   - component: {fileID: 70351615}
   - component: {fileID: 70351614}
   m_Layer: 0
-  m_Name: Length
+  m_Name: Good Length
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &70351613
 Transform:
   m_ObjectHideFlags: 0
@@ -147,11 +147,11 @@ Transform:
   m_GameObject: {fileID: 70351612}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7097077, y: 0.58, z: 41.018215}
-  m_LocalScale: {x: 3.6703374, y: 0.04, z: 0.9263141}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.19697867}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.16322254}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1569813291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &70351614
 BoxCollider:
@@ -607,12 +607,12 @@ GameObject:
   - component: {fileID: 303634359}
   - component: {fileID: 303634358}
   m_Layer: 0
-  m_Name: Full toss
+  m_Name: Full Length
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &303634357
 Transform:
   m_ObjectHideFlags: 0
@@ -622,11 +622,11 @@ Transform:
   m_GameObject: {fileID: 303634356}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7097077, y: 0.58, z: 44.405796}
-  m_LocalScale: {x: 3.6703374, y: 0.04, z: 1.1599584}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.399935}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.20439216}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1569813291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &303634358
 BoxCollider:
@@ -715,12 +715,12 @@ GameObject:
   - component: {fileID: 429506976}
   - component: {fileID: 429506975}
   m_Layer: 0
-  m_Name: Slot
+  m_Name: Short Length
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &429506974
 Transform:
   m_ObjectHideFlags: 0
@@ -730,11 +730,11 @@ Transform:
   m_GameObject: {fileID: 429506973}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7097077, y: 0.58, z: 42.05373}
-  m_LocalScale: {x: 3.6703374, y: 0.04, z: 1.1335491}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.014514261}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.19973868}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1569813291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &429506975
 BoxCollider:
@@ -1059,7 +1059,7 @@ GameObject:
   - component: {fileID: 623630491}
   - component: {fileID: 623630490}
   m_Layer: 0
-  m_Name: Wicket (1)
+  m_Name: umpire Wicket
   m_TagString: Wicket
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1093,7 +1093,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 623630489}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -1615,7 +1615,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1213891546
 Transform:
   m_ObjectHideFlags: 0
@@ -1625,11 +1625,11 @@ Transform:
   m_GameObject: {fileID: 1213891545}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7097077, y: 0.58, z: 43.206703}
-  m_LocalScale: {x: 3.6703374, y: 0.04, z: 1.1599584}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.18864708}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.20439216}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1569813291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1213891547
 BoxCollider:
@@ -2065,10 +2065,15 @@ Transform:
   m_GameObject: {fileID: 1569813287}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7286, y: 0.58, z: 42.6719}
-  m_LocalScale: {x: 3.0518038, y: 0.04, z: 4.603495}
+  m_LocalPosition: {x: 4.7286, y: 0.58, z: 42.1361}
+  m_LocalScale: {x: 3.0518038, y: 0.04, z: 5.6751604}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 303634357}
+  - {fileID: 1213891546}
+  - {fileID: 429506974}
+  - {fileID: 70351613}
+  - {fileID: 1582262650}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1582262649
@@ -2084,12 +2089,12 @@ GameObject:
   - component: {fileID: 1582262652}
   - component: {fileID: 1582262651}
   m_Layer: 0
-  m_Name: Short
+  m_Name: Bouncer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1582262650
 Transform:
   m_ObjectHideFlags: 0
@@ -2099,11 +2104,11 @@ Transform:
   m_GameObject: {fileID: 1582262649}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7097077, y: 0.58, z: 39.33621}
-  m_LocalScale: {x: 3.6703374, y: 0.04, z: 2.4179983}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.39013872}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.21963753}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1569813291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1582262651
 BoxCollider:
@@ -2192,6 +2197,7 @@ GameObject:
   - component: {fileID: 1592783275}
   - component: {fileID: 1592783274}
   - component: {fileID: 1592783278}
+  - component: {fileID: 1592783279}
   m_Layer: 6
   m_Name: Target
   m_TagString: Untagged
@@ -2314,6 +2320,18 @@ MonoBehaviour:
     m_Bits: 64
   useLayerMask: 1
   raycastMaxDistance: 100
+--- !u!114 &1592783279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592783273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ece1665fe97468340b8003406cfef37a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1791918231
 GameObject:
   m_ObjectHideFlags: 0
@@ -2327,7 +2345,7 @@ GameObject:
   - component: {fileID: 1791918233}
   - component: {fileID: 1791918232}
   m_Layer: 0
-  m_Name: Wicket
+  m_Name: Batsmen WIcket
   m_TagString: Wicket
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2696,15 +2714,21 @@ MonoBehaviour:
   ball: {fileID: 8718896542698064258, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
   target: {fileID: 1592783277}
   ballSpawnPoint: {fileID: 458010321}
-  ballSpeed: 10
-  arcHeight: 1
+  umpireWicket: {fileID: 623630493}
+  batsmanWicket: {fileID: 1791918235}
+  useDynamicSettings: 1
+  ballSettings: {fileID: 5986885649269739266, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
+  showBowlingZones: 1
+  pitchingArea: {fileID: 1569813291}
+  yorkerZone: {fileID: 1213891546}
+  fullTossZone: {fileID: 303634357}
+  lengthZone: {fileID: 70351613}
+  slotZone: {fileID: 429506974}
+  shortZone: {fileID: 1582262650}
+  zoneHeight: 0.1
+  zoneWidth: 2
   returnSpeed: 15
   waitTimeAfterLanding: 3
-  gravity: 9.81
-  useRealisticPhysics: 1
-  bounceForce: 0.8
-  bounceFriction: 0.85
-  maxBounces: 3
   startKey: 32
   stopKey: 27
 --- !u!1 &2116198337
@@ -2785,12 +2809,7 @@ SceneRoots:
   - {fileID: 623630493}
   - {fileID: 149550545}
   - {fileID: 458010321}
-  - {fileID: 1592783277}
-  - {fileID: 1582262650}
-  - {fileID: 70351613}
-  - {fileID: 429506974}
-  - {fileID: 1213891546}
-  - {fileID: 303634357}
   - {fileID: 1569813291}
   - {fileID: 2114426368}
   - {fileID: 626523555}
+  - {fileID: 1592783277}

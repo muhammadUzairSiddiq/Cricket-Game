@@ -22,8 +22,8 @@ namespace CricketGame
         [SerializeField] public float maxBounceHeight = 0.5f; // Maximum bounce height allowed - REDUCED for straight balls
         
         [Header("BOUNCE HEIGHT SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float pitchingAreaBounceHeight = 0.05f; // Pitching area bounce height (MINIMAL for straight balls)
-        [SerializeField] public float pitchingAreaBounceHeightFlat = 0.05f; // Bounce height for flat deliveries (MINIMAL for straight balls)
+        [SerializeField] public float pitchingAreaBounceHeight = 0.02f; // Pitching area bounce height (REDUCED for better reach)
+        [SerializeField] public float pitchingAreaBounceHeightFlat = 0.01f; // Bounce height for flat deliveries (MINIMAL for better reach)
         [SerializeField] public float groundBounceHeight = 0.02f; // Ground bounce height (MINIMAL for straight balls)
         [SerializeField] public float groundBounceHeightFast = 0.05f; // Ground bounce height for fast balls (MINIMAL for straight balls)
         
@@ -33,13 +33,13 @@ namespace CricketGame
         
         [Header("BOUNCE PHYSICS SETTINGS - ADJUST THESE IN INSPECTOR")]
         [SerializeField] public float bounceFactor = 0.0f; // Bounce factor for pitching area (0.0 = NO BOUNCE for straight balls)
-        [SerializeField] public float energyLoss = 0.0f; // Energy loss on bounce (0.0 = NO ENERGY LOSS for straight balls)
-        [SerializeField] public float momentumBoost = 1.0f; // Momentum boost (1.0 = no change)
+        [SerializeField] public float energyLoss = 0.05f; // Energy loss on bounce (0.05 = minimal energy loss for better reach)
+        [SerializeField] public float momentumBoost = 1.5f; // Momentum boost (1.5 = aggressive boost for maximum reach)
         [SerializeField] public float groundBounceFactor = 0.0f; // Ground bounce factor (0.0 = NO BOUNCE for straight balls)
         [SerializeField] public float groundEnergyLoss = 0.0f; // Ground energy loss (0.0 = NO ENERGY LOSS for straight balls)
         
         [Header("BALL SPEED SETTINGS - ADJUST THESE IN INSPECTOR")]
-        [SerializeField] public float minForwardSpeed = 35f; // Minimum forward speed after bounce (m/s)
+        [SerializeField] public float minForwardSpeed = 80f; // Minimum forward speed after bounce (m/s) - MAXIMUM INCREASE
         [SerializeField] public float speedBoostAfterPitch = 1.0f; // Speed multiplier after pitching (1.0 = no change)
         [SerializeField] public float initialBallSpeed = 40f; // Initial ball speed when bowled (m/s)
         
@@ -50,7 +50,7 @@ namespace CricketGame
         [SerializeField] public float debugLineWidth = 0.01f; // 🎯 Thinner line for subtlety
         
         [Header("🎯 PERFECT ACCURACY CONTROL SYSTEM")]
-        [SerializeField] public bool enableBouncePhysics = false; // Master switch for bounce physics (false = perfect accuracy)
+        [SerializeField] public bool enableBouncePhysics = false; // Master switch for bounce physics (false = perfect accuracy) - DISABLED FOR MAXIMUM REACH
         
         [Header("Visual Effects")]
         [SerializeField] private TrailRenderer ballTrail;
@@ -92,8 +92,39 @@ namespace CricketGame
         void Start()
         {
             initialPosition = transform.position;
+            ResetBallState();
             GetTargetLandingPosition();
             SetupDebugTrajectory();
+        }
+        
+        /// <summary>
+        /// Reset ball state for new bowling attempt
+        /// </summary>
+        public void ResetBallState()
+        {
+            hasLanded = false;
+            actualLandingPosition = Vector3.zero;
+            targetLandingPosition = Vector3.zero;
+            landingAccuracy = 0f;
+            bounceCount = 0;
+            lastBounceTime = 0f;
+            hasBounced = false;
+            ballAge = 0f;
+            isNewBall = true;
+            roughness = 0f;
+            
+            // Reset physics state
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = false;
+            }
+            
+            // Get fresh target position
+            GetTargetLandingPosition();
+            
+            Debug.Log("🎯 Ball state reset for new attempt");
         }
         
         void Update()
@@ -391,6 +422,9 @@ namespace CricketGame
             actualLandingPosition = contact.point;
             hasLanded = true;
             
+            // Get bowling system reference once for the entire method
+            CricketBowlingSystem bowlingSystem = FindObjectOfType<CricketBowlingSystem>();
+            
             // Calculate accuracy if we have a target
             if (targetLandingPosition != Vector3.zero)
             {
@@ -430,8 +464,23 @@ namespace CricketGame
                 // 🎯 CRITICAL: Use MINIMAL bounce to maintain trajectory accuracy
                 // The ball should bounce but not deviate significantly from its calculated path
                 
-                // Calculate new velocity with MINIMAL energy loss to maintain accuracy
-                float baseSpeed = incomingSpeed * (1f - this.energyLoss) * this.momentumBoost;
+                // Calculate new velocity with MAXIMUM SPEED BOOST for ultimate reach
+                float baseSpeed = incomingSpeed * (1f - this.energyLoss) * this.momentumBoost * 1.8f; // 80% additional boost
+                
+                // 🎯 DISTANCE-BASED SPEED ADJUSTMENT: Increase speed for longer distances
+                float distanceToTarget = 0f;
+                float distanceMultiplier = 1.0f;
+                
+                if (bowlingSystem != null)
+                {
+                    Vector3 targetPos = bowlingSystem.GetCurrentTargetPosition();
+                    if (targetPos != Vector3.zero)
+                    {
+                        distanceToTarget = Vector3.Distance(transform.position, targetPos);
+                        distanceMultiplier = 1.0f + (distanceToTarget / 20f) * 0.8f; // 80% boost for every 20m - MAXIMUM AGGRESSIVE
+                        baseSpeed *= distanceMultiplier;
+                    }
+                }
                 
                 // Ensure minimum forward speed to reach wickets
                 if (baseSpeed < this.minForwardSpeed)
@@ -440,16 +489,43 @@ namespace CricketGame
                     Debug.Log($"🎯 BOOSTED ball speed to {this.minForwardSpeed} m/s to maintain trajectory accuracy!");
                 }
                 
+                Debug.Log($"🎯 DISTANCE ADJUSTMENT: Distance {distanceToTarget:F1}m, Speed multiplier {distanceMultiplier:F2}, Final speed {baseSpeed:F1}m/s");
+                
                 newVelocity = forwardDirection * baseSpeed;
                 
-                // 🎯 PERFECT CRICKET BOUNCE - Low and controlled
-                // Use inspector values for easy adjustment
-                newVelocity.y = pitchingAreaBounceHeight; // Use inspector value
+                // 🎯 INTELLIGENT BOUNCE HEIGHT: Adjust based on incoming velocity and distance
+                float bounceHeight = pitchingAreaBounceHeight;
                 
                 // If ball is coming in too flat, use flat delivery bounce height
                 if (Mathf.Abs(incomingVelocity.y) < 3.0f)
                 {
-                    newVelocity.y = pitchingAreaBounceHeightFlat; // Use inspector value
+                    bounceHeight = pitchingAreaBounceHeightFlat;
+                }
+                
+                // Reduce bounce height for longer distances to maintain forward momentum
+                if (bowlingSystem != null && distanceToTarget > 20f) // For longer distances
+                {
+                    bounceHeight *= 0.5f; // Reduce bounce height by 50%
+                }
+                
+                newVelocity.y = bounceHeight;
+                
+                // 🎯 TRAJECTORY CORRECTION: Force ball to go directly to target
+                if (bowlingSystem != null)
+                {
+                    Vector3 targetPos = bowlingSystem.GetCurrentTargetPosition();
+                    if (targetPos != Vector3.zero)
+                    {
+                        Vector3 directionToTarget = (targetPos - transform.position).normalized;
+                        float currentDistanceToTarget = Vector3.Distance(transform.position, targetPos);
+                        float requiredSpeed = Mathf.Max(baseSpeed, 80f); // Ensure high minimum speed
+                        
+                        // Force the ball to go directly to target
+                        newVelocity = directionToTarget * requiredSpeed;
+                        newVelocity.y = Mathf.Max(newVelocity.y, 2f); // Maintain some upward velocity
+                        
+                        Debug.Log($"🎯 TRAJECTORY CORRECTION: Forcing ball to target at {requiredSpeed:F1}m/s");
+                    }
                 }
                 
                 Debug.Log($"🎯 TRAJECTORY MAINTENANCE: Speed after pitch: {baseSpeed:F1} → {newVelocity.magnitude:F1} m/s");
@@ -463,11 +539,35 @@ namespace CricketGame
             }
             else
             {
-                // 🎯 PERFECT ACCURACY: No bounce physics - maintain exact trajectory
-                newVelocity = rb.linearVelocity;
-                newVelocity.y = 0.01f; // Minimal bounce height for perfect accuracy
-                rb.linearVelocity = newVelocity;
+                // 🎯 PERFECT ACCURACY: No bounce physics - FORCE DIRECT PATH TO TARGET
+                if (bowlingSystem != null)
+                {
+                    Vector3 targetPos = bowlingSystem.GetCurrentTargetPosition();
+                    if (targetPos != Vector3.zero)
+                    {
+                        Vector3 directionToTarget = (targetPos - transform.position).normalized;
+                        float directDistanceToTarget = Vector3.Distance(transform.position, targetPos);
+                        float requiredSpeed = Mathf.Max(80f, directDistanceToTarget * 3f); // More aggressive dynamic speed
+                        
+                        // Force the ball to go directly to target
+                        newVelocity = directionToTarget * requiredSpeed;
+                        newVelocity.y = 1f; // Small upward component
+                        
+                        Debug.Log($"🎯 PERFECT ACCURACY: Direct path to target at {requiredSpeed:F1}m/s");
+                    }
+                    else
+                    {
+                        newVelocity = rb.linearVelocity;
+                        newVelocity.y = 0.01f; // Minimal bounce height for perfect accuracy
+                    }
+                }
+                else
+                {
+                    newVelocity = rb.linearVelocity;
+                    newVelocity.y = 0.01f; // Minimal bounce height for perfect accuracy
+                }
                 
+                rb.linearVelocity = newVelocity;
                 Debug.Log($"🎯 PERFECT ACCURACY: No bounce physics applied - trajectory maintained exactly!");
             }
             
@@ -478,7 +578,6 @@ namespace CricketGame
             HidePitchPrediction();
             
             // 🎯 Notify CricketBowlingSystem that ball has landed
-            CricketBowlingSystem bowlingSystem = FindObjectOfType<CricketBowlingSystem>();
             if (bowlingSystem != null)
             {
                 bowlingSystem.SetBallLanded();

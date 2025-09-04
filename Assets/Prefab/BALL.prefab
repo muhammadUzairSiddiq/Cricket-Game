@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: -2326500691655583616}
   - component: {fileID: 3178760582583728030}
   - component: {fileID: 5905204945185333897}
+  - component: {fileID: 5986885649269739266}
   m_Layer: 0
   m_Name: BALL
   m_TagString: Ball
@@ -168,7 +169,7 @@ TrailRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8718896542698064258}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -204,7 +205,7 @@ TrailRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Time: 0.8
+  m_Time: 0.5
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
@@ -214,7 +215,7 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.05
+        value: 0.08
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -223,7 +224,7 @@ TrailRenderer:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
-        value: 0.01
+        value: 0.02
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -235,15 +236,15 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 0.4}
-      key1: {r: 1, g: 1, b: 1, a: 0}
+      key0: {r: 1, g: 1, b: 1, a: 0.7019608}
+      key1: {r: 1, g: 1, b: 1, a: 0.101960786}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
       key5: {r: 0, g: 0, b: 0, a: 0}
       key6: {r: 0, g: 0, b: 0, a: 0}
       key7: {r: 0, g: 0, b: 0, a: 0}
-      ctime0: 0
+      ctime0: 9830
       ctime1: 65535
       ctime2: 0
       ctime3: 0
@@ -260,7 +261,7 @@ TrailRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: -1
+      m_ColorSpace: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
@@ -282,10 +283,60 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8718896542698064258}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 049a3c0da769cf34ab99988ed969f1a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   destroyDelay: 5
   startTimerOnStart: 1
+--- !u!114 &5986885649269739266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718896542698064258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ballSpeed: 10
+  arcHeight: 1
+  gravity: 9.81
+  mass: 0.16
+  drag: 0.02
+  angularDrag: 0.02
+  bounceForce: 0.8
+  bounceFriction: 0.85
+  maxBounces: 3
+  ballRadius: 0.036
+  useRealisticPhysics: 1
+  destroyDelay: 15
+  startTimerOnStart: 1
+  yorkerSpeed: 12
+  yorkerArcHeight: 2
+  yorkerBounceForce: 0.5
+  yorkerBounceFriction: 0.6
+  yorkerRotationX: 1.5
+  fullLengthSpeed: 13
+  fullLengthArcHeight: 2
+  fullLengthBounceForce: 0.9
+  fullLengthBounceFriction: 0.8
+  fullLengthRotationX: 0
+  goodLengthSpeed: 10
+  goodLengthArcHeight: 1.5
+  goodLengthBounceForce: 0.8
+  goodLengthBounceFriction: 0.9
+  goodLengthRotationX: 5
+  shortLengthSpeed: 11
+  shortLengthArcHeight: 2
+  shortLengthBounceForce: 0.7
+  shortLengthBounceFriction: 0.8
+  shortLengthRotationX: 10
+  bouncerSpeed: 7.96
+  bouncerArcHeight: 1
+  bouncerBounceForce: 0.95
+  bouncerBounceFriction: 1
+  bouncerRotationX: 0

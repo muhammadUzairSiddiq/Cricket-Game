@@ -38,7 +38,7 @@ public class BallAutoDestroy : MonoBehaviour
     /// </summary>
     IEnumerator DestroyAfterDelay()
     {
-        Debug.Log($"🏏 Ball {gameObject.name} will be destroyed in {destroyDelay} seconds");
+        // Ball will be destroyed after delay
         
         // Wait for the specified delay
         yield return new WaitForSeconds(destroyDelay);
@@ -50,11 +50,11 @@ public class BallAutoDestroy : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
-            Debug.Log($"🏏 Ball {gameObject.name} physics stopped before destruction");
+            // Ball physics stopped before destruction
         }
         
         // Destroy the ball
-        Debug.Log($"🏏 Destroying ball {gameObject.name} after {destroyDelay} seconds");
+        // Destroying ball after delay
         Destroy(gameObject);
     }
     
@@ -63,7 +63,7 @@ public class BallAutoDestroy : MonoBehaviour
     /// </summary>
     public void DestroyImmediately()
     {
-        Debug.Log($"🏏 Manually destroying ball {gameObject.name}");
+        // Manually destroying ball
         Destroy(gameObject);
     }
     
@@ -74,7 +74,7 @@ public class BallAutoDestroy : MonoBehaviour
     {
         timerStarted = false;
         StopAllCoroutines();
-        Debug.Log($"🏏 Destroy timer reset for ball {gameObject.name}");
+        // Destroy timer reset
     }
     
     /// <summary>

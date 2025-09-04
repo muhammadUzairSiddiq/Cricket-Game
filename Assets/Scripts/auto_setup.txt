@@ -1,0 +1,35 @@
+        [ContextMenu(" AUTO SETUP 3D TEXT DISPLAY")]
+        void AutoSetup3DTextDisplay()
+        {
+            if (target == null)
+            {
+                Debug.LogError(" Target not assigned! Please assign target first.");
+                return;
+            }
+            
+            // Check if 3D text display already exists
+            Cricket3DTextDisplay existingDisplay = target.GetComponent<Cricket3DTextDisplay>();
+            if (existingDisplay != null)
+            {
+                Debug.Log(" 3D Text Display already exists on target!");
+                return;
+            }
+            
+            // Add 3D text display component
+            Cricket3DTextDisplay textDisplay = target.gameObject.AddComponent<Cricket3DTextDisplay>();
+            
+            // Setup the component using reflection
+            var targetField = typeof(Cricket3DTextDisplay).GetField("target", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var bowlingSystemField = typeof(Cricket3DTextDisplay).GetField("bowlingSystem", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (targetField != null)
+                targetField.SetValue(textDisplay, target);
+            if (bowlingSystemField != null)
+                bowlingSystemField.SetValue(textDisplay, this);
+            
+            Debug.Log("  3D Text Display AUTO SETUP COMPLETE!");
+            Debug.Log(" Length and bounce rate will now show above target!");
+            Debug.Log(" Drag target to see different lengths: BOUNCER, SHORT, GOOD, FULL, YORKER");
+        }

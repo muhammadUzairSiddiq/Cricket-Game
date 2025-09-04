@@ -48,7 +48,7 @@ namespace CricketGame
         public void Initialize(ContinuousBowlingTest_WithBounce system)
         {
             bowlingSystem = system;
-            Debug.Log("🏏 Cricket Ball Bounce component initialized!");
+            // Cricket Ball Bounce component initialized
         }
         
         /// <summary>
@@ -124,8 +124,7 @@ namespace CricketGame
             
             if (showBounceDebug)
             {
-                Debug.Log($"🏏 BOUNCE DETECTED at {bouncePosition}");
-                Debug.Log($"🏏 Bounce velocity: {bounceVelocity}");
+                // Bounce detected
             }
             
             // Notify the bowling system
