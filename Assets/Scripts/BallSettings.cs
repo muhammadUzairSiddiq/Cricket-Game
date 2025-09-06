@@ -34,35 +34,35 @@ namespace CricketGame
         [SerializeField] private float yorkerArcHeight = 1.5f;
         [SerializeField] private float yorkerBounceForce = 1.2f;
         [SerializeField] private float yorkerBounceFriction = 0.9f;
-        [SerializeField] private float yorkerRotationX = 0f;
+        [SerializeField] private float yorkerRotationX = 0f; // X rotation for downward angle (pitch)
         
         [Header("🟡 Full Length Settings")]
         [SerializeField] private float fullLengthSpeed = 12f;
         [SerializeField] private float fullLengthArcHeight = 1.2f;
         [SerializeField] private float fullLengthBounceForce = 0.9f;
         [SerializeField] private float fullLengthBounceFriction = 0.8f;
-        [SerializeField] private float fullLengthRotationX = 1f;
+        [SerializeField] private float fullLengthRotationX = 1f; // X rotation for downward angle (pitch)
         
         [Header("🟢 Good Length Settings")]
         [SerializeField] private float goodLengthSpeed = 10f;
         [SerializeField] private float goodLengthArcHeight = 1.5f;
         [SerializeField] private float goodLengthBounceForce = 0.7f;
         [SerializeField] private float goodLengthBounceFriction = 0.7f;
-        [SerializeField] private float goodLengthRotationX = 5f;
+        [SerializeField] private float goodLengthRotationX = 5f; // X rotation for downward angle (pitch)
         
         [Header("🔵 Short Length Settings")]
         [SerializeField] private float shortLengthSpeed = 8f;
         [SerializeField] private float shortLengthArcHeight = 2.0f;
         [SerializeField] private float shortLengthBounceForce = 0.5f;
         [SerializeField] private float shortLengthBounceFriction = 0.6f;
-        [SerializeField] private float shortLengthRotationX = 10f;
+        [SerializeField] private float shortLengthRotationX = 10f; // X rotation for downward angle (pitch)
         
         [Header("🟣 Bouncer Settings")]
-        [SerializeField] private float bouncerSpeed = 6f;
+        [SerializeField] private float bouncerSpeed = 10f; // Increased from 6f to 10f for better movement
         [SerializeField] private float bouncerArcHeight = 1.0f;
         [SerializeField] private float bouncerBounceForce = 0.3f;
         [SerializeField] private float bouncerBounceFriction = 0.5f;
-        [SerializeField] private float bouncerRotationX = 25f;
+        [SerializeField] private float bouncerRotationX = 15f; // Reduced from 25f to 15f for less extreme angle
         
         // Public properties for other scripts to access
         public float BallSpeed => ballSpeed;
@@ -83,31 +83,31 @@ namespace CricketGame
         public float YorkerArcHeight => yorkerArcHeight;
         public float YorkerBounceForce => yorkerBounceForce;
         public float YorkerBounceFriction => yorkerBounceFriction;
-        public float YorkerRotationX => yorkerRotationX;
+        public float YorkerRotationX => yorkerRotationX; // X rotation for downward angle (pitch)
         
         public float FullLengthSpeed => fullLengthSpeed;
         public float FullLengthArcHeight => fullLengthArcHeight;
         public float FullLengthBounceForce => fullLengthBounceForce;
         public float FullLengthBounceFriction => fullLengthBounceFriction;
-        public float FullLengthRotationX => fullLengthRotationX;
+        public float FullLengthRotationX => fullLengthRotationX; // X rotation for downward angle (pitch)
         
         public float GoodLengthSpeed => goodLengthSpeed;
         public float GoodLengthArcHeight => goodLengthArcHeight;
         public float GoodLengthBounceForce => goodLengthBounceForce;
         public float GoodLengthBounceFriction => goodLengthBounceFriction;
-        public float GoodLengthRotationX => goodLengthRotationX;
+        public float GoodLengthRotationX => goodLengthRotationX; // X rotation for downward angle (pitch)
         
         public float ShortLengthSpeed => shortLengthSpeed;
         public float ShortLengthArcHeight => shortLengthArcHeight;
         public float ShortLengthBounceForce => shortLengthBounceForce;
         public float ShortLengthBounceFriction => shortLengthBounceFriction;
-        public float ShortLengthRotationX => shortLengthRotationX;
+        public float ShortLengthRotationX => shortLengthRotationX; // X rotation for downward angle (pitch)
         
         public float BouncerSpeed => bouncerSpeed;
         public float BouncerArcHeight => bouncerArcHeight;
         public float BouncerBounceForce => bouncerBounceForce;
         public float BouncerBounceFriction => bouncerBounceFriction;
-        public float BouncerRotationX => bouncerRotationX;
+        public float BouncerRotationX => bouncerRotationX; // X rotation for downward angle (pitch)
         
         // Setter methods for dynamic adjustment
         public void SetBallSpeed(float newSpeed)

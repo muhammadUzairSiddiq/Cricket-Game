@@ -117,7 +117,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!135 &7026982798576439528
@@ -313,9 +313,9 @@ MonoBehaviour:
   maxBounces: 3
   ballRadius: 0.036
   useRealisticPhysics: 1
-  destroyDelay: 15
-  startTimerOnStart: 1
-  yorkerSpeed: 12
+  destroyDelay: 0
+  startTimerOnStart: 0
+  yorkerSpeed: 13
   yorkerArcHeight: 2
   yorkerBounceForce: 0.5
   yorkerBounceFriction: 0.6
@@ -325,18 +325,18 @@ MonoBehaviour:
   fullLengthBounceForce: 0.9
   fullLengthBounceFriction: 0.8
   fullLengthRotationX: 0
-  goodLengthSpeed: 10
+  goodLengthSpeed: 13
   goodLengthArcHeight: 1.5
   goodLengthBounceForce: 0.8
   goodLengthBounceFriction: 0.9
-  goodLengthRotationX: 5
-  shortLengthSpeed: 11
+  goodLengthRotationX: -30
+  shortLengthSpeed: 15
   shortLengthArcHeight: 2
   shortLengthBounceForce: 0.7
   shortLengthBounceFriction: 0.8
-  shortLengthRotationX: 10
-  bouncerSpeed: 7.96
-  bouncerArcHeight: 1
+  shortLengthRotationX: 0
+  bouncerSpeed: 10
+  bouncerArcHeight: 0
   bouncerBounceForce: 0.95
   bouncerBounceFriction: 1
-  bouncerRotationX: 0
+  bouncerRotationX: -50

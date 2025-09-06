@@ -15,6 +15,13 @@ namespace CricketGame
         [SerializeField] private float ballBounciness = 0.8f; // How bouncy the ball is
         [SerializeField] private float ballFriction = 0.8f; // Ground friction
         
+        [Header("Smooth Movement Settings")]
+        [SerializeField] private bool useSmoothMovement = true; // Enable smooth movement interpolation
+        [SerializeField] private float smoothnessFactor = 0.95f; // How smooth the movement is (0-1)
+        [SerializeField] private float velocitySmoothing = 0.98f; // Velocity smoothing factor
+        [SerializeField] private float angularSmoothing = 0.95f; // Angular velocity smoothing
+        [SerializeField] private float minVelocityThreshold = 0.01f; // Minimum velocity to consider movement
+        
         [Header("PHYSICS SETTINGS - ADJUST THESE IN INSPECTOR")]
         [SerializeField] public float airResistance = 0.0f; // Air resistance (0.0 = NO AIR RESISTANCE for straight balls)
         [SerializeField] public float spinDecay = 1.0f; // How quickly spin decreases (1.0 = NO SPIN DECAY for straight balls)
@@ -72,6 +79,13 @@ namespace CricketGame
         private float lastBounceTime = 0f;
         private float minBounceInterval = 0.1f; // Minimum time between bounces
         
+        // Smooth movement variables
+        private Vector3 previousPosition;
+        private Vector3 smoothedVelocity;
+        private Vector3 smoothedAngularVelocity;
+        private Vector3 velocityAcceleration;
+        private float lastUpdateTime;
+        
         // ACCURACY DEBUG VARIABLES
         private Vector3 targetLandingPosition = Vector3.zero; // Where the ball SHOULD land
         private Vector3 actualLandingPosition = Vector3.zero; // Where the ball ACTUALLY landed
@@ -92,6 +106,11 @@ namespace CricketGame
         void Start()
         {
             initialPosition = transform.position;
+            previousPosition = transform.position;
+            smoothedVelocity = Vector3.zero;
+            smoothedAngularVelocity = Vector3.zero;
+            velocityAcceleration = Vector3.zero;
+            lastUpdateTime = Time.time;
             ResetBallState();
             GetTargetLandingPosition();
             SetupDebugTrajectory();
@@ -143,13 +162,15 @@ namespace CricketGame
             rb = GetComponent<Rigidbody>();
             ballCollider = GetComponent<Collider>();
             
-            // Configure rigidbody
+            // Configure rigidbody for smooth movement
             rb.mass = ballMass;
             rb.linearDamping = airResistance;
             rb.angularDamping = 0.05f;
             rb.useGravity = true;
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.interpolation = useSmoothMovement ? RigidbodyInterpolation.Interpolate : RigidbodyInterpolation.None;
+            rb.solverIterations = 10; // Higher solver iterations for smoother physics
+            rb.solverVelocityIterations = 10; // Higher velocity iterations for better accuracy
             
             // Configure collider
             if (ballCollider is SphereCollider sphereCollider)
@@ -250,33 +271,43 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Update ball physics
+        /// Update ball physics with smooth movement
         /// </summary>
         void UpdateBallPhysics()
         {
             if (rb == null) return;
             
-            // 🎯 PERFECT ACCURACY CONTROL: Apply physics effects only if enabled
-            // Apply air resistance
-            if (rb.linearVelocity.magnitude > 0.1f && airResistance > 0)
+            float deltaTime = Time.deltaTime;
+            float currentTime = Time.time;
+            
+            // 🎯 SMOOTH MOVEMENT: Calculate smoothed velocity for more realistic movement
+            if (useSmoothMovement)
             {
-                rb.AddForce(-rb.linearVelocity.normalized * airResistance * rb.linearVelocity.sqrMagnitude, ForceMode.Force);
+                UpdateSmoothMovement(deltaTime, currentTime);
             }
             
-            // Decay spin over time
+            // 🎯 PERFECT ACCURACY CONTROL: Apply physics effects only if enabled
+            // Apply air resistance with smooth falloff
+            if (rb.linearVelocity.magnitude > minVelocityThreshold && airResistance > 0)
+            {
+                Vector3 airResistanceForce = -rb.linearVelocity.normalized * airResistance * rb.linearVelocity.sqrMagnitude;
+                rb.AddForce(airResistanceForce, ForceMode.Force);
+            }
+            
+            // Decay spin over time with smooth interpolation
             if (rb.angularVelocity.magnitude > 0.01f && spinDecay < 1.0f)
             {
-                rb.angularVelocity *= spinDecay;
+                rb.angularVelocity = Vector3.Lerp(rb.angularVelocity, Vector3.zero, (1f - spinDecay) * deltaTime * 10f);
             }
             
-            // Decay velocity over time
-            if (rb.linearVelocity.magnitude > 0.01f && velocityDecay < 1.0f)
+            // Decay velocity over time with smooth interpolation
+            if (rb.linearVelocity.magnitude > minVelocityThreshold && velocityDecay < 1.0f)
             {
-                rb.linearVelocity *= velocityDecay;
+                rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, (1f - velocityDecay) * deltaTime * 10f);
             }
             
-            // Check if ball has stopped
-            if (rb.linearVelocity.magnitude < 0.1f && rb.angularVelocity.magnitude < 0.01f)
+            // Check if ball has stopped with improved threshold
+            if (rb.linearVelocity.magnitude < minVelocityThreshold && rb.angularVelocity.magnitude < 0.01f)
             {
                 if (!hasBounced || bounceCount > 0)
                 {
@@ -284,11 +315,45 @@ namespace CricketGame
                 }
             }
             
-            // Update trail emission
+            // Update trail emission with smooth transition
             if (ballTrail != null)
             {
-                ballTrail.emitting = rb.linearVelocity.magnitude > 0.5f;
+                bool shouldEmit = rb.linearVelocity.magnitude > 0.5f;
+                if (ballTrail.emitting != shouldEmit)
+                {
+                    ballTrail.emitting = shouldEmit;
+                }
             }
+        }
+        
+        /// <summary>
+        /// Update smooth movement calculations
+        /// </summary>
+        void UpdateSmoothMovement(float deltaTime, float currentTime)
+        {
+            // Calculate actual velocity from position change
+            Vector3 currentPosition = transform.position;
+            Vector3 actualVelocity = (currentPosition - previousPosition) / deltaTime;
+            
+            // Smooth the velocity using exponential smoothing
+            smoothedVelocity = Vector3.Lerp(smoothedVelocity, actualVelocity, velocitySmoothing);
+            
+            // Smooth angular velocity
+            smoothedAngularVelocity = Vector3.Lerp(smoothedAngularVelocity, rb.angularVelocity, angularSmoothing);
+            
+            // Apply smooth velocity if it's significantly different from rigidbody velocity
+            if (Vector3.Distance(smoothedVelocity, rb.linearVelocity) > 0.1f)
+            {
+                // Only apply smoothing if the ball is moving fast enough
+                if (rb.linearVelocity.magnitude > minVelocityThreshold)
+                {
+                    rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, smoothedVelocity, smoothnessFactor * deltaTime * 10f);
+                }
+            }
+            
+            // Update previous position for next frame
+            previousPosition = currentPosition;
+            lastUpdateTime = currentTime;
         }
         
         /// <summary>
@@ -531,8 +596,16 @@ namespace CricketGame
                 Debug.Log($"🎯 TRAJECTORY MAINTENANCE: Speed after pitch: {baseSpeed:F1} → {newVelocity.magnitude:F1} m/s");
                 Debug.Log($"🎯 Bounce height: {newVelocity.y:F2}m (incoming Y: {incomingVelocity.y:F2}m)");
                 
-                // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
-                rb.linearVelocity = newVelocity;
+                // 🎯 APPLY NEW VELOCITY WITH SMOOTH TRANSITION to maintain trajectory
+                if (useSmoothMovement)
+                {
+                    // Smooth transition to new velocity
+                    rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, newVelocity, 0.8f);
+                }
+                else
+                {
+                    rb.linearVelocity = newVelocity;
+                }
                 
                 // Add minimal upward impulse for realistic bounce (use inspector value)
                 rb.AddForce(Vector3.up * pitchingAreaImpulse, ForceMode.Impulse);
@@ -643,8 +716,16 @@ namespace CricketGame
                 
                 Debug.Log($"🎯 GROUND BOUNCE: Speed maintained at {newForwardSpeed:F1} m/s, bounce height: {newVelocity.y:F2}m");
                 
-                // 🎯 APPLY NEW VELOCITY IMMEDIATELY to maintain trajectory
-                rb.linearVelocity = newVelocity;
+                // 🎯 APPLY NEW VELOCITY WITH SMOOTH TRANSITION to maintain trajectory
+                if (useSmoothMovement)
+                {
+                    // Smooth transition to new velocity
+                    rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, newVelocity, 0.7f);
+                }
+                else
+                {
+                    rb.linearVelocity = newVelocity;
+                }
                 
                 // Add minimal upward impulse for realistic bounce (use inspector value)
                 rb.AddForce(Vector3.up * groundImpulse, ForceMode.Impulse);
@@ -764,6 +845,22 @@ namespace CricketGame
         public Vector3 GetVelocity()
         {
             return rb != null ? rb.linearVelocity : Vector3.zero;
+        }
+        
+        /// <summary>
+        /// Get smoothed ball velocity for more realistic movement
+        /// </summary>
+        public Vector3 GetSmoothedVelocity()
+        {
+            return useSmoothMovement ? smoothedVelocity : (rb != null ? rb.linearVelocity : Vector3.zero);
+        }
+        
+        /// <summary>
+        /// Get ball acceleration for physics calculations
+        /// </summary>
+        public Vector3 GetAcceleration()
+        {
+            return velocityAcceleration;
         }
         
         /// <summary>

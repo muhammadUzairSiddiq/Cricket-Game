@@ -39,6 +39,12 @@ namespace CricketGame
         [SerializeField] private float returnSpeed = 15f;
         [SerializeField] private float waitTimeAfterLanding = 3f;
         
+        [Header("Smooth Movement Settings")]
+        [SerializeField] private bool useSmoothMovement = true; // Enable smooth ball movement
+        [SerializeField] private float smoothnessFactor = 0.95f; // How smooth the movement is (0-1)
+        [SerializeField] private float velocitySmoothing = 0.98f; // Velocity smoothing factor
+        [SerializeField] private float minVelocityThreshold = 0.01f; // Minimum velocity to consider movement
+        
         [Header("Controls")]
         [SerializeField] private KeyCode startKey = KeyCode.Space;
         [SerializeField] private KeyCode stopKey = KeyCode.Escape;
@@ -57,6 +63,12 @@ namespace CricketGame
         // ?? Length factor along pitch: 0 = near umpire (short/bouncer), 1 = near batsman (yorker)
         private float currentLength01 = 0.5f;
         
+        // Smooth movement variables
+        private Vector3 previousPosition;
+        private Vector3 smoothedVelocity;
+        private Vector3 velocityAcceleration;
+        private float lastUpdateTime;
+        
         void Start()
         {
             SetupTest();
@@ -67,6 +79,12 @@ namespace CricketGame
         void Update()
         {
             HandleInput();
+            
+            // Update smooth movement if enabled
+            if (useSmoothMovement && ball != null)
+            {
+                UpdateSmoothMovement();
+            }
         }
         
         /// <summary>
@@ -98,10 +116,48 @@ namespace CricketGame
             // Store original position
             originalBallPosition = spawnPoint.position;
             
+            // Initialize smooth movement variables
+            previousPosition = ball.transform.position;
+            smoothedVelocity = Vector3.zero;
+            velocityAcceleration = Vector3.zero;
+            lastUpdateTime = Time.time;
+            
             // Setup ball physics
             SetupBallPhysics();
             
             // System initialized
+        }
+        
+        /// <summary>
+        /// Update smooth movement calculations
+        /// </summary>
+        void UpdateSmoothMovement()
+        {
+            if (ball == null) return;
+            
+            float deltaTime = Time.deltaTime;
+            float currentTime = Time.time;
+            
+            // Calculate actual velocity from position change
+            Vector3 currentPosition = ball.transform.position;
+            Vector3 actualVelocity = (currentPosition - previousPosition) / deltaTime;
+            
+            // Smooth the velocity using exponential smoothing
+            smoothedVelocity = Vector3.Lerp(smoothedVelocity, actualVelocity, velocitySmoothing);
+            
+            // Apply smooth velocity if ball has rigidbody and is moving
+            if (ballRigidbody != null && ballRigidbody.linearVelocity.magnitude > minVelocityThreshold)
+            {
+                // Only apply smoothing if the velocity difference is significant
+                if (Vector3.Distance(smoothedVelocity, ballRigidbody.linearVelocity) > 0.1f)
+                {
+                    ballRigidbody.linearVelocity = Vector3.Lerp(ballRigidbody.linearVelocity, smoothedVelocity, smoothnessFactor * deltaTime * 10f);
+                }
+            }
+            
+            // Update previous position for next frame
+            previousPosition = currentPosition;
+            lastUpdateTime = currentTime;
         }
         
         /// <summary>
@@ -115,6 +171,8 @@ namespace CricketGame
             if (!useDynamicSettings || target == null || pitchingArea == null)
             {
                 Debug.Log($"<color=#FF0000>❌ DYNAMIC BOWLING INACTIVE: useDynamicSettings={useDynamicSettings}, target={target != null}, pitchingArea={pitchingArea != null}</color>");
+                // Apply basic settings even if dynamic is disabled
+                ApplyBasicBallSettings(ballSettings);
                 return;
             }
             
@@ -228,6 +286,25 @@ namespace CricketGame
             targetBallSettings.SetUseRealisticPhysics(ballSettings.UseRealisticPhysics);
             
             Debug.Log($"✅ Applied {length} settings from single BallSettings component");
+        }
+        
+        /// <summary>
+        /// Apply basic ball settings when dynamic settings are disabled
+        /// </summary>
+        void ApplyBasicBallSettings(BallSettings targetBallSettings)
+        {
+            Debug.Log("🎯 Applying basic ball settings (dynamic disabled)");
+            
+            // Apply default cricket ball settings
+            targetBallSettings.SetBallSpeed(12f);
+            targetBallSettings.SetArcHeight(1.2f);
+            targetBallSettings.SetBounceForce(1.0f);
+            targetBallSettings.SetBounceFriction(0.85f);
+            targetBallSettings.SetGravity(9.81f);
+            targetBallSettings.SetMaxBounces(3);
+            targetBallSettings.SetUseRealisticPhysics(true);
+            
+            Debug.Log("✅ Basic ball settings applied: Speed=12, Arc=1.2, Bounce=1.0, Physics=true");
         }
         
         /// <summary>
@@ -412,12 +489,23 @@ namespace CricketGame
             if (spawnPoint == null) return;
             
             float rotationX = GetRotationForLength(length);
-            spawnPoint.rotation = Quaternion.Euler(rotationX, spawnPoint.rotation.eulerAngles.y, spawnPoint.rotation.eulerAngles.z);
-            Debug.Log($"🎯 Applied {length} rotation: {rotationX}° to spawn point");
+            
+            // 🎯 NEW: Calculate Y rotation to aim at target (left/right angle)
+            float rotationY = 0f;
+            if (target != null)
+            {
+                Vector3 directionToTarget = (target.position - spawnPoint.position).normalized;
+                rotationY = Mathf.Atan2(directionToTarget.x, directionToTarget.z) * Mathf.Rad2Deg;
+            }
+            
+            // 🎯 CORRECT: Use X rotation for downward angle + Y rotation for left/right aiming
+            spawnPoint.rotation = Quaternion.Euler(rotationX, rotationY, spawnPoint.rotation.eulerAngles.z);
+            Debug.Log($"🎯 Applied {length} rotation: X={rotationX}° (downward), Y={rotationY}° (left/right) to spawn point");
         }
         
         /// <summary>
-        /// Get rotation value for a specific bowling length from single BallSettings component
+        /// Get X rotation value for a specific bowling length from single BallSettings component
+        /// X rotation controls downward angle (pitch angle) of the ball trajectory
         /// </summary>
         float GetRotationForLength(BowlingLength length)
         {
@@ -426,15 +514,15 @@ namespace CricketGame
             switch (length)
             {
                 case BowlingLength.Yorker:
-                    return ballSettings.YorkerRotationX;
+                    return ballSettings.YorkerRotationX; // X rotation for downward angle
                 case BowlingLength.FullLength:
-                    return ballSettings.FullLengthRotationX;
+                    return ballSettings.FullLengthRotationX; // X rotation for downward angle
                 case BowlingLength.GoodLength:
-                    return ballSettings.GoodLengthRotationX;
+                    return ballSettings.GoodLengthRotationX; // X rotation for downward angle
                 case BowlingLength.ShortLength:
-                    return ballSettings.ShortLengthRotationX;
+                    return ballSettings.ShortLengthRotationX; // X rotation for downward angle
                 case BowlingLength.Bouncer:
-                    return ballSettings.BouncerRotationX;
+                    return ballSettings.BouncerRotationX; // X rotation for downward angle
                 default:
                     return 0f;
             }
@@ -451,12 +539,15 @@ namespace CricketGame
                 ballRigidbody = ball.AddComponent<Rigidbody>();
             }
             
-            // ?? IMPROVED: Configure rigidbody for realistic cricket ball physics
+            // ?? IMPROVED: Configure rigidbody for realistic cricket ball physics with smooth movement
             ballRigidbody.mass = 0.16f; // Standard cricket ball weight
             ballRigidbody.linearDamping = 0.02f; // Very low drag for realistic air resistance
             ballRigidbody.angularDamping = 0.02f; // Low angular drag
             ballRigidbody.useGravity = true; // Always use gravity for cricket ball
             ballRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            ballRigidbody.interpolation = useSmoothMovement ? RigidbodyInterpolation.Interpolate : RigidbodyInterpolation.None;
+            ballRigidbody.solverIterations = 10; // Higher solver iterations for smoother physics
+            ballRigidbody.solverVelocityIterations = 10; // Higher velocity iterations for better accuracy
             
             // Add collider if missing
             if (ball.GetComponent<Collider>() == null)
@@ -517,12 +608,15 @@ namespace CricketGame
                 instanceRigidbody = ballInstance.AddComponent<Rigidbody>();
             }
             
-            // ?? CRITICAL: Configure rigidbody for realistic cricket ball physics
+            // ?? CRITICAL: Configure rigidbody for realistic cricket ball physics with smooth movement
             instanceRigidbody.mass = 0.16f; // Standard cricket ball weight
             instanceRigidbody.linearDamping = 0.02f; // Very low drag for realistic air resistance
             instanceRigidbody.angularDamping = 0.02f; // Low angular drag
             instanceRigidbody.useGravity = true; // Always use gravity for cricket ball
             instanceRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            instanceRigidbody.interpolation = useSmoothMovement ? RigidbodyInterpolation.Interpolate : RigidbodyInterpolation.None;
+            instanceRigidbody.solverIterations = 10; // Higher solver iterations for smoother physics
+            instanceRigidbody.solverVelocityIterations = 10; // Higher velocity iterations for better accuracy
             
             // Add collider if missing
             if (ballInstance.GetComponent<Collider>() == null)
@@ -588,18 +682,21 @@ namespace CricketGame
             // ?? NEW: Instantiate new ball with S key
             if (Input.GetKeyDown(KeyCode.S))
             {
+                Debug.Log("🎯 S key pressed - Creating new ball");
                 InstantiateNewBall();
             }
             
             // ?? NEW: Bowl current ball with SPACE key
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                Debug.Log("🎯 SPACE key pressed - Attempting to bowl ball");
                 BowlCurrentBall();
             }
             
             // Manual ball reset with R key (kept for compatibility)
             if (Input.GetKeyDown(KeyCode.R))
             {
+                Debug.Log("🎯 R key pressed - Resetting ball");
                 ResetBall();
             }
             
@@ -619,19 +716,22 @@ namespace CricketGame
         /// </summary>
         public void InstantiateNewBall()
         {
+            Debug.Log("🎯 InstantiateNewBall called");
+            
             // Destroy existing ball instance if any (NOT the prefab reference!)
             if (currentBallInstance != null)
             {
                 DestroyImmediate(currentBallInstance);
                 currentBallInstance = null;
-                Debug.Log("?? Destroyed previous ball instance");
+                Debug.Log("🎯 Destroyed previous ball instance");
             }
             
             // Instantiate new ball at spawn point
             if (ball != null && spawnPoint != null)
             {
                 currentBallInstance = Instantiate(ball, spawnPoint.position, spawnPoint.rotation);
-                Debug.Log($"?? New ball instantiated at: {spawnPoint.position}");
+                Debug.Log($"🎯 New ball instantiated at: {spawnPoint.position}");
+                Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
                 
                 // Reset state
                 ballIsBowled = false;
@@ -640,6 +740,7 @@ namespace CricketGame
                 
                 // ?? FIXED: Keep original ball prefab reference, only update instance references
                 ballRigidbody = currentBallInstance.GetComponent<Rigidbody>();
+                Debug.Log($"🎯 Ball rigidbody: {ballRigidbody != null}");
                 
                 // ?? CRITICAL: Setup physics for the new ball instance
                 SetupBallPhysicsForInstance(currentBallInstance);
@@ -648,14 +749,19 @@ namespace CricketGame
                 BallSettings ballSettings = currentBallInstance.GetComponent<BallSettings>();
                 if (ballSettings != null)
                 {
+                    Debug.Log("🎯 BallSettings found on ball instance");
                     ApplyDynamicBowlingSettings(ballSettings);
                 }
+                else
+                {
+                    Debug.LogWarning("🎯 No BallSettings component found on ball instance!");
+                }
                 
-                Debug.Log("?? Ball ready for bowling! Press SPACE to bowl");
+                Debug.Log("🎯 Ball ready for bowling! Press SPACE to bowl");
             }
             else
             {
-                Debug.LogError("?? Cannot instantiate ball - missing ball prefab or spawn point!");
+                Debug.LogError($"🎯 Cannot instantiate ball - ball: {ball != null}, spawnPoint: {spawnPoint != null}");
             }
         }
         
@@ -664,19 +770,21 @@ namespace CricketGame
         /// </summary>
         public void BowlCurrentBall()
         {
+            Debug.Log($"🎯 BowlCurrentBall called - currentBallInstance: {currentBallInstance != null}, ballIsBowled: {ballIsBowled}");
+            
             if (currentBallInstance == null)
             {
-                Debug.LogWarning("?? No ball to bowl! Press S to create a new ball first.");
+                Debug.LogWarning("🎯 No ball to bowl! Press S to create a new ball first.");
                 return;
             }
             
             if (ballIsBowled)
             {
-                Debug.LogWarning("?? Ball already bowled! Wait for it to be destroyed or press S for new ball.");
+                Debug.LogWarning("🎯 Ball already bowled! Wait for it to be destroyed or press S for new ball.");
                 return;
             }
             
-            Debug.Log("?? Bowling current ball...");
+            Debug.Log("🎯 Bowling current ball...");
             ballIsBowled = true;
             
             // Start bowling process
@@ -819,21 +927,76 @@ namespace CricketGame
                 Debug.Log($"?? Y velocity capped to {maxYVelocity:F1} m/s for realistic cricket arc");
             }
             
-            // Calculate horizontal velocity
-            Vector3 horizontalDirection = (horizontalTarget - horizontalStart).normalized;
-            Vector3 horizontalVelocity = horizontalDirection * ballSpeed;
-            
-            // Combine velocities
-            Vector3 initialVelocity = horizontalVelocity;
-            initialVelocity.y = requiredYVelocity;
-            
-            // Apply velocity to ball
-            if (ballSettings.UseRealisticPhysics)
+            // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
+            Vector3 horizontalDirection;
+            if (spawnPoint != null)
             {
-                ballRigidbodyToUse.linearVelocity = initialVelocity;
+                // Use spawn point's forward direction which already includes both X and Y rotation
+                horizontalDirection = spawnPoint.forward;
+                // Remove Y component to keep it horizontal
+                horizontalDirection.y = 0f;
+                horizontalDirection = horizontalDirection.normalized;
+                
+                Debug.Log($"🎯 ROTATION APPLIED: Spawn rotation {spawnPoint.rotation.eulerAngles}, Forward direction {spawnPoint.forward}, Horizontal direction {horizontalDirection}");
             }
             else
             {
+                // Fallback to direct target direction
+                horizontalDirection = (horizontalTarget - horizontalStart).normalized;
+            }
+            
+            // 🎯 CRITICAL FIX: Apply X rotation to Y velocity as well
+            float rotationXRadians = spawnPoint != null ? spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
+            float rotationEffect = Mathf.Sin(rotationXRadians); // This gives us the downward component
+            
+            // 🎯 BOUNCER DEBUG: Check for extreme rotation values
+            if (spawnPoint != null && spawnPoint.rotation.eulerAngles.x > 20f)
+            {
+                Debug.LogWarning($"🎯 EXTREME ROTATION DETECTED: X rotation = {spawnPoint.rotation.eulerAngles.x}° - This might cause ball to go straight down!");
+                Debug.LogWarning($"🎯 Rotation effect = {rotationEffect:F3}, Ball speed = {ballSpeed}");
+            }
+            
+            // Adjust Y velocity based on X rotation
+            float adjustedYVelocity = requiredYVelocity + (rotationEffect * ballSpeed * 0.5f);
+            
+            Vector3 horizontalVelocity = horizontalDirection * ballSpeed;
+            
+            // 🎯 BOUNCER FIX: Ensure minimum horizontal velocity even with extreme rotations
+            float minHorizontalSpeed = 2f; // Minimum horizontal speed to prevent ball from going straight down
+            if (horizontalVelocity.magnitude < minHorizontalSpeed)
+            {
+                Debug.LogWarning($"🎯 BOUNCER FIX: Horizontal velocity too low ({horizontalVelocity.magnitude:F2}), applying minimum speed");
+                horizontalVelocity = horizontalDirection * minHorizontalSpeed;
+            }
+            
+            // Combine velocities with rotation-adjusted Y velocity
+            Vector3 initialVelocity = horizontalVelocity;
+            initialVelocity.y = adjustedYVelocity;
+            
+            Debug.Log($"🎯 ROTATION EFFECT: X rotation {spawnPoint?.rotation.eulerAngles.x ?? 0f}°, Rotation effect {rotationEffect:F3}, Y velocity {requiredYVelocity:F2} → {adjustedYVelocity:F2}");
+            
+            // Apply velocity to ball with smooth movement
+            Debug.Log($"🎯 APPLYING VELOCITY: UseRealisticPhysics={ballSettings.UseRealisticPhysics}, useSmoothMovement={useSmoothMovement}");
+            Debug.Log($"🎯 VELOCITY VALUES: initialVelocity={initialVelocity}, magnitude={initialVelocity.magnitude:F2}");
+            Debug.Log($"🎯 RIGIDBODY STATUS: ballRigidbodyToUse={ballRigidbodyToUse != null}, isKinematic={ballRigidbodyToUse?.isKinematic}");
+            
+            if (ballSettings.UseRealisticPhysics)
+            {
+                if (useSmoothMovement)
+                {
+                    Debug.Log("🎯 Using smooth velocity application");
+                    // Apply velocity smoothly over time
+                    StartCoroutine(ApplySmoothVelocity(ballRigidbodyToUse, initialVelocity));
+                }
+                else
+                {
+                    Debug.Log("🎯 Using direct velocity application");
+                    ballRigidbodyToUse.linearVelocity = initialVelocity;
+                }
+            }
+            else
+            {
+                Debug.Log("🎯 Using kinematic movement");
                 // Use kinematic movement for precise control
                 StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
             }
@@ -852,7 +1015,29 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Move ball using kinematic movement with realistic cricket arc
+        /// Apply velocity smoothly over time for realistic ball movement
+        /// </summary>
+        IEnumerator ApplySmoothVelocity(Rigidbody rb, Vector3 targetVelocity)
+        {
+            Vector3 startVelocity = rb.linearVelocity;
+            float duration = 0.1f; // Short duration for smooth transition
+            float elapsed = 0f;
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                t = Mathf.SmoothStep(0f, 1f, t); // Smooth interpolation
+                
+                rb.linearVelocity = Vector3.Lerp(startVelocity, targetVelocity, t);
+                yield return null;
+            }
+            
+            rb.linearVelocity = targetVelocity;
+        }
+        
+        /// <summary>
+        /// Move ball using kinematic movement with realistic cricket arc and rotation
         /// </summary>
         IEnumerator MoveBallKinematic(Vector3 startPos, Vector3 endPos, float duration)
         {
@@ -865,18 +1050,49 @@ namespace CricketGame
             // ?? FIXED: Use realistic cricket bowling arc (much lower)
             float realisticArcHeight = arcHeight * 0.2f; // Same reduction as physics version
             
+            // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
+            Vector3 trajectoryDirection;
+            if (spawnPoint != null)
+            {
+                // Use spawn point's forward direction which already includes both X and Y rotation
+                trajectoryDirection = spawnPoint.forward;
+                // Remove Y component to keep it horizontal
+                trajectoryDirection.y = 0f;
+                trajectoryDirection = trajectoryDirection.normalized;
+                
+                Debug.Log($"🎯 KINEMATIC ROTATION: Applied spawn rotation {spawnPoint.rotation.eulerAngles} to trajectory direction {trajectoryDirection}");
+            }
+            else
+            {
+                // Fallback to direct target direction
+                trajectoryDirection = (endPos - startPos).normalized;
+            }
+            
+            // 🎯 CRITICAL FIX: Apply X rotation effect to arc height for kinematic movement
+            float rotationXRadians = spawnPoint != null ? spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
+            float rotationEffect = Mathf.Sin(rotationXRadians);
+            float adjustedArcHeight = realisticArcHeight + (rotationEffect * 2f); // Adjust arc based on rotation
+            
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;
                 
-                // ?? CREATE REALISTIC CRICKET BOWLING ARC: Much lower and more natural
-                Vector3 currentPos = Vector3.Lerp(startPos, endPos, t);
+                // 🎯 FIXED: Use rotated trajectory direction
+                Vector3 currentPos = startPos + trajectoryDirection * Vector3.Distance(startPos, endPos) * t;
                 
-                // Use a more realistic arc curve for cricket bowling
+                // Use a more realistic arc curve for cricket bowling with X rotation effect
                 // Cricket balls follow a gentle, low arc, not a high parabola
-                float arcCurve = Mathf.Sin(t * Mathf.PI) * realisticArcHeight;
+                float arcCurve = Mathf.Sin(t * Mathf.PI) * adjustedArcHeight;
                 currentPos.y += arcCurve;
+                
+                // 🎯 CRITICAL FIX: Apply additional downward angle based on X rotation
+                if (spawnPoint != null)
+                {
+                    float kinematicRotationXRadians = spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad;
+                    float downwardAngle = Mathf.Sin(kinematicRotationXRadians) * t * 0.5f; // Progressive downward angle
+                    currentPos.y -= downwardAngle;
+                }
                 
                 ball.transform.position = currentPos;
                 
@@ -1045,20 +1261,27 @@ namespace CricketGame
             // ?? IMMEDIATE: Force ball to stop moving
             ball.transform.position = currentPos;
             
-            // ?? AGGRESSIVE: Fast return movement with forced positioning
+            // ?? SMOOTH: Fast return movement with smooth positioning
             float elapsed = 0f;
             while (elapsed < timeToReturn)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / timeToReturn;
                 
-                // Fast interpolation
+                // Smooth interpolation for better movement
                 t = Mathf.SmoothStep(0f, 1f, t);
                 
                 Vector3 newPosition = Vector3.Lerp(currentPos, targetPos, t);
                 
-                // ?? FORCE: Set position every frame
-                ball.transform.position = newPosition;
+                // ?? SMOOTH: Set position with smooth movement
+                if (useSmoothMovement)
+                {
+                    ball.transform.position = Vector3.Lerp(ball.transform.position, newPosition, 0.8f);
+                }
+                else
+                {
+                    ball.transform.position = newPosition;
+                }
                 
                 // Debug position every few frames
                 if (Mathf.FloorToInt(elapsed * 10) % 5 == 0)
@@ -1184,6 +1407,34 @@ namespace CricketGame
                 // ?? PRECISE: Draw exact ball trajectory
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(ball.transform.position, target.position);
+                
+                // 🎯 NEW: Draw rotated trajectory direction if spawn point exists
+                if (spawnPoint != null)
+                {
+                    Vector3 horizontalStart = new Vector3(ball.transform.position.x, 0, ball.transform.position.z);
+                    Vector3 horizontalTarget = new Vector3(target.position.x, 0, target.position.z);
+                    Vector3 horizontalDirection = (horizontalTarget - horizontalStart).normalized;
+                    
+                    // Apply spawn point X rotation to show actual trajectory (downward angle)
+                    Vector3 spawnForward = spawnPoint.forward;
+                    Vector3 spawnUp = spawnPoint.up;
+                    float forwardComponent = Vector3.Dot(horizontalDirection, spawnForward);
+                    float upComponent = Vector3.Dot(horizontalDirection, spawnUp);
+                    Vector3 rotatedDirection = (spawnForward * forwardComponent + spawnUp * upComponent).normalized;
+                    
+                    // Draw the rotated trajectory
+                    Gizmos.color = Color.white;
+                    Vector3 rotatedEnd = ball.transform.position + rotatedDirection * Vector3.Distance(horizontalStart, horizontalTarget);
+                    Gizmos.DrawLine(ball.transform.position, rotatedEnd);
+                    
+                    // Draw spawn point rotation indicator (forward direction)
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawLine(spawnPoint.position, spawnPoint.position + spawnPoint.forward * 2f);
+                    
+                    // Draw spawn point up direction (affected by X rotation)
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(spawnPoint.position, spawnPoint.position + spawnPoint.up * 2f);
+                }
                 
                 // ?? PRECISE: Draw target with larger indicator
                 Gizmos.color = Color.green;

@@ -30,6 +30,12 @@ namespace CricketGame
         [SerializeField] private float bounceHeight = 0.5f; // meters
         [SerializeField] private float ballWeight = 0.16f; // kg (standard cricket ball)
         
+        [Header("Smooth Physics Settings")]
+        [SerializeField] private bool useSmoothPhysics = true; // Enable smooth physics calculations
+        [SerializeField] private float physicsSmoothing = 0.95f; // Physics smoothing factor
+        [SerializeField] private float trajectorySmoothing = 0.98f; // Trajectory calculation smoothing
+        [SerializeField] private int physicsUpdateRate = 60; // Physics update rate (Hz)
+        
         [Header("Bounce Physics - Adjust in Editor")]
         [SerializeField] public float speedBoostAfterBounce = 1.2f; // Speed multiplier after hitting pitching area
         [SerializeField] public float directionPreservation = 0.95f; // How much direction is preserved (0-1)
@@ -1090,37 +1096,79 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Apply advanced bowling physics
+        /// Apply advanced bowling physics with smooth movement
         /// </summary>
         void ApplyBowlingPhysics(Vector3 initialVelocity)
         {
             if (ballRigidbody == null) return;
             
-            // Set initial velocity
-            ballRigidbody.linearVelocity = initialVelocity;
+            // 🎯 SMOOTH PHYSICS: Apply initial velocity with smooth transition
+            if (useSmoothPhysics)
+            {
+                // Gradually apply velocity for smoother movement
+                StartCoroutine(ApplySmoothVelocity(initialVelocity));
+            }
+            else
+            {
+                ballRigidbody.linearVelocity = initialVelocity;
+            }
             
-            // Apply spin
+            // Apply spin with smooth transition
             if (spinRate > 0)
             {
                 Vector3 spinAxis = Vector3.Cross(initialVelocity, Vector3.up).normalized;
-                ballRigidbody.angularVelocity = spinAxis * (spinRate * Mathf.PI / 30f); // Convert RPM to rad/s
+                Vector3 targetAngularVelocity = spinAxis * (spinRate * Mathf.PI / 30f); // Convert RPM to rad/s
+                
+                if (useSmoothPhysics)
+                {
+                    ballRigidbody.angularVelocity = Vector3.Lerp(ballRigidbody.angularVelocity, targetAngularVelocity, 0.5f);
+                }
+                else
+                {
+                    ballRigidbody.angularVelocity = targetAngularVelocity;
+                }
             }
             
-            // Apply seam movement
+            // Apply seam movement with smooth physics
             if (seamMovement > 0)
             {
                 StartCoroutine(ApplySeamMovement());
             }
             
-            // Apply swing
+            // Apply swing with smooth physics
             if (swingAmount > 0)
             {
                 StartCoroutine(ApplySwing());
             }
+            
+            Debug.Log($"🎯 Ball launched with velocity: {initialVelocity.magnitude:F1} m/s");
+            Debug.Log($"🎯 Smooth physics: {(useSmoothPhysics ? "Enabled" : "Disabled")}");
         }
         
         /// <summary>
-        /// Apply seam movement over time
+        /// Apply velocity smoothly over time
+        /// </summary>
+        System.Collections.IEnumerator ApplySmoothVelocity(Vector3 targetVelocity)
+        {
+            Vector3 startVelocity = ballRigidbody.linearVelocity;
+            float duration = 0.1f; // Short duration for smooth transition
+            float elapsed = 0f;
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                t = Mathf.SmoothStep(0f, 1f, t); // Smooth interpolation
+                
+                ballRigidbody.linearVelocity = Vector3.Lerp(startVelocity, targetVelocity, t);
+                yield return null;
+            }
+            
+            ballRigidbody.linearVelocity = targetVelocity;
+        }
+        
+        /// <summary>
+        /// Apply seam movement over time with smooth physics
         /// </summary>
         IEnumerator ApplySeamMovement()
         {
@@ -1132,16 +1180,26 @@ namespace CricketGame
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;
                 
-                // Seam movement effect
+                // 🎯 SMOOTH SEAM MOVEMENT: Apply with smooth interpolation
                 Vector3 seamForce = Vector3.Cross(ballRigidbody.linearVelocity, Vector3.up).normalized * seamMovement * (1f - t);
-                ballRigidbody.AddForce(seamForce, ForceMode.Acceleration);
+                
+                if (useSmoothPhysics)
+                {
+                    // Apply force smoothly over multiple frames
+                    Vector3 smoothForce = seamForce * Time.deltaTime;
+                    ballRigidbody.AddForce(smoothForce, ForceMode.VelocityChange);
+                }
+                else
+                {
+                    ballRigidbody.AddForce(seamForce, ForceMode.Acceleration);
+                }
                 
                 yield return null;
             }
         }
         
         /// <summary>
-        /// Apply swing over time
+        /// Apply swing over time with smooth physics
         /// </summary>
         IEnumerator ApplySwing()
         {
@@ -1153,10 +1211,20 @@ namespace CricketGame
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;
                 
-                // Swing effect (parabolic)
+                // 🎯 SMOOTH SWING: Apply with smooth interpolation
                 float swingCurve = Mathf.Sin(t * Mathf.PI) * swingAmount;
                 Vector3 swingForce = Vector3.Cross(ballRigidbody.linearVelocity, Vector3.up).normalized * swingCurve;
-                ballRigidbody.AddForce(swingForce, ForceMode.Acceleration);
+                
+                if (useSmoothPhysics)
+                {
+                    // Apply force smoothly over multiple frames
+                    Vector3 smoothForce = swingForce * Time.deltaTime;
+                    ballRigidbody.AddForce(smoothForce, ForceMode.VelocityChange);
+                }
+                else
+                {
+                    ballRigidbody.AddForce(swingForce, ForceMode.Acceleration);
+                }
                 
                 yield return null;
             }
