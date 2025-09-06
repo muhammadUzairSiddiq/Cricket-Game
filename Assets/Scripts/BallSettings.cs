@@ -59,36 +59,17 @@ namespace CricketGame
         [SerializeField] private float bouncerBounceFriction = 0.5f;
         [SerializeField] private float bouncerRotationX = 15f; // Reduced from 25f to 15f for less extreme angle
         
-        [Header("🎯 Dynamic Bounce System - Starting/Ending Ranges")]
-        [Header("🔴 Yorker Dynamic Bounce")]
-        [SerializeField] public float yorkerBounceForceStart = 0.4f;
-        [SerializeField] public float yorkerBounceForceEnd = 0.5f;
-        [SerializeField] public float yorkerBounceFrictionStart = 0.9f;
-        [SerializeField] public float yorkerBounceFrictionEnd = 0.95f;
+        [Header("🎯 Realistic Physics Bounce System")]
+        [Header("Physics Parameters")]
+        [SerializeField] private float baseRestitutionCoefficient = 0.6f; // Base bounce energy retention
+        [SerializeField] private float randomVariation = 0.05f; // Random variation for realism
         
-        [Header("🟡 Full Length Dynamic Bounce")]
-        [SerializeField] public float fullLengthBounceForceStart = 0.25f;
-        [SerializeField] public float fullLengthBounceForceEnd = 0.35f;
-        [SerializeField] public float fullLengthBounceFrictionStart = 0.75f;
-        [SerializeField] public float fullLengthBounceFrictionEnd = 0.85f;
-        
-        [Header("🟢 Good Length Dynamic Bounce")]
-        [SerializeField] public float goodLengthBounceForceStart = 0.7f;
-        [SerializeField] public float goodLengthBounceForceEnd = 0.8f;
-        [SerializeField] public float goodLengthBounceFrictionStart = 0.8f;
-        [SerializeField] public float goodLengthBounceFrictionEnd = 0.9f;
-        
-        [Header("🔵 Short Length Dynamic Bounce")]
-        [SerializeField] public float shortLengthBounceForceStart = 0.6f;
-        [SerializeField] public float shortLengthBounceForceEnd = 0.7f;
-        [SerializeField] public float shortLengthBounceFrictionStart = 0.7f;
-        [SerializeField] public float shortLengthBounceFrictionEnd = 0.8f;
-        
-        [Header("🟣 Bouncer Dynamic Bounce")]
-        [SerializeField] public float bouncerBounceForceStart = 0.2f;
-        [SerializeField] public float bouncerBounceForceEnd = 0.4f;
-        [SerializeField] public float bouncerBounceFrictionStart = 0.4f;
-        [SerializeField] public float bouncerBounceFrictionEnd = 0.6f;
+        [Header("Length-Specific Physics Multipliers")]
+        [SerializeField] private float yorkerPhysicsMultiplier = 0.8f; // Yorker bounces less
+        [SerializeField] private float fullLengthPhysicsMultiplier = 0.6f; // Full length bounces least
+        [SerializeField] private float goodLengthPhysicsMultiplier = 1.0f; // Good length standard bounce
+        [SerializeField] private float shortLengthPhysicsMultiplier = 1.2f; // Short length bounces more
+        [SerializeField] private float bouncerPhysicsMultiplier = 1.5f; // Bouncer bounces most
         
         // Public properties for other scripts to access
         public float BallSpeed => globalBallSpeed; // Now uses global speed for all lengths
@@ -145,43 +126,82 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// 🎯 INTELLIGENT BOUNCE CALCULATION: Calculate dynamic bounce values based on speed and bowling length
-        /// Higher speed = higher bounce, Lower speed = lower bounce
+        /// 🎯 REALISTIC PHYSICS BOUNCE CALCULATION: Calculate bounce using real physics equations
+        /// Based on kinetic energy, restitution coefficient, and bowling length characteristics
         /// </summary>
-        public void CalculateDynamicBounce(BowlingLength length)
+        public void CalculatePhysicsBounce(BowlingLength length)
         {
-            float speedFactor = Mathf.Clamp01((globalBallSpeed - 5f) / 15f); // Normalize speed (5-20 m/s) to 0-1
+            // Get length-specific physics multiplier
+            float lengthMultiplier = GetLengthPhysicsMultiplier(length);
             
+            // Calculate kinetic energy (E = 0.5 * m * v²)
+            float kineticEnergy = 0.5f * this.mass * globalBallSpeed * globalBallSpeed;
+            
+            // Calculate speed factor using square root for realistic physics (non-linear)
+            float speedFactor = Mathf.Sqrt(globalBallSpeed / 20f); // Normalize to 0-1 range
+            
+            // Calculate restitution coefficient with length and speed factors
+            float restitution = baseRestitutionCoefficient * lengthMultiplier * speedFactor;
+            
+            // Add random variation for realism
+            float randomFactor = Random.Range(1f - randomVariation, 1f + randomVariation);
+            restitution *= randomFactor;
+            
+            // Calculate bounce force based on energy conservation
+            float bounceForce = restitution * (kineticEnergy / 10f); // Scale down for Unity physics
+            
+            // Calculate friction (higher speed = less friction due to reduced contact time)
+            float friction = Mathf.Clamp(0.9f - (globalBallSpeed / 30f) * 0.4f, 0.3f, 0.9f);
+            friction *= lengthMultiplier; // Apply length multiplier to friction too
+            
+            // Apply calculated values to appropriate length
+            ApplyPhysicsValues(length, bounceForce, friction);
+            
+            Debug.Log($"🎯 PHYSICS BOUNCE {length}: Speed={globalBallSpeed:F1}m/s, Energy={kineticEnergy:F1}J, Restitution={restitution:F2}, Bounce={bounceForce:F2}, Friction={friction:F2}");
+        }
+        
+        /// <summary>
+        /// Get physics multiplier for specific bowling length
+        /// </summary>
+        private float GetLengthPhysicsMultiplier(BowlingLength length)
+        {
+            switch (length)
+            {
+                case BowlingLength.Yorker: return yorkerPhysicsMultiplier;
+                case BowlingLength.FullLength: return fullLengthPhysicsMultiplier;
+                case BowlingLength.GoodLength: return goodLengthPhysicsMultiplier;
+                case BowlingLength.ShortLength: return shortLengthPhysicsMultiplier;
+                case BowlingLength.Bouncer: return bouncerPhysicsMultiplier;
+                default: return 1.0f;
+            }
+        }
+        
+        /// <summary>
+        /// Apply calculated physics values to specific bowling length
+        /// </summary>
+        private void ApplyPhysicsValues(BowlingLength length, float bounceForce, float friction)
+        {
             switch (length)
             {
                 case BowlingLength.Yorker:
-                    yorkerBounceForce = Mathf.Lerp(yorkerBounceForceStart, yorkerBounceForceEnd, speedFactor);
-                    yorkerBounceFriction = Mathf.Lerp(yorkerBounceFrictionStart, yorkerBounceFrictionEnd, speedFactor);
-                    Debug.Log($"🎯 YORKER Dynamic Bounce: Speed={globalBallSpeed:F1}m/s, Factor={speedFactor:F2}, Bounce={yorkerBounceForce:F2}, Friction={yorkerBounceFriction:F2}");
+                    yorkerBounceForce = bounceForce;
+                    yorkerBounceFriction = friction;
                     break;
-                    
                 case BowlingLength.FullLength:
-                    fullLengthBounceForce = Mathf.Lerp(fullLengthBounceForceStart, fullLengthBounceForceEnd, speedFactor);
-                    fullLengthBounceFriction = Mathf.Lerp(fullLengthBounceFrictionStart, fullLengthBounceFrictionEnd, speedFactor);
-                    Debug.Log($"🎯 FULL LENGTH Dynamic Bounce: Speed={globalBallSpeed:F1}m/s, Factor={speedFactor:F2}, Bounce={fullLengthBounceForce:F2}, Friction={fullLengthBounceFriction:F2}");
+                    fullLengthBounceForce = bounceForce;
+                    fullLengthBounceFriction = friction;
                     break;
-                    
                 case BowlingLength.GoodLength:
-                    goodLengthBounceForce = Mathf.Lerp(goodLengthBounceForceStart, goodLengthBounceForceEnd, speedFactor);
-                    goodLengthBounceFriction = Mathf.Lerp(goodLengthBounceFrictionStart, goodLengthBounceFrictionEnd, speedFactor);
-                    Debug.Log($"🎯 GOOD LENGTH Dynamic Bounce: Speed={globalBallSpeed:F1}m/s, Factor={speedFactor:F2}, Bounce={goodLengthBounceForce:F2}, Friction={goodLengthBounceFriction:F2}");
+                    goodLengthBounceForce = bounceForce;
+                    goodLengthBounceFriction = friction;
                     break;
-                    
                 case BowlingLength.ShortLength:
-                    shortLengthBounceForce = Mathf.Lerp(shortLengthBounceForceStart, shortLengthBounceForceEnd, speedFactor);
-                    shortLengthBounceFriction = Mathf.Lerp(shortLengthBounceFrictionStart, shortLengthBounceFrictionEnd, speedFactor);
-                    Debug.Log($"🎯 SHORT LENGTH Dynamic Bounce: Speed={globalBallSpeed:F1}m/s, Factor={speedFactor:F2}, Bounce={shortLengthBounceForce:F2}, Friction={shortLengthBounceFriction:F2}");
+                    shortLengthBounceForce = bounceForce;
+                    shortLengthBounceFriction = friction;
                     break;
-                    
                 case BowlingLength.Bouncer:
-                    bouncerBounceForce = Mathf.Lerp(bouncerBounceForceStart, bouncerBounceForceEnd, speedFactor);
-                    bouncerBounceFriction = Mathf.Lerp(bouncerBounceFrictionStart, bouncerBounceFrictionEnd, speedFactor);
-                    Debug.Log($"🎯 BOUNCER Dynamic Bounce: Speed={globalBallSpeed:F1}m/s, Factor={speedFactor:F2}, Bounce={bouncerBounceForce:F2}, Friction={bouncerBounceFriction:F2}");
+                    bouncerBounceForce = bounceForce;
+                    bouncerBounceFriction = friction;
                     break;
             }
         }

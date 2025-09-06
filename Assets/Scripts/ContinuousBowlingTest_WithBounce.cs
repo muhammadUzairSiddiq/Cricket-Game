@@ -240,8 +240,8 @@ namespace CricketGame
             
             Debug.Log($"<color=#FFD700>🔍 Using Inspector BallSettings for {length}</color>");
             
-            // 🎯 NEW: Calculate dynamic bounce values based on speed
-            ballSettings.CalculateDynamicBounce(length);
+            // 🎯 NEW: Calculate realistic physics bounce values based on speed and energy
+            ballSettings.CalculatePhysicsBounce(length);
             
             // Apply settings based on bowling length from the single BallSettings component
             // Note: Speed is now global, only arc, bounce, and rotation are length-specific
