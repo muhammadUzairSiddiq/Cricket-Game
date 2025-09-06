@@ -302,41 +302,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ballSpeed: 10
+  globalBallSpeed: 12
   arcHeight: 1
   gravity: 9.81
   mass: 0.16
   drag: 0.02
   angularDrag: 0.02
-  bounceForce: 0.8
-  bounceFriction: 0.85
+  bounceForce: 0.85
+  bounceFriction: 0.90000004
   maxBounces: 3
   ballRadius: 0.036
   useRealisticPhysics: 1
-  destroyDelay: 0
-  startTimerOnStart: 0
-  yorkerSpeed: 13
+  destroyDelay: 10
+  startTimerOnStart: 1
   yorkerArcHeight: 2
-  yorkerBounceForce: 0.5
-  yorkerBounceFriction: 0.6
+  yorkerBounceForce: 0.44666666
+  yorkerBounceFriction: 0.9233333
   yorkerRotationX: 1.5
-  fullLengthSpeed: 13
   fullLengthArcHeight: 2
   fullLengthBounceForce: 0.9
   fullLengthBounceFriction: 0.8
   fullLengthRotationX: 0
-  goodLengthSpeed: 13
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.8
-  goodLengthBounceFriction: 0.9
+  goodLengthBounceForce: 0.74666667
+  goodLengthBounceFriction: 0.84666663
   goodLengthRotationX: -30
-  shortLengthSpeed: 15
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.7
-  shortLengthBounceFriction: 0.8
+  shortLengthBounceForce: 0.64666665
+  shortLengthBounceFriction: 0.74666667
   shortLengthRotationX: 0
-  bouncerSpeed: 10
   bouncerArcHeight: 0
-  bouncerBounceForce: 0.95
-  bouncerBounceFriction: 1
+  bouncerBounceForce: 0.29333335
+  bouncerBounceFriction: 0.49333334
   bouncerRotationX: -50
+  yorkerBounceForceStart: 0.35
+  yorkerBounceForceEnd: 0.45
+  yorkerBounceFrictionStart: 0.5
+  yorkerBounceFrictionEnd: 0.6
+  fullLengthBounceForceStart: 0.25
+  fullLengthBounceForceEnd: 0.35
+  fullLengthBounceFrictionStart: 0.3
+  fullLengthBounceFrictionEnd: 0.4
+  goodLengthBounceForceStart: 0.7
+  goodLengthBounceForceEnd: 0.83
+  goodLengthBounceFrictionStart: 0.75
+  goodLengthBounceFrictionEnd: 0.88
+  shortLengthBounceForceStart: 0.6
+  shortLengthBounceForceEnd: 0.7
+  shortLengthBounceFrictionStart: 0.7
+  shortLengthBounceFrictionEnd: 0.8
+  bouncerBounceForceStart: 0.8
+  bouncerBounceForceEnd: 0.95
+  bouncerBounceFrictionStart: 0.85
+  bouncerBounceFrictionEnd: 1

@@ -179,7 +179,7 @@ namespace CricketGame
             Debug.Log($"<color=#FFD700>🔍 ZONE REFERENCES: yorkerZone={yorkerZone != null}, fullTossZone={fullTossZone != null}, lengthZone={lengthZone != null}, slotZone={slotZone != null}, shortZone={shortZone != null}</color>");
             
             // Store original values for comparison
-            float originalSpeed = ballSettings.BallSpeed;
+            float originalSpeed = ballSettings.GlobalBallSpeed;
             float originalArc = ballSettings.ArcHeight;
             float originalBounce = ballSettings.BounceForce;
             
@@ -194,12 +194,12 @@ namespace CricketGame
             
             // Colorful debug information with before/after comparison
             string lengthColor = GetLengthColor(lengthCategory);
-            string speedColor = originalSpeed != ballSettings.BallSpeed ? "<color=#00FF00>" : "<color=#FF0000>";
+            string speedColor = originalSpeed != ballSettings.GlobalBallSpeed ? "<color=#00FF00>" : "<color=#FF0000>";
             string arcColor = originalArc != ballSettings.ArcHeight ? "<color=#00FF00>" : "<color=#FF0000>";
             string bounceColor = originalBounce != ballSettings.BounceForce ? "<color=#00FF00>" : "<color=#FF0000>";
             
             Debug.Log($"{lengthColor}🎯 BOWLING LENGTH: {lengthCategory} (Zone-based detection)</color>");
-            Debug.Log($"{speedColor}⚡ BALL SPEED: {originalSpeed:F1} → {ballSettings.BallSpeed:F1} m/s</color>");
+            Debug.Log($"{speedColor}⚡ GLOBAL BALL SPEED: {originalSpeed:F1} → {ballSettings.GlobalBallSpeed:F1} m/s (applies to all lengths)</color>");
             Debug.Log($"{arcColor}📈 ARC HEIGHT: {originalArc:F1} → {ballSettings.ArcHeight:F1} m</color>");
             Debug.Log($"{bounceColor}🏀 BOUNCE FORCE: {originalBounce:F2} → {ballSettings.BounceForce:F2}</color>");
             Debug.Log($"<color=#FFD700>✅ DYNAMIC SETTINGS APPLIED SUCCESSFULLY!</color>");
@@ -240,40 +240,39 @@ namespace CricketGame
             
             Debug.Log($"<color=#FFD700>🔍 Using Inspector BallSettings for {length}</color>");
             
+            // 🎯 NEW: Calculate dynamic bounce values based on speed
+            ballSettings.CalculateDynamicBounce(length);
+            
             // Apply settings based on bowling length from the single BallSettings component
+            // Note: Speed is now global, only arc, bounce, and rotation are length-specific
             switch (length)
             {
                 case BowlingLength.Yorker:
-                    Debug.Log($"<color=#FF0000>🔍 Yorker Inspector Values: Speed={ballSettings.YorkerSpeed}, Arc={ballSettings.YorkerArcHeight}, Bounce={ballSettings.YorkerBounceForce}</color>");
-                    targetBallSettings.SetBallSpeed(ballSettings.YorkerSpeed);
+                    Debug.Log($"<color=#FF0000>🔍 Yorker Inspector Values: Global Speed={ballSettings.GlobalBallSpeed}, Arc={ballSettings.YorkerArcHeight}, Bounce={ballSettings.YorkerBounceForce}</color>");
                     targetBallSettings.SetArcHeight(ballSettings.YorkerArcHeight);
                     targetBallSettings.SetBounceForce(ballSettings.YorkerBounceForce);
                     targetBallSettings.SetBounceFriction(ballSettings.YorkerBounceFriction);
                     break;
                     
                 case BowlingLength.FullLength:
-                    targetBallSettings.SetBallSpeed(ballSettings.FullLengthSpeed);
                     targetBallSettings.SetArcHeight(ballSettings.FullLengthArcHeight);
                     targetBallSettings.SetBounceForce(ballSettings.FullLengthBounceForce);
                     targetBallSettings.SetBounceFriction(ballSettings.FullLengthBounceFriction);
                     break;
                     
                 case BowlingLength.GoodLength:
-                    targetBallSettings.SetBallSpeed(ballSettings.GoodLengthSpeed);
                     targetBallSettings.SetArcHeight(ballSettings.GoodLengthArcHeight);
                     targetBallSettings.SetBounceForce(ballSettings.GoodLengthBounceForce);
                     targetBallSettings.SetBounceFriction(ballSettings.GoodLengthBounceFriction);
                     break;
                     
                 case BowlingLength.ShortLength:
-                    targetBallSettings.SetBallSpeed(ballSettings.ShortLengthSpeed);
                     targetBallSettings.SetArcHeight(ballSettings.ShortLengthArcHeight);
                     targetBallSettings.SetBounceForce(ballSettings.ShortLengthBounceForce);
                     targetBallSettings.SetBounceFriction(ballSettings.ShortLengthBounceFriction);
                     break;
                     
                 case BowlingLength.Bouncer:
-                    targetBallSettings.SetBallSpeed(ballSettings.BouncerSpeed);
                     targetBallSettings.SetArcHeight(ballSettings.BouncerArcHeight);
                     targetBallSettings.SetBounceForce(ballSettings.BouncerBounceForce);
                     targetBallSettings.SetBounceFriction(ballSettings.BouncerBounceFriction);
@@ -312,45 +311,43 @@ namespace CricketGame
         /// </summary>
         void ApplyHardcodedSettings(BallSettings targetBallSettings, BowlingLength length)
         {
+            // Set global speed first (same for all lengths now)
+            targetBallSettings.SetBallSpeed(12f); // Global speed for all lengths
+            
             switch (length)
             {
                 case BowlingLength.Yorker:
-                    targetBallSettings.SetBallSpeed(15f);
                     targetBallSettings.SetArcHeight(1.5f);
                     targetBallSettings.SetBounceForce(1.2f);
                     targetBallSettings.SetBounceFriction(0.9f);
                     break;
                     
                 case BowlingLength.FullLength:
-                    targetBallSettings.SetBallSpeed(12f);
                     targetBallSettings.SetArcHeight(1.2f);
                     targetBallSettings.SetBounceForce(0.9f);
                     targetBallSettings.SetBounceFriction(0.8f);
                     break;
                     
                 case BowlingLength.GoodLength:
-                    targetBallSettings.SetBallSpeed(13f);
                     targetBallSettings.SetArcHeight(1.3f);
                     targetBallSettings.SetBounceForce(1.0f);
                     targetBallSettings.SetBounceFriction(0.85f);
                     break;
                     
                 case BowlingLength.ShortLength:
-                    targetBallSettings.SetBallSpeed(11f);
                     targetBallSettings.SetArcHeight(1.1f);
                     targetBallSettings.SetBounceForce(0.8f);
                     targetBallSettings.SetBounceFriction(0.75f);
                     break;
                     
                 case BowlingLength.Bouncer:
-                    targetBallSettings.SetBallSpeed(10f);
                     targetBallSettings.SetArcHeight(1.0f);
                     targetBallSettings.SetBounceForce(0.7f);
                     targetBallSettings.SetBounceFriction(0.7f);
                     break;
             }
             
-            Debug.Log($"✅ Applied hardcoded {length} settings: Speed={targetBallSettings.BallSpeed}, Arc={targetBallSettings.ArcHeight}, Bounce={targetBallSettings.BounceForce}");
+            Debug.Log($"✅ Applied hardcoded {length} settings: Global Speed={targetBallSettings.BallSpeed}, Arc={targetBallSettings.ArcHeight}, Bounce={targetBallSettings.BounceForce}");
         }
         
         /// <summary>
@@ -991,7 +988,7 @@ namespace CricketGame
                 else
                 {
                     Debug.Log("🎯 Using direct velocity application");
-                    ballRigidbodyToUse.linearVelocity = initialVelocity;
+                ballRigidbodyToUse.linearVelocity = initialVelocity;
                 }
             }
             else
@@ -1280,7 +1277,7 @@ namespace CricketGame
                 }
                 else
                 {
-                    ball.transform.position = newPosition;
+                ball.transform.position = newPosition;
                 }
                 
                 // Debug position every few frames
