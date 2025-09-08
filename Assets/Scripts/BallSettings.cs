@@ -61,15 +61,44 @@ namespace CricketGame
         
         [Header("🎯 Realistic Physics Bounce System")]
         [Header("Physics Parameters")]
-        [SerializeField] private float baseRestitutionCoefficient = 0.6f; // Base bounce energy retention
-        [SerializeField] private float randomVariation = 0.05f; // Random variation for realism
+        [SerializeField] public float baseRestitutionCoefficient = 0.6f; // Base bounce energy retention
+        [SerializeField] public float randomVariation = 0.05f; // Random variation for realism
+        
+        [Header("Speed Response Values (Simple Numbers)")]
+        [Tooltip("Bounce multiplier for different speeds - higher = more bounce")]
+        [SerializeField] public float speed9Bounce = 1.08f;
+        [SerializeField] public float speed10Bounce = 1.10f;
+        [SerializeField] public float speed11Bounce = 1.08f;
+        [SerializeField] public float speed12Bounce = 1.06f;
+        [SerializeField] public float speed13Bounce = 1.03f;
+        [SerializeField] public float speed14Bounce = 1.00f;
+        [SerializeField] public float speed15Bounce = 0.85f;
+        [SerializeField] public float speed16Bounce = 0.80f;
+        [SerializeField] public float speed18Bounce = 0.75f;
+        [SerializeField] public float speed20Bounce = 0.72f;
+        
+        [Tooltip("Friction multiplier for different speeds - higher = more friction/damping")]
+        [SerializeField] public float speed9Friction = 0.80f;
+        [SerializeField] public float speed10Friction = 0.82f;
+        [SerializeField] public float speed12Friction = 0.85f;
+        [SerializeField] public float speed15Friction = 0.95f;
+        [SerializeField] public float speed16Friction = 1.02f;
+        [SerializeField] public float speed18Friction = 1.08f;
+        [SerializeField] public float speed20Friction = 1.10f;
         
         [Header("Length-Specific Physics Multipliers")]
-        [SerializeField] private float yorkerPhysicsMultiplier = 0.8f; // Yorker bounces less
-        [SerializeField] private float fullLengthPhysicsMultiplier = 0.6f; // Full length bounces least
-        [SerializeField] private float goodLengthPhysicsMultiplier = 1.0f; // Good length standard bounce
-        [SerializeField] private float shortLengthPhysicsMultiplier = 1.2f; // Short length bounces more
-        [SerializeField] private float bouncerPhysicsMultiplier = 1.5f; // Bouncer bounces most
+        [SerializeField] public float yorkerPhysicsMultiplier = 0.8f; // Yorker bounces less
+        [SerializeField] public float fullLengthPhysicsMultiplier = 0.6f; // Full length bounces least
+        [SerializeField] public float goodLengthPhysicsMultiplier = 1.0f; // Good length standard bounce
+        [SerializeField] public float shortLengthPhysicsMultiplier = 1.2f; // Short length bounces more
+        [SerializeField] public float bouncerPhysicsMultiplier = 1.5f; // Bouncer bounces most
+        
+        [Header("Length-Specific Physics Friction")]
+        [SerializeField] public float yorkerPhysicsFriction = 0.9f; // Yorker friction
+        [SerializeField] public float fullLengthPhysicsFriction = 0.8f; // Full length friction
+        [SerializeField] public float goodLengthPhysicsFriction = 1.0f; // Good length friction
+        [SerializeField] public float shortLengthPhysicsFriction = 1.1f; // Short length friction
+        [SerializeField] public float bouncerPhysicsFriction = 1.2f; // Bouncer friction
         
         // Public properties for other scripts to access
         public float BallSpeed => globalBallSpeed; // Now uses global speed for all lengths
@@ -134,30 +163,29 @@ namespace CricketGame
             // Get length-specific physics multiplier
             float lengthMultiplier = GetLengthPhysicsMultiplier(length);
             
-            // Calculate kinetic energy (E = 0.5 * m * v²)
-            float kineticEnergy = 0.5f * this.mass * globalBallSpeed * globalBallSpeed;
+            // Compute a normalized restitution coefficient (0.0 - 1.2) independent of v² to avoid extreme scaling
+            float restitution = baseRestitutionCoefficient * lengthMultiplier;
             
-            // Calculate speed factor using square root for realistic physics (non-linear)
-            float speedFactor = Mathf.Sqrt(globalBallSpeed / 20f); // Normalize to 0-1 range
+            // Get bounce multiplier based on speed
+            float bounceMultiplier = GetBounceMultiplier(globalBallSpeed);
+            restitution *= bounceMultiplier;
             
-            // Calculate restitution coefficient with length and speed factors
-            float restitution = baseRestitutionCoefficient * lengthMultiplier * speedFactor;
+            // Add subtle random variation
+            restitution *= Random.Range(1f - randomVariation, 1f + randomVariation);
+            restitution = Mathf.Clamp(restitution, 0.4f, 1.2f);
             
-            // Add random variation for realism
-            float randomFactor = Random.Range(1f - randomVariation, 1f + randomVariation);
-            restitution *= randomFactor;
+            // Use restitution directly as bounceForce (coefficient style), not scaled by kinetic energy
+            float bounceForceCoef = restitution;
             
-            // Calculate bounce force based on energy conservation
-            float bounceForce = restitution * (kineticEnergy / 10f); // Scale down for Unity physics
-            
-            // Calculate friction (higher speed = less friction due to reduced contact time)
-            float friction = Mathf.Clamp(0.9f - (globalBallSpeed / 30f) * 0.4f, 0.3f, 0.9f);
-            friction *= lengthMultiplier; // Apply length multiplier to friction too
+            // Friction coefficient shaped by speed and length (higher at high speeds to damp)
+            float friction = GetFrictionMultiplier(globalBallSpeed);
+            float lengthFriction = GetLengthPhysicsFriction(length);
+            friction = Mathf.Clamp(friction * lengthFriction, 0.5f, 1.2f);
             
             // Apply calculated values to appropriate length
-            ApplyPhysicsValues(length, bounceForce, friction);
+            ApplyPhysicsValues(length, bounceForceCoef, friction);
             
-            Debug.Log($"🎯 PHYSICS BOUNCE {length}: Speed={globalBallSpeed:F1}m/s, Energy={kineticEnergy:F1}J, Restitution={restitution:F2}, Bounce={bounceForce:F2}, Friction={friction:F2}");
+            Debug.Log($"🎯 PHYSICS BOUNCE {length}: Speed={globalBallSpeed:F1}m/s, Restitution={restitution:F2}, BounceCoef={bounceForceCoef:F2}, Friction={friction:F2}");
         }
         
         /// <summary>
@@ -174,6 +202,55 @@ namespace CricketGame
                 case BowlingLength.Bouncer: return bouncerPhysicsMultiplier;
                 default: return 1.0f;
             }
+        }
+        
+        /// <summary>
+        /// Get physics friction for specific bowling length
+        /// </summary>
+        private float GetLengthPhysicsFriction(BowlingLength length)
+        {
+            switch (length)
+            {
+                case BowlingLength.Yorker: return yorkerPhysicsFriction;
+                case BowlingLength.FullLength: return fullLengthPhysicsFriction;
+                case BowlingLength.GoodLength: return goodLengthPhysicsFriction;
+                case BowlingLength.ShortLength: return shortLengthPhysicsFriction;
+                case BowlingLength.Bouncer: return bouncerPhysicsFriction;
+                default: return 1.0f;
+            }
+        }
+        
+        /// <summary>
+        /// Get bounce multiplier based on speed (simple linear interpolation)
+        /// </summary>
+        private float GetBounceMultiplier(float speed)
+        {
+            if (speed <= 9f) return speed9Bounce;
+            if (speed <= 10f) return Mathf.Lerp(speed9Bounce, speed10Bounce, (speed - 9f) / 1f);
+            if (speed <= 11f) return Mathf.Lerp(speed10Bounce, speed11Bounce, (speed - 10f) / 1f);
+            if (speed <= 12f) return Mathf.Lerp(speed11Bounce, speed12Bounce, (speed - 11f) / 1f);
+            if (speed <= 13f) return Mathf.Lerp(speed12Bounce, speed13Bounce, (speed - 12f) / 1f);
+            if (speed <= 14f) return Mathf.Lerp(speed13Bounce, speed14Bounce, (speed - 13f) / 1f);
+            if (speed <= 15f) return Mathf.Lerp(speed14Bounce, speed15Bounce, (speed - 14f) / 1f);
+            if (speed <= 16f) return Mathf.Lerp(speed15Bounce, speed16Bounce, (speed - 15f) / 1f);
+            if (speed <= 18f) return Mathf.Lerp(speed16Bounce, speed18Bounce, (speed - 16f) / 2f);
+            if (speed <= 20f) return Mathf.Lerp(speed18Bounce, speed20Bounce, (speed - 18f) / 2f);
+            return speed20Bounce;
+        }
+        
+        /// <summary>
+        /// Get friction multiplier based on speed (simple linear interpolation)
+        /// </summary>
+        private float GetFrictionMultiplier(float speed)
+        {
+            if (speed <= 9f) return speed9Friction;
+            if (speed <= 10f) return Mathf.Lerp(speed9Friction, speed10Friction, (speed - 9f) / 1f);
+            if (speed <= 12f) return Mathf.Lerp(speed10Friction, speed12Friction, (speed - 10f) / 2f);
+            if (speed <= 15f) return Mathf.Lerp(speed12Friction, speed15Friction, (speed - 12f) / 3f);
+            if (speed <= 16f) return Mathf.Lerp(speed15Friction, speed16Friction, (speed - 15f) / 1f);
+            if (speed <= 18f) return Mathf.Lerp(speed16Friction, speed18Friction, (speed - 16f) / 2f);
+            if (speed <= 20f) return Mathf.Lerp(speed18Friction, speed20Friction, (speed - 18f) / 2f);
+            return speed20Friction;
         }
         
         /// <summary>

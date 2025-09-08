@@ -2721,6 +2721,8 @@ MonoBehaviour:
   smoothnessFactor: 0.1
   velocitySmoothing: 0.1
   minVelocityThreshold: 0.01
+  speedMultiplier: 1
+  xRotationSpeedBoost: 1
   startKey: 32
   stopKey: 27
 --- !u!1 &2116198337

@@ -302,43 +302,65 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 14
+  globalBallSpeed: 16
   arcHeight: 1
   gravity: 9.81
   mass: 0.16
   drag: 0.02
   angularDrag: 0.02
-  bounceForce: 0.85
-  bounceFriction: 0.90000004
+  bounceForce: 0.8
+  bounceFriction: 0.85
   maxBounces: 3
   ballRadius: 0.036
   useRealisticPhysics: 1
-  destroyDelay: 10
+  destroyDelay: 5
   startTimerOnStart: 1
-  yorkerArcHeight: 2
-  yorkerBounceForce: 0.60231763
-  yorkerBounceFriction: 0.5706667
-  yorkerRotationX: 1.5
-  fullLengthArcHeight: 2
-  fullLengthBounceForce: 0.48938227
-  fullLengthBounceFriction: 0.428
-  fullLengthRotationX: 0
+  yorkerArcHeight: 0
+  yorkerBounceForce: 0.49665725
+  yorkerBounceFriction: 0.8364
+  yorkerRotationX: 75
+  fullLengthArcHeight: 0
+  fullLengthBounceForce: 0.4
+  fullLengthBounceFriction: 0.589
+  fullLengthRotationX: 135
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.80032426
-  goodLengthBounceFriction: 0.7133333
-  goodLengthRotationX: -30
+  goodLengthBounceForce: 0.8436395
+  goodLengthBounceFriction: 1.2
+  goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 2.5770502
-  shortLengthBounceFriction: 0.856
-  shortLengthRotationX: 0
-  bouncerArcHeight: 0
-  bouncerBounceForce: 1.2043626
-  bouncerBounceFriction: 1.0699999
+  shortLengthBounceForce: 0.6527582
+  shortLengthBounceFriction: 0.88000005
+  shortLengthRotationX: 50
+  bouncerArcHeight: 1
+  bouncerBounceForce: 0.93438935
+  bouncerBounceFriction: 1.2
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
+  speed9Bounce: 0.85
+  speed10Bounce: 0.87
+  speed11Bounce: 0.9
+  speed12Bounce: 0.92
+  speed13Bounce: 0.94
+  speed14Bounce: 0.97
+  speed15Bounce: 1
+  speed16Bounce: 1.02
+  speed18Bounce: 1.05
+  speed20Bounce: 1.07
+  speed9Friction: 0.8
+  speed10Friction: 0.82
+  speed12Friction: 0.85
+  speed15Friction: 0.95
+  speed16Friction: 1.02
+  speed18Friction: 1.08
+  speed20Friction: 1.1
   yorkerPhysicsMultiplier: 0.8
   fullLengthPhysicsMultiplier: 0.6
-  goodLengthPhysicsMultiplier: 1
-  shortLengthPhysicsMultiplier: 1.2
+  goodLengthPhysicsMultiplier: 1.4
+  shortLengthPhysicsMultiplier: 1.25
   bouncerPhysicsMultiplier: 1.5
+  yorkerPhysicsFriction: 0.82
+  fullLengthPhysicsFriction: 0.62
+  goodLengthPhysicsFriction: 1.2
+  shortLengthPhysicsFriction: 1.1
+  bouncerPhysicsFriction: 1.3

@@ -901,27 +901,49 @@ namespace CricketGame
             float arcHeight = ballSettings.ArcHeight;
             float gravity = ballSettings.Gravity;
             
-            // Calculate time to reach target
-            float timeToReach = horizontalDistance / ballSpeed;
+            // 🎯 ANALYTIC BALLISTIC SOLVER: Compute exact initial velocity to hit target with given speed
+            Vector3 initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, ballSpeed, gravity, false /*low arc*/);
             
-            // Calculate realistic cricket bowling arc
-            float heightDifference = targetPosition.y - startPosition.y;
-            float realisticArcHeight = arcHeight * 0.2f; // Use your working arc height
-            
-            // Calculate required Y velocity for realistic arc
-            float requiredYVelocity = (heightDifference + realisticArcHeight + 0.5f * gravity * timeToReach * timeToReach) / timeToReach;
-            
-            // ?? LENGTH-BASED TRAJECTORY TUNING
-            // Higher length (towards batsman) -> lower bounce/arc; shorter (bouncer) -> higher arc
-            float yScaleByLength = Mathf.Lerp(1.35f, 0.75f, currentLength01); // 0 -> +35% Y, 1 -> -25% Y
-            requiredYVelocity *= yScaleByLength;
-            
-            // Cap Y velocity for realistic cricket arc
-            float maxYVelocity = ballSpeed * 0.25f;
-            if (requiredYVelocity > maxYVelocity)
+            // If no feasible solution with this speed (too fast/too slow), gently reduce speed until feasible
+            if (initialVelocity == Vector3.zero)
             {
-                requiredYVelocity = maxYVelocity;
-                Debug.Log($"?? Y velocity capped to {maxYVelocity:F1} m/s for realistic cricket arc");
+                float trySpeed = ballSpeed;
+                for (int i = 0; i < 6; i++)
+                {
+                    trySpeed *= 0.95f; // reduce 5% and try again
+                    initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, trySpeed, gravity, false);
+                    if (initialVelocity != Vector3.zero) { ballSpeed = trySpeed; break; }
+                }
+            }
+            
+            // 🎯 SPEED 12 FIX: Special handling for speed 12 which seems to have targeting issues
+            if (Mathf.Abs(ballSpeed - 12f) < 0.5f)
+            {
+                // Try high-arc solution for speed 12 if low-arc failed
+                if (initialVelocity == Vector3.zero)
+                {
+                    initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, ballSpeed, gravity, true);
+                }
+                
+                // Apply extra horizontal damping for speed 12
+                if (initialVelocity != Vector3.zero)
+                {
+                    Vector3 horizontalVel = new Vector3(initialVelocity.x, 0, initialVelocity.z);
+                    horizontalVel *= 0.92f; // 8% horizontal speed reduction for speed 12
+                    initialVelocity = new Vector3(horizontalVel.x, initialVelocity.y, horizontalVel.z);
+                    Debug.Log($"🎯 SPEED 12 FIX: Applied extra horizontal damping, new speed = {initialVelocity.magnitude:F1}");
+                }
+            }
+            
+            // If still zero, fall back to prior simple approach to avoid stalling
+            if (initialVelocity == Vector3.zero)
+            {
+                Vector3 toTargetXZ = new Vector3(targetPosition.x - startPosition.x, 0f, targetPosition.z - startPosition.z);
+                float fallbackTime = Mathf.Max(0.1f, toTargetXZ.magnitude / Mathf.Max(1f, ballSpeed));
+                float yVel = (targetPosition.y - startPosition.y + 0.5f * gravity * fallbackTime * fallbackTime) / fallbackTime;
+                Vector3 dirXZ = toTargetXZ.normalized;
+                Vector3 velXZ = dirXZ * (toTargetXZ.magnitude / fallbackTime);
+                initialVelocity = new Vector3(velXZ.x, yVel, velXZ.z);
             }
             
             // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
@@ -942,21 +964,52 @@ namespace CricketGame
                 horizontalDirection = (horizontalTarget - horizontalStart).normalized;
             }
             
-            // 🎯 CRITICAL FIX: Apply X rotation to Y velocity as well
+            // 🎯 SIMPLIFIED X ROTATION: Apply smaller, more controlled rotation effect (post ballistic)
+            float preAdjustY = initialVelocity.y;
             float rotationXRadians = spawnPoint != null ? spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
             float rotationEffect = Mathf.Sin(rotationXRadians); // This gives us the downward component
             
-            // 🎯 BOUNCER DEBUG: Check for extreme rotation values
-            if (spawnPoint != null && spawnPoint.rotation.eulerAngles.x > 20f)
+            // 🎯 REDUCED ROTATION EFFECT: Much smaller impact on trajectory
+            float rotationMultiplier = 0.1f; // Reduced from 0.5f to 0.1f
+            float adjustedYVelocity = initialVelocity.y + (rotationEffect * ballSpeed * rotationMultiplier);
+
+            // 🎯 HIGH-SPEED DOWNWARD ASSIST: ensure >14 m/s lands on target by adding extra downward component
+            if (ballSpeed >= 14f)
             {
-                Debug.LogWarning($"🎯 EXTREME ROTATION DETECTED: X rotation = {spawnPoint.rotation.eulerAngles.x}° - This might cause ball to go straight down!");
-                Debug.LogWarning($"🎯 Rotation effect = {rotationEffect:F3}, Ball speed = {ballSpeed}");
+                // Add small progressive downward adjustment proportional to overspeed
+                float overspeed = Mathf.Clamp01((ballSpeed - 14f) / 8f); // 0..1 around 14..22 m/s
+                float downwardAssist = overspeed * ballSpeed * 0.08f; // gentle but effective
+                adjustedYVelocity -= downwardAssist;
+                Debug.Log($"🎯 HIGH-SPEED ASSIST: speed={ballSpeed:F1}, overspeed={overspeed:F2}, assist={downwardAssist:F2}, Y={preAdjustY:F2}->{adjustedYVelocity:F2}");
             }
             
-            // Adjust Y velocity based on X rotation
-            float adjustedYVelocity = requiredYVelocity + (rotationEffect * ballSpeed * 0.5f);
+            // 🎯 DEBUG: Log rotation effect
+            if (spawnPoint != null && Mathf.Abs(spawnPoint.rotation.eulerAngles.x) > 1f)
+            {
+                Debug.Log($"🎯 X ROTATION: {spawnPoint.rotation.eulerAngles.x:F1}°, Effect: {rotationEffect:F3}, Y Velocity: {preAdjustY:F2} → {adjustedYVelocity:F2}");
+            }
             
-            Vector3 horizontalVelocity = horizontalDirection * ballSpeed;
+            // 🎯 SPEED-BASED CORRECTION: mild damping at very high speeds
+            float horizontalSpeed = new Vector2(initialVelocity.x, initialVelocity.z).magnitude;
+            
+            // Apply speed correction factor (higher speed needs more correction)
+            float speedCorrectionFactor = 1f;
+            if (ballSpeed > 12f)
+            {
+                // For high speeds, reduce horizontal speed to prevent overshooting
+                speedCorrectionFactor = 0.82f + (15f - ballSpeed) * 0.015f; // Slightly stronger correction
+                speedCorrectionFactor = Mathf.Clamp(speedCorrectionFactor, 0.68f, 1f);
+            }
+            
+            horizontalSpeed *= speedCorrectionFactor;
+            Vector3 horizontalVelocity = initialVelocity;
+            horizontalVelocity.y = 0f;
+            if (horizontalVelocity.sqrMagnitude > 0.0001f)
+            {
+                horizontalVelocity = horizontalVelocity.normalized * horizontalSpeed;
+            }
+            
+            Debug.Log($"🎯 SPEED CORRECTION: BallSpeed={ballSpeed:F1}, CorrectionFactor={speedCorrectionFactor:F2}, FinalHorizontalSpeed={horizontalSpeed:F1}");
             
             // 🎯 BOUNCER FIX: Ensure minimum horizontal velocity even with extreme rotations
             float minHorizontalSpeed = 2f; // Minimum horizontal speed to prevent ball from going straight down
@@ -967,10 +1020,37 @@ namespace CricketGame
             }
             
             // Combine velocities with rotation-adjusted Y velocity
-            Vector3 initialVelocity = horizontalVelocity;
-            initialVelocity.y = adjustedYVelocity;
+            initialVelocity = new Vector3(horizontalVelocity.x, adjustedYVelocity, horizontalVelocity.z);
             
-            Debug.Log($"🎯 ROTATION EFFECT: X rotation {spawnPoint?.rotation.eulerAngles.x ?? 0f}°, Rotation effect {rotationEffect:F3}, Y velocity {requiredYVelocity:F2} → {adjustedYVelocity:F2}");
+            // Compute timeToReach analytically from vertical motion; fallback to horizontal if needed
+            float timeToReach;
+            {
+                float a_t = -0.5f * gravity;
+                float b_t = adjustedYVelocity;
+                float c_t = targetPosition.y - startPosition.y;
+                float disc_t = b_t * b_t - 4f * a_t * c_t;
+                if (disc_t >= 0f)
+                {
+                    float sqrt_t = Mathf.Sqrt(disc_t);
+                    float t1 = (-b_t + sqrt_t) / (2f * a_t);
+                    float t2 = (-b_t - sqrt_t) / (2f * a_t);
+                    // choose the larger positive time
+                    timeToReach = Mathf.Max(t1, t2);
+                    if (timeToReach <= 0f || float.IsNaN(timeToReach))
+                    {
+                        timeToReach = horizontalDistance / Mathf.Max(0.1f, horizontalSpeed);
+                    }
+                }
+                else
+                {
+                    timeToReach = horizontalDistance / Mathf.Max(0.1f, horizontalSpeed);
+                }
+            }
+            
+            // 🎯 DEBUG: Log trajectory calculations
+            Debug.Log($"🎯 TRAJECTORY CALC: Distance={horizontalDistance:F1}m, Time={timeToReach:F2}s, HorizontalSpeed={horizontalSpeed:F1}m/s, YVelocity={adjustedYVelocity:F1}m/s");
+            
+            Debug.Log($"🎯 ROTATION EFFECT: X rotation {spawnPoint?.rotation.eulerAngles.x ?? 0f}°, Rotation effect {rotationEffect:F3}, Y velocity {preAdjustY:F2} → {adjustedYVelocity:F2}");
             
             // Apply velocity to ball with smooth movement
             Debug.Log($"🎯 APPLYING VELOCITY: UseRealisticPhysics={ballSettings.UseRealisticPhysics}, useSmoothMovement={useSmoothMovement}");
@@ -1004,11 +1084,44 @@ namespace CricketGame
             Debug.Log($"<color=#FFD700>🎯 Using ball settings: Speed={ballSpeed}, Arc={arcHeight}, Bounce={ballSettings.BounceForce}, Gravity={gravity}</color>");
             
             // Wait for ball to reach target area
-            yield return new WaitForSeconds(timeToReach);
+            float waitTime = Mathf.Clamp(timeToReach, 0.1f, 5f);
+            yield return new WaitForSeconds(waitTime);
             
             // Mark as landed
             hasLanded = true;
             Debug.Log("?? Ball has landed on target!");
+        }
+
+        // --- Analytic ballistic solver ---
+        // Returns initial velocity that hits target with given speed and gravity. If infeasible, returns Vector3.zero
+        private Vector3 SolveBallisticVelocity(Vector3 start, Vector3 end, float speed, float gravity, bool highArc)
+        {
+            Vector3 delta = end - start;
+            Vector3 deltaXZ = new Vector3(delta.x, 0f, delta.z);
+            float dx = deltaXZ.magnitude;
+            float dy = delta.y;
+            float v = Mathf.Max(0.1f, speed);
+            float g = Mathf.Max(0.01f, gravity);
+
+            float v2 = v * v;
+            float underSqrt = v2 * v2 - g * (g * dx * dx + 2f * dy * v2);
+            if (underSqrt < 0f)
+            {
+                return Vector3.zero; // No solution with this speed
+            }
+
+            float sqrt = Mathf.Sqrt(underSqrt);
+            // Two possible angles: low arc and high arc
+            float tanThetaLow = (v2 - sqrt) / (g * dx);
+            float tanThetaHigh = (v2 + sqrt) / (g * dx);
+            float tanTheta = highArc ? tanThetaHigh : tanThetaLow;
+            float cosTheta = 1f / Mathf.Sqrt(1f + tanTheta * tanTheta);
+            float sinTheta = tanTheta * cosTheta;
+
+            Vector3 dirXZ = dx > 0.0001f ? deltaXZ.normalized : Vector3.forward;
+            Vector3 v0 = dirXZ * (v * cosTheta);
+            v0.y = v * sinTheta;
+            return v0;
         }
         
         /// <summary>
@@ -1043,9 +1156,23 @@ namespace CricketGame
             // ?? NEW: Get ball settings for kinematic movement
             BallSettings ballSettings = currentBallInstance?.GetComponent<BallSettings>();
             float arcHeight = ballSettings != null ? ballSettings.ArcHeight : 1f;
+            float gravity = ballSettings != null ? ballSettings.Gravity : 9.81f;
             
             // ?? FIXED: Use realistic cricket bowling arc (much lower)
             float realisticArcHeight = arcHeight * 0.2f; // Same reduction as physics version
+            
+            // 🎯 SIMPLIFIED KINEMATIC: Use simpler duration calculation
+            Vector3 horizontalStart = new Vector3(startPos.x, 0, startPos.z);
+            Vector3 horizontalEnd = new Vector3(endPos.x, 0, endPos.z);
+            float horizontalDistance = Vector3.Distance(horizontalStart, horizontalEnd);
+            
+            // Use ball speed for kinematic movement (simpler and more predictable)
+            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
+            float baseDuration = horizontalDistance / ballSpeed;
+            
+            // Apply small correction for arc height
+            float arcTimeFactor = 1f + (realisticArcHeight * 0.1f);
+            duration = baseDuration * arcTimeFactor;
             
             // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
             Vector3 trajectoryDirection;
