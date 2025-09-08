@@ -316,24 +316,24 @@ MonoBehaviour:
   destroyDelay: 5
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.49665725
+  yorkerBounceForce: 0.47488526
   yorkerBounceFriction: 0.8364
-  yorkerRotationX: 75
+  yorkerRotationX: 80
   fullLengthArcHeight: 0
   fullLengthBounceForce: 0.4
-  fullLengthBounceFriction: 0.589
-  fullLengthRotationX: 135
+  fullLengthBounceFriction: 0.5
+  fullLengthRotationX: 120
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.8436395
+  goodLengthBounceForce: 0.82521105
   goodLengthBounceFriction: 1.2
   goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.6527582
-  shortLengthBounceFriction: 0.88000005
+  shortLengthBounceForce: 0.77091354
+  shortLengthBounceFriction: 1.122
   shortLengthRotationX: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.93438935
-  bouncerBounceFriction: 1.2
+  bouncerBounceForce: 0.7493184
+  bouncerBounceFriction: 0.976
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
@@ -355,12 +355,12 @@ MonoBehaviour:
   speed18Friction: 1.08
   speed20Friction: 1.1
   yorkerPhysicsMultiplier: 0.8
-  fullLengthPhysicsMultiplier: 0.6
+  fullLengthPhysicsMultiplier: 0.2
   goodLengthPhysicsMultiplier: 1.4
   shortLengthPhysicsMultiplier: 1.25
-  bouncerPhysicsMultiplier: 1.5
+  bouncerPhysicsMultiplier: 1.44
   yorkerPhysicsFriction: 0.82
-  fullLengthPhysicsFriction: 0.62
+  fullLengthPhysicsFriction: 0.25
   goodLengthPhysicsFriction: 1.2
   shortLengthPhysicsFriction: 1.1
-  bouncerPhysicsFriction: 1.3
+  bouncerPhysicsFriction: 1.22

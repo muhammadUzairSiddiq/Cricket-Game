@@ -23,6 +23,7 @@ namespace CricketGame
         
         [Header("Ball Settings Reference")]
         [SerializeField] private BallSettings ballSettings; // Single BallSettings component with all bowling length settings
+        [SerializeField] private SpeedController speedController; // Speed controller reference
         
         [Header("Length Zone Visualization")]
         [SerializeField] private bool showBowlingZones = true;
@@ -896,8 +897,18 @@ namespace CricketGame
             ApplyDynamicBowlingSettings(ballSettings);
             Debug.Log($"<color=#FFD700>🔍 ApplyDynamicBowlingSettings completed!</color>");
             
-            // ?? NEW: Read ball settings AFTER dynamic update
-            float ballSpeed = ballSettings.BallSpeed;
+            // ?? NEW: Read ball speed from speed controller if available, otherwise use ball settings
+            float ballSpeed;
+            if (speedController != null)
+            {
+                ballSpeed = speedController.GetCurrentSpeed();
+                Debug.Log($"🎯 SPEED FROM SLIDER: {ballSpeed} m/s");
+            }
+            else
+            {
+                ballSpeed = ballSettings.BallSpeed;
+                Debug.Log($"🎯 SPEED FROM BALL SETTINGS: {ballSpeed} m/s");
+            }
             float arcHeight = ballSettings.ArcHeight;
             float gravity = ballSettings.Gravity;
             
