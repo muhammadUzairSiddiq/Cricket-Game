@@ -15,8 +15,8 @@ GameObject:
   - component: {fileID: 7026982798576439528}
   - component: {fileID: -2326500691655583616}
   - component: {fileID: 3178760582583728030}
-  - component: {fileID: 5905204945185333897}
   - component: {fileID: 5986885649269739266}
+  - component: {fileID: 5278319595849064019}
   m_Layer: 0
   m_Name: BALL
   m_TagString: Ball
@@ -276,20 +276,6 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 1
   m_ApplyActiveColorSpace: 1
---- !u!114 &5905204945185333897
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8718896542698064258}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 049a3c0da769cf34ab99988ed969f1a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  destroyDelay: 5
-  startTimerOnStart: 1
 --- !u!114 &5986885649269739266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -316,7 +302,7 @@ MonoBehaviour:
   destroyDelay: 5
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.47488526
+  yorkerBounceForce: 0.5019312
   yorkerBounceFriction: 0.8364
   yorkerRotationX: 80
   fullLengthArcHeight: 0
@@ -324,16 +310,16 @@ MonoBehaviour:
   fullLengthBounceFriction: 0.5
   fullLengthRotationX: 120
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.82521105
+  goodLengthBounceForce: 0.8944484
   goodLengthBounceFriction: 1.2
   goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.77091354
+  shortLengthBounceForce: 0.7770031
   shortLengthBounceFriction: 1.122
   shortLengthRotationX: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.7493184
-  bouncerBounceFriction: 0.976
+  bouncerBounceForce: 0.9242262
+  bouncerBounceFriction: 1.2
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
@@ -364,3 +350,29 @@ MonoBehaviour:
   goodLengthPhysicsFriction: 1.2
   shortLengthPhysicsFriction: 1.1
   bouncerPhysicsFriction: 1.22
+--- !u!114 &5278319595849064019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718896542698064258}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c13e783ff03f604e9c24ce5306bf83b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableSpeedBoost: 1
+  boostMultiplier: 1
+  speed9Boost: 0
+  speed10Boost: 0.05
+  speed11Boost: 0.1
+  speed12Boost: 0.15
+  speed13Boost: 0.2
+  speed14Boost: 0.25
+  speed15Boost: 0.3
+  speed16Boost: 0.35
+  boostDelay: 0.1
+  applyBoostOnTargetHit: 1
+  applyBoostOnBounce: 0
+  showDebugLogs: 1

@@ -46,6 +46,10 @@ namespace CricketGame
         [SerializeField] private float velocitySmoothing = 0.98f; // Velocity smoothing factor
         [SerializeField] private float minVelocityThreshold = 0.01f; // Minimum velocity to consider movement
         
+        [Header("Delivery System")]
+        [SerializeField] private DeliverySystem deliverySystem;
+        
+        
         [Header("Controls")]
         [SerializeField] private KeyCode startKey = KeyCode.Space;
         [SerializeField] private KeyCode stopKey = KeyCode.Escape;
@@ -862,11 +866,14 @@ namespace CricketGame
             hasLanded = false;
             ResetBounceState();
             
+            // Reset delivery system for new ball
+            ResetDeliverySystem();
+            
             // Calculate trajectory to target
             Vector3 targetPosition = target.position;
             Vector3 startPosition = ballToBowl.transform.position;
             
-            // Calculate horizontal distance
+            // Calculate horizontal distance to target
             Vector3 horizontalStart = new Vector3(startPosition.x, 0, startPosition.z);
             Vector3 horizontalTarget = new Vector3(targetPosition.x, 0, targetPosition.z);
             float horizontalDistance = Vector3.Distance(horizontalStart, horizontalTarget);
@@ -912,8 +919,11 @@ namespace CricketGame
             float arcHeight = ballSettings.ArcHeight;
             float gravity = ballSettings.Gravity;
             
-            // 🎯 ANALYTIC BALLISTIC SOLVER: Compute exact initial velocity to hit target with given speed
-            Vector3 initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, ballSpeed, gravity, false /*low arc*/);
+            // 🎯 DELIVERY TRAJECTORY: Calculate delivery-modified target position
+            Vector3 finalTargetPosition = CalculateDeliveryTrajectory(startPosition, targetPosition, ballSpeed);
+            
+            // 🎯 ANALYTIC BALLISTIC SOLVER: Compute exact initial velocity to hit swing-modified target with given speed
+            Vector3 initialVelocity = SolveBallisticVelocity(startPosition, finalTargetPosition, ballSpeed, gravity, false /*low arc*/);
             
             // If no feasible solution with this speed (too fast/too slow), gently reduce speed until feasible
             if (initialVelocity == Vector3.zero)
@@ -922,7 +932,7 @@ namespace CricketGame
                 for (int i = 0; i < 6; i++)
                 {
                     trySpeed *= 0.95f; // reduce 5% and try again
-                    initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, trySpeed, gravity, false);
+                    initialVelocity = SolveBallisticVelocity(startPosition, finalTargetPosition, trySpeed, gravity, false);
                     if (initialVelocity != Vector3.zero) { ballSpeed = trySpeed; break; }
                 }
             }
@@ -933,7 +943,7 @@ namespace CricketGame
                 // Try high-arc solution for speed 12 if low-arc failed
                 if (initialVelocity == Vector3.zero)
                 {
-                    initialVelocity = SolveBallisticVelocity(startPosition, targetPosition, ballSpeed, gravity, true);
+                    initialVelocity = SolveBallisticVelocity(startPosition, finalTargetPosition, ballSpeed, gravity, true);
                 }
                 
                 // Apply extra horizontal damping for speed 12
@@ -1068,6 +1078,34 @@ namespace CricketGame
             Debug.Log($"🎯 VELOCITY VALUES: initialVelocity={initialVelocity}, magnitude={initialVelocity.magnitude:F2}");
             Debug.Log($"🎯 RIGIDBODY STATUS: ballRigidbodyToUse={ballRigidbodyToUse != null}, isKinematic={ballRigidbodyToUse?.isKinematic}");
             
+            // 🎯 SPEED BOOST: Set initial speed for speed boost system
+            BallSpeedBoost ballSpeedBoost = currentBallInstance?.GetComponent<BallSpeedBoost>();
+            if (ballSpeedBoost == null)
+            {
+                // Try to add BallSpeedBoost component if missing
+                ballSpeedBoost = currentBallInstance?.AddComponent<BallSpeedBoost>();
+                if (ballSpeedBoost != null)
+                {
+                    Debug.Log($"🎯 SPEED BOOST: Added BallSpeedBoost component to ball instance");
+                }
+            }
+            
+            if (ballSpeedBoost != null)
+            {
+                ballSpeedBoost.SetInitialSpeed(ballSpeed);
+                ballSpeedBoost.CheckConfiguration(); // Debug configuration
+                DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
+                Debug.Log($"🎯 SPEED BOOST: Set initial speed to {ballSpeed:F1} m/s for {currentDelivery} delivery");
+                Debug.Log($"🎯 DELIVERY TYPE: Currently using {currentDelivery} delivery system");
+            }
+            else
+            {
+                Debug.LogWarning($"🎯 SPEED BOOST: Could not add BallSpeedBoost component! Speed boost will not work.");
+            }
+            
+            // 🎯 SWING TRAJECTORY: Calculate swing-modified trajectory (already calculated above)
+            
+             // 🎯 USE NORMAL PHYSICS FOR ALL DELIVERIES (including In Swing)
             if (ballSettings.UseRealisticPhysics)
             {
                 if (useSmoothMovement)
@@ -1101,8 +1139,92 @@ namespace CricketGame
             // Mark as landed
             hasLanded = true;
             Debug.Log("?? Ball has landed on target!");
+            
+            // 🎯 SPEED BOOST: Trigger speed boost when ball hits target
+            BallSpeedBoost targetSpeedBoost = currentBallInstance?.GetComponent<BallSpeedBoost>();
+            if (targetSpeedBoost != null)
+            {
+                targetSpeedBoost.OnTargetHit();
+                DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
+                Debug.Log($"🎯 SPEED BOOST: Triggered for {currentDelivery} delivery with initial speed {ballSpeed:F1} m/s");
+                Debug.Log($"🎯 DELIVERY CONFIRMATION: Speed boost applied to {currentDelivery} delivery");
+            }
+            else
+            {
+                Debug.LogWarning($"🎯 SPEED BOOST: BallSpeedBoost component not found when ball hit target!");
+                Debug.LogWarning($"🎯 SPEED BOOST: This should not happen if speed boost was set up correctly during ball launch.");
+            }
         }
 
+        // --- Delivery System ---
+        /// <summary>
+        /// Calculate delivery-modified trajectory target position
+        /// </summary>
+        private Vector3 CalculateDeliveryTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
+        {
+            if (deliverySystem == null)
+            {
+                Debug.LogWarning("🎯 DELIVERY: No delivery system assigned, using flat delivery");
+                return targetPos;
+            }
+            
+            Vector3 deliveryTarget = deliverySystem.CalculateTrajectory(startPos, targetPos, ballSpeed);
+            
+            Debug.Log($"🎯 DELIVERY: {deliverySystem.GetCurrentDeliveryType()} trajectory calculated at speed {ballSpeed:F1} m/s");
+            
+            return deliveryTarget;
+        }
+        
+        /// <summary>
+        /// Reset delivery system for new ball
+        /// </summary>
+        private void ResetDeliverySystem()
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.ResetDelivery();
+                Debug.Log("🎯 DELIVERY: Reset delivery system for new ball");
+            }
+        }
+        
+        /// <summary>
+        /// Switch to flat delivery
+        /// </summary>
+        public void SwitchToFlatDelivery()
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.SetDeliveryType(DeliveryType.Flat);
+                Debug.Log("🎯 DELIVERY: Switched to Flat delivery");
+            }
+        }
+        
+        
+        /// <summary>
+        /// Switch to in swing delivery
+        /// </summary>
+        public void SwitchToInSwingDelivery()
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.SetDeliveryType(DeliveryType.InSwing);
+                Debug.Log("🎯 DELIVERY: Switched to In Swing delivery");
+            }
+        }
+        
+        /// <summary>
+        /// Switch to out swing delivery
+        /// </summary>
+        public void SwitchToOutSwingDelivery()
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.SetDeliveryType(DeliveryType.OutSwing);
+                Debug.Log("🎯 DELIVERY: Switched to Out Swing delivery");
+            }
+        }
+        
+        
         // --- Analytic ballistic solver ---
         // Returns initial velocity that hits target with given speed and gravity. If infeasible, returns Vector3.zero
         private Vector3 SolveBallisticVelocity(Vector3 start, Vector3 end, float speed, float gravity, bool highArc)
