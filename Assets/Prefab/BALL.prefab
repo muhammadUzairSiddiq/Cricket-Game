@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 16
+  globalBallSpeed: 9
   arcHeight: 1
   gravity: 9.81
   mass: 0.16
@@ -302,8 +302,8 @@ MonoBehaviour:
   destroyDelay: 5
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.5019312
-  yorkerBounceFriction: 0.8364
+  yorkerBounceForce: 0.40435964
+  yorkerBounceFriction: 0.656
   yorkerRotationX: 80
   fullLengthArcHeight: 0
   fullLengthBounceForce: 0.4
@@ -314,12 +314,12 @@ MonoBehaviour:
   goodLengthBounceFriction: 1.2
   goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.7770031
+  shortLengthBounceForce: 0.80295974
   shortLengthBounceFriction: 1.122
   shortLengthRotationX: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.9242262
-  bouncerBounceFriction: 1.2
+  bouncerBounceForce: 0.7144391
+  bouncerBounceFriction: 0.976
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
@@ -357,7 +357,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8718896542698064258}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c13e783ff03f604e9c24ce5306bf83b, type: 3}
   m_Name: 

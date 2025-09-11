@@ -2229,7 +2229,7 @@ MonoBehaviour:
   enableInSwing: 1
   baseSwingForce: 1
   minSwingAtSpeed9: -0.2
-  maxSwingAtSpeed16: -1.47
+  maxSwingAtSpeed16: -1.35
   swingDirection: {x: 0, y: 0, z: 0}
   showDebugLogs: 1
 --- !u!114 &1212878762
