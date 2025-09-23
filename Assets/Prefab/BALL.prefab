@@ -156,7 +156,7 @@ MonoBehaviour:
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  bounceDetectionRadius: 0.5
+  bounceDetectionRadius: 1
   minBounceVelocity: 0.2
   heightTolerance: 0.2
   showBounceDebug: 1
@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 12.749999
+  globalBallSpeed: 16
   arcHeight: 1
   gravity: 9.81
   mass: 0.16
@@ -302,7 +302,7 @@ MonoBehaviour:
   destroyDelay: 5
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.49699926
+  yorkerBounceForce: 0.50545734
   yorkerBounceFriction: 0.8364
   yorkerRotationX: 80
   fullLengthArcHeight: 0
@@ -310,16 +310,16 @@ MonoBehaviour:
   fullLengthBounceFriction: 0.5
   fullLengthRotationX: 120
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.87640977
+  goodLengthBounceForce: 0.8957634
   goodLengthBounceFriction: 1.2
   goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.782369
+  shortLengthBounceForce: 0.8010463
   shortLengthBounceFriction: 1.122
   shortLengthRotationX: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.810384
-  bouncerBounceFriction: 1.0675
+  bouncerBounceForce: 0.7816567
+  bouncerBounceFriction: 1.0370001
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
