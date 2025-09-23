@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 9
+  globalBallSpeed: 12.749999
   arcHeight: 1
   gravity: 9.81
   mass: 0.16
@@ -302,24 +302,24 @@ MonoBehaviour:
   destroyDelay: 5
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.40435964
-  yorkerBounceFriction: 0.656
+  yorkerBounceForce: 0.49699926
+  yorkerBounceFriction: 0.8364
   yorkerRotationX: 80
   fullLengthArcHeight: 0
   fullLengthBounceForce: 0.4
   fullLengthBounceFriction: 0.5
   fullLengthRotationX: 120
   goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.8944484
+  goodLengthBounceForce: 0.87640977
   goodLengthBounceFriction: 1.2
   goodLengthRotationX: 20
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.80295974
+  shortLengthBounceForce: 0.782369
   shortLengthBounceFriction: 1.122
   shortLengthRotationX: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.7144391
-  bouncerBounceFriction: 0.976
+  bouncerBounceForce: 0.810384
+  bouncerBounceFriction: 1.0675
   bouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05

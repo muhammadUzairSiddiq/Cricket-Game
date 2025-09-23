@@ -2,11 +2,12 @@ using UnityEngine;
 
 namespace CricketGame
 {
-    public class InSwingDelivery : MonoBehaviour
+    public class SeamInDelivery : MonoBehaviour
     {
-        [Header("In Swing Settings")]
-        [Tooltip("Enable/disable in swing delivery")]
-        [SerializeField] private bool enableInSwing = true;
+        [Header("Seam In Settings")]
+        [Tooltip("Enable/disable seam in delivery")]
+        [UnityEngine.Serialization.FormerlySerializedAs("enableInSwing")]
+        [SerializeField] private bool enableSeamIn = true;
         
         [Tooltip("Base swing force multiplier")]
         [SerializeField] private float baseSwingForce = 1.0f;
@@ -18,7 +19,7 @@ namespace CricketGame
         [SerializeField] private float maxSwingAtSpeed16 = 2.5f;
         
         [Header("Swing Direction")]
-        [Tooltip("Direction of in swing (negative X = left, positive X = right)")]
+        [Tooltip("Direction of seam in (negative X = left, positive X = right)")]
         [SerializeField] private Vector3 swingDirection = new Vector3(-1f, 0f, 0f);
         
         [Header("Debug")]
@@ -28,7 +29,7 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 InSwingDelivery: Ready for in swing deliveries");
+                Debug.Log("🎯 SeamInDelivery: Ready for seam in deliveries");
             }
         }
         
@@ -37,7 +38,7 @@ namespace CricketGame
         /// </summary>
         public Vector3 CalculateTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableInSwing)
+            if (!enableSeamIn)
                 return targetPos;
                 
             // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
@@ -48,14 +49,14 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 InSwingDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
+                Debug.Log($"🎯 SeamInDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
             }
             
             return swingTarget;
         }
         
         /// <summary>
-        /// Calculate Bezier curve target for smooth in swing trajectory
+        /// Calculate Bezier curve target for smooth seam in trajectory
         /// </summary>
         private Vector3 CalculateBezierCurveTarget(Vector3 startPos, Vector3 targetPos, float swingForce)
         {
@@ -66,7 +67,7 @@ namespace CricketGame
             // Create control points for Bezier curve
             Vector3 midPoint = Vector3.Lerp(startPos, targetPos, 0.5f);
             
-            // Control point for left curve (in swing)
+            // Control point for left curve (seam in)
             Vector3 leftOffset = new Vector3(-swingForce * 3f, 0, 0); // Curve left
             Vector3 controlPoint = midPoint + leftOffset;
             
@@ -96,11 +97,11 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Get in swing direction for trajectory calculation
+        /// Get seam in direction for trajectory calculation
         /// </summary>
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableInSwing)
+            if (!enableSeamIn)
                 return (targetPos - startPos).normalized;
                 
             float swingForce = CalculateSwingForce(ballSpeed);
@@ -111,7 +112,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 InSwingDelivery: Swing direction calculated - Force: {swingForce:F2}");
+                Debug.Log($"🎯 SeamInDelivery: Swing direction calculated - Force: {swingForce:F2}");
             }
             
             return swingDirection.normalized;
@@ -130,22 +131,22 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Reset in swing delivery for new ball
+        /// Reset seam in delivery for new ball
         /// </summary>
         public void ResetDelivery()
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 InSwingDelivery: Reset for new ball");
+                Debug.Log("🎯 SeamInDelivery: Reset for new ball");
             }
         }
         
         /// <summary>
-        /// Get in swing delivery info
+        /// Get seam in delivery info
         /// </summary>
         public string GetDeliveryInfo()
         {
-            return "In Swing Delivery - Curves left towards batsman";
+            return "Seam In Delivery - Curves in towards batsman";
         }
         
         /// <summary>
@@ -159,7 +160,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 InSwingDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
+                Debug.Log($"🎯 SeamInDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
             }
         }
     }

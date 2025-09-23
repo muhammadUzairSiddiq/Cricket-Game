@@ -1201,26 +1201,26 @@ namespace CricketGame
         
         
         /// <summary>
-        /// Switch to in swing delivery
+        /// Switch to seam in delivery
         /// </summary>
         public void SwitchToInSwingDelivery()
         {
             if (deliverySystem != null)
             {
-                deliverySystem.SetDeliveryType(DeliveryType.InSwing);
-                Debug.Log("🎯 DELIVERY: Switched to In Swing delivery");
+                deliverySystem.SetDeliveryType(DeliveryType.SeamIn);
+                Debug.Log("🎯 DELIVERY: Switched to Seam In delivery");
             }
         }
         
         /// <summary>
-        /// Switch to out swing delivery
+        /// Switch to seam out delivery
         /// </summary>
         public void SwitchToOutSwingDelivery()
         {
             if (deliverySystem != null)
             {
-                deliverySystem.SetDeliveryType(DeliveryType.OutSwing);
-                Debug.Log("🎯 DELIVERY: Switched to Out Swing delivery");
+                deliverySystem.SetDeliveryType(DeliveryType.SeamOut);
+                Debug.Log("🎯 DELIVERY: Switched to Seam Out delivery");
             }
         }
         

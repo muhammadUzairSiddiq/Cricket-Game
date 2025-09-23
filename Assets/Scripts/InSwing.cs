@@ -3,11 +3,12 @@ using System.Collections;
 
 namespace CricketGame
 {
-    public class InSwing : MonoBehaviour
+    public class SeamIn : MonoBehaviour
     {
-        [Header("In Swing Settings")]
-        [Tooltip("Enable/disable in swing effect")]
-        [SerializeField] private bool enableInSwing = true;
+        [Header("Seam In Settings")]
+        [Tooltip("Enable/disable seam in effect")]
+        [UnityEngine.Serialization.FormerlySerializedAs("enableInSwing")]
+        [SerializeField] private bool enableSeamIn = true;
         
         [Tooltip("Base swing force multiplier")]
         [SerializeField] private float baseSwingForce = 1.0f;
@@ -19,7 +20,7 @@ namespace CricketGame
         [SerializeField] private float maxSwingAtSpeed16 = 2.5f;
         
         [Header("Swing Direction")]
-        [Tooltip("Direction of in swing (negative X = left, positive X = right)")]
+        [Tooltip("Direction of seam in (negative X = left, positive X = right)")]
         [SerializeField] private Vector3 swingDirection = new Vector3(-1f, 0f, 0f);
         
         [Header("Debug")]
@@ -40,7 +41,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log("🎯 InSwing: Ready to apply in swing effect");
+                Debug.Log("🎯 SeamIn: Ready to apply seam in effect");
             }
         }
         
@@ -49,7 +50,7 @@ namespace CricketGame
         /// </summary>
         public Vector3 CalculateSwingTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableInSwing)
+            if (!enableSeamIn)
                 return Vector3.zero;
                 
             // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
@@ -63,7 +64,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 InSwing: Calculated swing trajectory - Force: {swingForce:F2}, Offset: {swingOffset:F2}");
+                Debug.Log($"🎯 SeamIn: Calculated swing trajectory - Force: {swingForce:F2}, Offset: {swingOffset:F2}");
             }
             
             return swingTarget;
@@ -74,7 +75,7 @@ namespace CricketGame
         /// </summary>
         public Vector3 GetSwingDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableInSwing)
+            if (!enableSeamIn)
                 return (targetPos - startPos).normalized;
                 
             float swingForce = CalculateSwingForce(ballSpeed);
@@ -106,7 +107,7 @@ namespace CricketGame
             swingApplied = false;
             if (showDebugLogs)
             {
-                Debug.Log("🎯 InSwing: Reset for new ball");
+                Debug.Log("🎯 SeamIn: Reset for new ball");
             }
         }
         
@@ -129,7 +130,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 InSwing: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
+                Debug.Log($"🎯 SeamIn: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
             }
         }
     }

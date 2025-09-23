@@ -3,11 +3,12 @@ using System.Collections;
 
 namespace CricketGame
 {
-    public class OutSwing : MonoBehaviour
+    public class SeamOut : MonoBehaviour
     {
-        [Header("Out Swing Settings")]
-        [Tooltip("Enable/disable out swing effect")]
-        [SerializeField] private bool enableOutSwing = true;
+        [Header("Seam Out Settings")]
+        [Tooltip("Enable/disable seam out effect")]
+        [UnityEngine.Serialization.FormerlySerializedAs("enableOutSwing")]
+        [SerializeField] private bool enableSeamOut = true;
         
         [Tooltip("Base swing force multiplier")]
         [SerializeField] private float baseSwingForce = 1.0f;
@@ -19,7 +20,7 @@ namespace CricketGame
         [SerializeField] private float maxSwingAtSpeed16 = 2.5f;
         
         [Header("Swing Direction")]
-        [Tooltip("Direction of out swing (positive X = right, negative X = left)")]
+        [Tooltip("Direction of seam out (positive X = right, negative X = left)")]
         [SerializeField] private Vector3 swingDirection = new Vector3(1f, 0f, 0f);
         
         [Header("Debug")]
@@ -40,7 +41,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log("🎯 OutSwing: Ready to apply out swing effect");
+                Debug.Log("🎯 SeamOut: Ready to apply seam out effect");
             }
         }
         
@@ -49,7 +50,7 @@ namespace CricketGame
         /// </summary>
         public Vector3 CalculateSwingTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableOutSwing)
+            if (!enableSeamOut)
                 return Vector3.zero;
                 
             // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
@@ -63,7 +64,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 OutSwing: Calculated swing trajectory - Force: {swingForce:F2}, Offset: {swingOffset:F2}");
+                Debug.Log($"🎯 SeamOut: Calculated swing trajectory - Force: {swingForce:F2}, Offset: {swingOffset:F2}");
             }
             
             return swingTarget;
@@ -74,7 +75,7 @@ namespace CricketGame
         /// </summary>
         public Vector3 GetSwingDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableOutSwing)
+            if (!enableSeamOut)
                 return (targetPos - startPos).normalized;
                 
             float swingForce = CalculateSwingForce(ballSpeed);
@@ -106,7 +107,7 @@ namespace CricketGame
             swingApplied = false;
             if (showDebugLogs)
             {
-                Debug.Log("🎯 OutSwing: Reset for new ball");
+                Debug.Log("🎯 SeamOut: Reset for new ball");
             }
         }
         
@@ -129,7 +130,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 OutSwing: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
+                Debug.Log($"🎯 SeamOut: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
             }
         }
     }

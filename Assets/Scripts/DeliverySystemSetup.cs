@@ -11,8 +11,10 @@ namespace CricketGame
         
         [Header("UI Buttons")]
         [SerializeField] private Button flatDeliveryButton;
-        [SerializeField] private Button inSwingButton;
-        [SerializeField] private Button outSwingButton;
+        [UnityEngine.Serialization.FormerlySerializedAs("inSwingButton")]
+        [SerializeField] private Button seamInButton;
+        [UnityEngine.Serialization.FormerlySerializedAs("outSwingButton")]
+        [SerializeField] private Button seamOutButton;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -63,27 +65,27 @@ namespace CricketGame
                 });
             }
             
-            // Setup In Swing Button
-            if (inSwingButton != null)
+            // Setup Seam In Button
+            if (seamInButton != null)
             {
-                inSwingButton.onClick.AddListener(() => {
+                seamInButton.onClick.AddListener(() => {
                     bowlingController.SwitchToInSwingDelivery();
-                    if (showDebugLogs) Debug.Log("🎯 SETUP: In swing button clicked");
+                    if (showDebugLogs) Debug.Log("🎯 SETUP: Seam in button clicked");
                 });
             }
             
-            // Setup Out Swing Button
-            if (outSwingButton != null)
+            // Setup Seam Out Button
+            if (seamOutButton != null)
             {
-                outSwingButton.onClick.AddListener(() => {
+                seamOutButton.onClick.AddListener(() => {
                     bowlingController.SwitchToOutSwingDelivery();
-                    if (showDebugLogs) Debug.Log("🎯 SETUP: Out swing button clicked");
+                    if (showDebugLogs) Debug.Log("🎯 SETUP: Seam out button clicked");
                 });
             }
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SETUP: UI buttons configured - Flat: {flatDeliveryButton != null}, In Swing: {inSwingButton != null}, Out Swing: {outSwingButton != null}");
+                Debug.Log($"🎯 SETUP: UI buttons configured - Flat: {flatDeliveryButton != null}, Seam In: {seamInButton != null}, Seam Out: {seamOutButton != null}");
             }
         }
         

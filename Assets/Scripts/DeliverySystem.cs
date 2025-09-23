@@ -5,8 +5,8 @@ namespace CricketGame
     public enum DeliveryType
     {
         Flat,
-        InSwing,
-        OutSwing
+        SeamIn,
+        SeamOut
     }
     
     public class DeliverySystem : MonoBehaviour
@@ -16,8 +16,10 @@ namespace CricketGame
         
         [Header("Delivery Components")]
         [SerializeField] private FlatDelivery flatDelivery;
-        [SerializeField] private InSwingDelivery inSwingDelivery;
-        [SerializeField] private OutSwingDelivery outSwingDelivery;
+        [UnityEngine.Serialization.FormerlySerializedAs("inSwingDelivery")]
+        [SerializeField] private SeamInDelivery seamInDelivery;
+        [UnityEngine.Serialization.FormerlySerializedAs("outSwingDelivery")]
+        [SerializeField] private SeamOutDelivery seamOutDelivery;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -53,11 +55,11 @@ namespace CricketGame
                 case DeliveryType.Flat:
                     return flatDelivery?.CalculateTrajectory(startPos, targetPos, ballSpeed) ?? targetPos;
                     
-                case DeliveryType.InSwing:
-                    return inSwingDelivery?.CalculateTrajectory(startPos, targetPos, ballSpeed) ?? targetPos;
+                case DeliveryType.SeamIn:
+                    return seamInDelivery?.CalculateTrajectory(startPos, targetPos, ballSpeed) ?? targetPos;
                     
-                case DeliveryType.OutSwing:
-                    return outSwingDelivery?.CalculateTrajectory(startPos, targetPos, ballSpeed) ?? targetPos;
+                case DeliveryType.SeamOut:
+                    return seamOutDelivery?.CalculateTrajectory(startPos, targetPos, ballSpeed) ?? targetPos;
                     
                 default:
                     return targetPos;
@@ -74,11 +76,11 @@ namespace CricketGame
                 case DeliveryType.Flat:
                     return flatDelivery?.GetDeliveryDirection(startPos, targetPos, ballSpeed) ?? (targetPos - startPos).normalized;
                     
-                case DeliveryType.InSwing:
-                    return inSwingDelivery?.GetDeliveryDirection(startPos, targetPos, ballSpeed) ?? (targetPos - startPos).normalized;
+                case DeliveryType.SeamIn:
+                    return seamInDelivery?.GetDeliveryDirection(startPos, targetPos, ballSpeed) ?? (targetPos - startPos).normalized;
                     
-                case DeliveryType.OutSwing:
-                    return outSwingDelivery?.GetDeliveryDirection(startPos, targetPos, ballSpeed) ?? (targetPos - startPos).normalized;
+                case DeliveryType.SeamOut:
+                    return seamOutDelivery?.GetDeliveryDirection(startPos, targetPos, ballSpeed) ?? (targetPos - startPos).normalized;
                     
                 default:
                     return (targetPos - startPos).normalized;
@@ -91,8 +93,8 @@ namespace CricketGame
         public void ResetDelivery()
         {
             flatDelivery?.ResetDelivery();
-            inSwingDelivery?.ResetDelivery();
-            outSwingDelivery?.ResetDelivery();
+            seamInDelivery?.ResetDelivery();
+            seamOutDelivery?.ResetDelivery();
             
             if (showDebugLogs)
             {

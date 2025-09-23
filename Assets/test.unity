@@ -2208,10 +2208,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d8cdda58bb43e8478c90b047ab4247a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableOutSwing: 1
+  enableSeamOut: 1
   baseSwingForce: 1
   minSwingAtSpeed9: -0.2
-  maxSwingAtSpeed16: -1.44
+  maxSwingAtSpeed16: -1.35
   swingDirection: {x: 0, y: 0, z: 0}
   showDebugLogs: 0
 --- !u!114 &1212878761
@@ -2226,7 +2226,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 448e933923854a34c8d7be22b14c9bd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableInSwing: 1
+  enableSeamIn: 1
   baseSwingForce: 1
   minSwingAtSpeed9: -0.2
   maxSwingAtSpeed16: -1.35
@@ -2258,10 +2258,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d520999e2b96148baea7c5dd66d0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentDeliveryType: 1
+  currentDeliveryType: 2
   flatDelivery: {fileID: 1212878762}
-  inSwingDelivery: {fileID: 1212878761}
-  outSwingDelivery: {fileID: 1212878760}
+  seamInDelivery: {fileID: 1212878761}
+  seamOutDelivery: {fileID: 1212878760}
   showDebugLogs: 1
 --- !u!4 &1212878764
 Transform:
@@ -4089,7 +4089,7 @@ GameObject:
   - component: {fileID: 2114426368}
   - component: {fileID: 2114426370}
   m_Layer: 0
-  m_Name: Script
+  m_Name: Bowling Machine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

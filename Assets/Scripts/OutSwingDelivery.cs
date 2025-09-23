@@ -2,11 +2,12 @@ using UnityEngine;
 
 namespace CricketGame
 {
-    public class OutSwingDelivery : MonoBehaviour
+    public class SeamOutDelivery : MonoBehaviour
     {
-        [Header("Out Swing Settings")]
-        [Tooltip("Enable/disable out swing delivery")]
-        [SerializeField] private bool enableOutSwing = true;
+        [Header("Seam Out Settings")]
+        [Tooltip("Enable/disable seam out delivery")]
+        [UnityEngine.Serialization.FormerlySerializedAs("enableOutSwing")]
+        [SerializeField] private bool enableSeamOut = true;
         
         [Tooltip("Base swing force multiplier")]
         [SerializeField] private float baseSwingForce = 1.0f;
@@ -18,7 +19,7 @@ namespace CricketGame
         [SerializeField] private float maxSwingAtSpeed16 = 1.47f;
         
         [Header("Swing Direction")]
-        [Tooltip("Direction of out swing (positive X = right, negative X = left)")]
+        [Tooltip("Direction of seam out (positive X = right, negative X = left)")]
         [SerializeField] private Vector3 swingDirection = new Vector3(1f, 0f, 0f);
         
         [Header("Debug")]
@@ -28,16 +29,16 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 OutSwingDelivery: Ready for out swing deliveries");
+                Debug.Log("🎯 SeamOutDelivery: Ready for seam out deliveries");
             }
         }
         
         /// <summary>
-        /// Calculate out swing trajectory (curves right away from batsman)
+        /// Calculate seam out trajectory (curves away from batsman)
         /// </summary>
         public Vector3 CalculateTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableOutSwing)
+            if (!enableSeamOut)
                 return targetPos;
                 
             // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
@@ -48,14 +49,14 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 OutSwingDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
+                Debug.Log($"🎯 SeamOutDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
             }
             
             return swingTarget;
         }
         
         /// <summary>
-        /// Calculate Bezier curve target for smooth out swing trajectory
+        /// Calculate Bezier curve target for smooth seam out trajectory
         /// </summary>
         private Vector3 CalculateBezierCurveTarget(Vector3 startPos, Vector3 targetPos, float swingForce)
         {
@@ -66,7 +67,7 @@ namespace CricketGame
             // Create control points for Bezier curve
             Vector3 midPoint = Vector3.Lerp(startPos, targetPos, 0.5f);
             
-            // Control point for right curve (out swing) - POSITIVE values
+            // Control point for right curve (seam out) - POSITIVE values
             Vector3 rightOffset = new Vector3(swingForce * 3f, 0, 0); // Curve right
             Vector3 controlPoint = midPoint + rightOffset;
             
@@ -96,11 +97,11 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Get out swing direction for trajectory calculation
+        /// Get seam out direction for trajectory calculation
         /// </summary>
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableOutSwing)
+            if (!enableSeamOut)
                 return (targetPos - startPos).normalized;
                 
             float swingForce = CalculateSwingForce(ballSpeed);
@@ -111,7 +112,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 OutSwingDelivery: Swing direction calculated - Force: {swingForce:F2}");
+                Debug.Log($"🎯 SeamOutDelivery: Swing direction calculated - Force: {swingForce:F2}");
             }
             
             return swingDirection.normalized;
@@ -130,22 +131,22 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Reset out swing delivery for new ball
+        /// Reset seam out delivery for new ball
         /// </summary>
         public void ResetDelivery()
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 OutSwingDelivery: Reset for new ball");
+                Debug.Log("🎯 SeamOutDelivery: Reset for new ball");
             }
         }
         
         /// <summary>
-        /// Get out swing delivery info
+        /// Get seam out delivery info
         /// </summary>
         public string GetDeliveryInfo()
         {
-            return "Out Swing Delivery - Curves right away from batsman";
+            return "Seam Out Delivery - Curves away from batsman";
         }
         
         /// <summary>
@@ -159,7 +160,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 OutSwingDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
+                Debug.Log($"🎯 SeamOutDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
             }
         }
     }
