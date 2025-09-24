@@ -2189,6 +2189,7 @@ GameObject:
   - component: {fileID: 1212878762}
   - component: {fileID: 1212878761}
   - component: {fileID: 1212878760}
+  - component: {fileID: 1212878765}
   m_Layer: 0
   m_Name: Delievery System
   m_TagString: Untagged
@@ -2258,10 +2259,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d520999e2b96148baea7c5dd66d0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentDeliveryType: 2
+  currentDeliveryType: 0
+  enableDeliverySystem: 1
   flatDelivery: {fileID: 1212878762}
   seamInDelivery: {fileID: 1212878761}
   seamOutDelivery: {fileID: 1212878760}
+  inswingDelivery: {fileID: 1212878765}
   showDebugLogs: 1
 --- !u!4 &1212878764
 Transform:
@@ -2278,6 +2281,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1212878765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1212878759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a5b5835c7f91404892c0daed6d49506, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableInSwing: 1
+  baseSwingForce: 1
+  minSwingAtSpeed9: -0.2
+  maxSwingAtSpeed16: -1.35
+  swingDirection: {x: -1, y: 0, z: 0}
+  enableCurvedPath: 1
+  curveIntensity: 0.75
+  pathArcHeight: 0.5
+  bendDistanceScale: 0.075
+  showDebugLogs: 1
+  showCurvedPathInScene: 1
 --- !u!1 &1213891545
 GameObject:
   m_ObjectHideFlags: 0
@@ -3322,7 +3348,7 @@ MonoBehaviour:
   speedText: {fileID: 77483797}
   ballSettingsPrefab: {fileID: 5986885649269739266, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
   bowlingController: {fileID: 2114426370}
-  minSpeed: 9
+  minSpeed: 11
   maxSpeed: 16
   currentSpeed: 12
   showSpeedInKmh: 1

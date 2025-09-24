@@ -59,7 +59,7 @@ namespace CricketGame
             if (hasBounced) return;
             
             // 🎯 SIMPLE: Check if ball is moving downward with sufficient velocity
-            if (ballRigidbody.linearVelocity.y < -minBounceVelocity)
+            if (ballRigidbody.linearVelocity.y < -minBounceVelocity || ballRigidbody.isKinematic == false && ballRigidbody.linearVelocity.magnitude > 0.1f)
             {
                 // 🎯 SIMPLE: Check if ball is near the target
                 if (IsNearTarget())
@@ -88,8 +88,10 @@ namespace CricketGame
             Transform target = bowlingSystem.GetTarget();
             if (target == null) return false;
             
+            // Expand target radius slightly so path-follow completion still triggers a bounce
             float distanceToTarget = Vector3.Distance(transform.position, target.position);
-            return distanceToTarget <= bounceDetectionRadius;
+            float effectiveRadius = Mathf.Max(0.5f, bounceDetectionRadius);
+            return distanceToTarget <= effectiveRadius;
         }
         
         /// <summary>
@@ -103,7 +105,9 @@ namespace CricketGame
             if (target == null) return false;
             
             float heightDifference = Mathf.Abs(transform.position.y - target.position.y);
-            return heightDifference <= heightTolerance;
+            // Be a bit more forgiving right after path-follow completes
+            float effectiveTolerance = Mathf.Max(0.15f, heightTolerance);
+            return heightDifference <= effectiveTolerance;
         }
         
 

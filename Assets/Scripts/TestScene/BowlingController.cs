@@ -804,9 +804,14 @@ namespace CricketGame
             // Wait for ball to land and bounce
             yield return StartCoroutine(WaitForLanding());
             
+            // Reset ball state so new balls can be bowled
+            ballIsBowled = false;
+            hasLanded = false;
+            ResetBounceState();
+            
             // Ball will destroy itself after 5 seconds via BallAutoDestroy script
             Debug.Log("?? Ball has landed and bounced - it will destroy itself in 5 seconds");
-            Debug.Log("?? Press S to create a new ball when ready!");
+            Debug.Log("?? Ball state reset - ready for new ball! Press S to create a new ball when ready!");
         }
         
         /// <summary>
@@ -1105,9 +1110,93 @@ namespace CricketGame
             
             // 🎯 SWING TRAJECTORY: Calculate swing-modified trajectory (already calculated above)
             
-             // 🎯 USE NORMAL PHYSICS FOR ALL DELIVERIES (including In Swing)
-            if (ballSettings.UseRealisticPhysics)
+             // 🎯 CURVED PATH CHECK: Force kinematic movement for curved path deliveries
+            bool useKinematicForCurvedPath = false;
+            if (deliverySystem != null)
             {
+                DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
+                if (currentDelivery == DeliveryType.Inswing)
+                {
+                    // Get InswingDelivery component from DeliverySystem
+                    InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>();
+                    if (inswingDelivery == null)
+                    {
+                        // Try to find it on the same GameObject as DeliverySystem
+                        inswingDelivery = deliverySystem.transform.GetComponent<InswingDelivery>();
+                    }
+                    
+                    if (inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled())
+                    {
+                        useKinematicForCurvedPath = true;
+                        Debug.Log("🎯 CURVED PATH: Forcing kinematic movement for curved path delivery");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"🎯 CURVED PATH: InswingDelivery not found or curved path disabled. InswingDelivery: {inswingDelivery != null}, CurvedPathEnabled: {inswingDelivery?.IsCurvedPathEnabled()}");
+                    }
+                }
+            }
+            
+            // 🎯 USE PATH FOLLOWER FOR INSWING CURVED PATH
+            if (useKinematicForCurvedPath)
+            {
+                Debug.Log("🎯 Using PathFollower for Inswing curved path");
+                InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
+                if (inswingDelivery != null)
+                {
+                    Vector3[] path = inswingDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                    // Ensure physics won't fight the scripted motion
+                    Rigidbody rbFollow = currentBallInstance.GetComponent<Rigidbody>();
+                    if (rbFollow != null)
+                    {
+                        rbFollow.linearVelocity = Vector3.zero;
+                        rbFollow.angularVelocity = Vector3.zero;
+                        rbFollow.isKinematic = true;
+                    }
+
+                    // Compute final forward direction of the path (used to resume physics)
+                    Vector3 finalDir = (path[path.Length - 1] - path[path.Length - 2]).normalized;
+
+                    var follower = currentBallInstance.AddComponent<PathFollower>();
+                    // Use InswingDelivery's public pathArcHeight so you can tune elevation in the Inspector
+                    float addedArc = inswingDelivery.pathArcHeight;
+                    follower.Initialize(path, ballSpeed, addedArc, () =>
+                    {
+                        hasLanded = true;
+                        Debug.Log("🎯 PathFollower complete");
+                        // Re-enable physics so the ball can bounce and roll towards wicket
+                        if (rbFollow != null)
+                        {
+                            rbFollow.isKinematic = false;
+                            rbFollow.useGravity = true;
+                            // Resume motion along the last path direction
+                            float resumeSpeed = Mathf.Max(10f, ballSpeed * 1.0f);
+                            // Ensure a clear downward component so CricketBallBounce detects the bounce
+                            float downwardSpeed = Mathf.Max(4.5f, resumeSpeed * 0.35f);
+                            Vector3 resumeVelocity = finalDir * resumeSpeed + Vector3.down * downwardSpeed;
+                            // Nudge position slightly above target so it falls onto pitch
+                            currentBallInstance.transform.position = targetPosition + Vector3.up * 0.03f;
+                            rbFollow.linearVelocity = resumeVelocity;
+                            // Explicitly trigger first bounce using controller bounce logic for reliability
+                            OnBallBounce(currentBallInstance.transform.position, resumeVelocity);
+                        }
+                    });
+                    follower.Begin();
+                }
+                else
+                {
+                    // Fallback to simple kinematic move
+                    StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
+                }
+            }
+            else if (!ballSettings.UseRealisticPhysics)
+            {
+                Debug.Log("🎯 Using kinematic movement");
+                StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
+            }
+            else
+            {
+                // 🎯 USE PHYSICS FOR STRAIGHT DELIVERIES
                 if (useSmoothMovement)
                 {
                     Debug.Log("🎯 Using smooth velocity application");
@@ -1119,12 +1208,6 @@ namespace CricketGame
                     Debug.Log("🎯 Using direct velocity application");
                 ballRigidbodyToUse.linearVelocity = initialVelocity;
                 }
-            }
-            else
-            {
-                Debug.Log("🎯 Using kinematic movement");
-                // Use kinematic movement for precise control
-                StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
             }
             
             Debug.Log($"?? Ball launched with velocity: {initialVelocity.magnitude:F1} m/s");
@@ -1201,14 +1284,14 @@ namespace CricketGame
         
         
         /// <summary>
-        /// Switch to seam in delivery
+        /// Switch to inswing delivery
         /// </summary>
         public void SwitchToInSwingDelivery()
         {
             if (deliverySystem != null)
             {
-                deliverySystem.SetDeliveryType(DeliveryType.SeamIn);
-                Debug.Log("🎯 DELIVERY: Switched to Seam In delivery");
+                deliverySystem.SetDeliveryType(DeliveryType.Inswing);
+                Debug.Log("🎯 DELIVERY: Switched to Inswing delivery");
             }
         }
         
@@ -1291,16 +1374,20 @@ namespace CricketGame
             float arcHeight = ballSettings != null ? ballSettings.ArcHeight : 1f;
             float gravity = ballSettings != null ? ballSettings.Gravity : 9.81f;
             
+            // Use ball speed for kinematic movement (simpler and more predictable)
+            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
+            
             // ?? FIXED: Use realistic cricket bowling arc (much lower)
             float realisticArcHeight = arcHeight * 0.2f; // Same reduction as physics version
+            
+            // Speed-based arc reduction: slower balls get lower arc to avoid going too high
+            float speedFactor = Mathf.Clamp(ballSpeed / 12f, 0.5f, 1.2f); // Normalize around 12 m/s
+            realisticArcHeight *= speedFactor;
             
             // 🎯 SIMPLIFIED KINEMATIC: Use simpler duration calculation
             Vector3 horizontalStart = new Vector3(startPos.x, 0, startPos.z);
             Vector3 horizontalEnd = new Vector3(endPos.x, 0, endPos.z);
             float horizontalDistance = Vector3.Distance(horizontalStart, horizontalEnd);
-            
-            // Use ball speed for kinematic movement (simpler and more predictable)
-            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
             float baseDuration = horizontalDistance / ballSpeed;
             
             // Apply small correction for arc height
@@ -1330,13 +1417,68 @@ namespace CricketGame
             float rotationEffect = Mathf.Sin(rotationXRadians);
             float adjustedArcHeight = realisticArcHeight + (rotationEffect * 2f); // Adjust arc based on rotation
             
+            // 🎯 CURVED PATH: Check if current delivery supports curved path
+            bool useCurvedPath = false;
+            
+            if (deliverySystem != null)
+            {
+                DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
+                if (currentDelivery == DeliveryType.Inswing)
+                {
+                    InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>();
+                    if (inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled())
+                    {
+                        useCurvedPath = true;
+                        Debug.Log($"🎯 CURVED PATH: Using curved path for Inswing delivery");
+                    }
+                }
+            }
+            
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;
                 
-                // 🎯 FIXED: Use rotated trajectory direction
-                Vector3 currentPos = startPos + trajectoryDirection * Vector3.Distance(startPos, endPos) * t;
+                Vector3 currentPos;
+                
+                if (useCurvedPath)
+                {
+                    // 🎯 CURVED PATH: Follow Bezier curve
+                    InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>();
+                    if (inswingDelivery == null)
+                    {
+                        // Try to find it on the same GameObject as DeliverySystem
+                        inswingDelivery = deliverySystem.transform.GetComponent<InswingDelivery>();
+                    }
+                    
+                    if (inswingDelivery != null)
+                    {
+                        currentPos = inswingDelivery.GetCurvedPathPoint(startPos, endPos, ballSpeed, t);
+                        
+                        // Apply arc height to curved path
+                        float arcCurve = Mathf.Sin(t * Mathf.PI) * adjustedArcHeight;
+                        currentPos.y += arcCurve;
+                        
+                        // Apply downward angle for curved path
+                        if (spawnPoint != null)
+                        {
+                            float kinematicRotationXRadians = spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad;
+                            float downwardAngle = Mathf.Sin(kinematicRotationXRadians) * t * 0.5f;
+                            currentPos.y -= downwardAngle;
+                        }
+                    }
+                    else
+                    {
+                        // Fallback to straight path
+                        currentPos = startPos + trajectoryDirection * Vector3.Distance(startPos, endPos) * t;
+                        float arcCurve = Mathf.Sin(t * Mathf.PI) * adjustedArcHeight;
+                        currentPos.y += arcCurve;
+                    }
+                }
+                else
+                {
+                    // 🎯 STRAIGHT PATH: Use rotated trajectory direction
+                    currentPos = startPos + trajectoryDirection * Vector3.Distance(startPos, endPos) * t;
                 
                 // Use a more realistic arc curve for cricket bowling with X rotation effect
                 // Cricket balls follow a gentle, low arc, not a high parabola
@@ -1349,6 +1491,7 @@ namespace CricketGame
                     float kinematicRotationXRadians = spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad;
                     float downwardAngle = Mathf.Sin(kinematicRotationXRadians) * t * 0.5f; // Progressive downward angle
                     currentPos.y -= downwardAngle;
+                    }
                 }
                 
                 ball.transform.position = currentPos;
@@ -1419,27 +1562,31 @@ namespace CricketGame
                 // Calculate bounce velocity with friction
                 Vector3 newVelocity = bounceVelocity * ballSettings.BounceFriction;
                 
-                // ?? ENHANCED: Apply stronger bounce force for more visible bouncing
-                float enhancedBounceForce = ballSettings.BounceForce;
-                if (currentBounces == 1)
+                // Bounce force tuning
+                // Identify bouncer lengths (short/mid) and reduce bounce to avoid too-high hop
+                bool isBouncerLength = currentLength01 <= 0.35f; // shorter distance → bouncer
+                float enhancedBounceForce;
+                if (isBouncerLength)
                 {
-                    enhancedBounceForce = ballSettings.BounceForce * 1.2f; // First bounce is stronger
-                }
-                else if (currentBounces == 2)
-                {
-                    enhancedBounceForce = ballSettings.BounceForce * 0.9f; // Second bounce slightly weaker
+                    // Reduce bounce to ~60% of base for bouncers (user request)
+                    enhancedBounceForce = ballSettings.BounceForce * 0.6f;
                 }
                 else
                 {
-                    enhancedBounceForce = ballSettings.BounceForce * 0.7f; // Third bounce weaker
-                }
+                    // Gentle scaling for other lengths; avoid exceeding base by much
+                    enhancedBounceForce = ballSettings.BounceForce;
+                    if (currentBounces == 1)
+                        enhancedBounceForce *= 1.05f; // very slight first-bounce lift
+                    else if (currentBounces == 2)
+                        enhancedBounceForce *= 0.9f;
+                    else
+                        enhancedBounceForce *= 0.75f;
 
-                // ?? LENGTH-BASED BOUNCE SCALING
-                // Higher length (yorker, near batsman) => lower bounce; bouncer (mid/short) => higher bounce
-                float lengthBounceScale = Mathf.Lerp(1.25f, 0.65f, currentLength01);
-                // Prevent too-dead bounce; keep some minimum
-                lengthBounceScale = Mathf.Clamp(lengthBounceScale, 0.6f, 1.35f);
+                    // Length-based scaling with max 1.0 to avoid extra boost
+                    float lengthBounceScale = Mathf.Lerp(1.0f, 0.65f, currentLength01);
+                    lengthBounceScale = Mathf.Clamp(lengthBounceScale, 0.65f, 1.0f);
                 enhancedBounceForce *= lengthBounceScale;
+                }
                 
                 // Apply enhanced bounce force to Y velocity
                 newVelocity.y = Mathf.Abs(bounceVelocity.y) * enhancedBounceForce;
