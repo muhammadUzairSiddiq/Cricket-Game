@@ -289,39 +289,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 16
+  globalBallSpeed: 12
   arcHeight: 1
-  gravity: 9.81
+  gravity: 10.5
   mass: 0.16
   drag: 0.02
   angularDrag: 0.02
-  bounceForce: 0.8
+  bounceForce: 1
   bounceFriction: 0.85
   maxBounces: 3
   ballRadius: 0.036
   useRealisticPhysics: 1
-  destroyDelay: 5
+  destroyDelay: 3
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.79735494
+  yorkerBounceForce: 0.7991972
   yorkerBounceFriction: 1.2
-  yorkerRotationX: 70
+  yorkerRotationXMin: 40
+  yorkerRotationXMax: 88
   fullLengthArcHeight: 0
-  fullLengthBounceForce: 0.94074667
+  fullLengthBounceForce: 0.9136451
   fullLengthBounceFriction: 1.2
-  fullLengthRotationX: 120
-  goodLengthArcHeight: 1.5
-  goodLengthBounceForce: 0.76561135
-  goodLengthBounceFriction: 1.0020001
-  goodLengthRotationX: 20
+  fullLengthRotationXMin: 120
+  fullLengthRotationXMax: 108
+  goodLengthArcHeight: 0
+  goodLengthBounceForce: 0.7821158
+  goodLengthBounceFriction: 1.0200001
+  goodLengthRotationXMin: 5
+  goodLengthRotationXMax: 9
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.75331986
-  shortLengthBounceFriction: 1.122
-  shortLengthRotationX: 50
+  shortLengthBounceForce: 0.69043034
+  shortLengthBounceFriction: 0.93500006
+  shortLengthRotationXMin: 40
+  shortLengthRotationXMax: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.7613794
-  bouncerBounceFriction: 1.2
-  bouncerRotationX: -50
+  bouncerBounceForce: 0.7640406
+  bouncerBounceFriction: 0.85
+  bouncerRotationXMin: -50
+  bouncerRotationXMax: -50
+  currentYorkerRotationX: 40
+  currentFullLengthRotationX: 120
+  currentGoodLengthRotationX: 5
+  currentShortLengthRotationX: 40
+  currentBouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05
   speed9Bounce: 0.85
@@ -350,7 +360,7 @@ MonoBehaviour:
   fullLengthPhysicsFriction: 1.5
   goodLengthPhysicsFriction: 1.2
   shortLengthPhysicsFriction: 1.1
-  bouncerPhysicsFriction: 1.5
+  bouncerPhysicsFriction: 1
 --- !u!114 &5278319595849064019
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -372,10 +382,10 @@ MonoBehaviour:
   speed13Boost: 0.2
   speed14Boost: 0.25
   speed15Boost: 0.3
-  speed16Boost: 0.35
+  speed16Boost: 1
   boostDelay: 0.1
   applyBoostOnTargetHit: 1
-  applyBoostOnBounce: 0
+  applyBoostOnBounce: 1
   showDebugLogs: 1
 --- !u!114 &7435138428196163601
 MonoBehaviour:

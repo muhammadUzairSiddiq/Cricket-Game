@@ -147,8 +147,8 @@ Transform:
   m_GameObject: {fileID: 70351612}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.29957464}
-  m_LocalScale: {x: 1.2026782, y: 1, z: 0.18726176}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.30480018}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.19823319}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1569813291}
@@ -795,8 +795,8 @@ Transform:
   m_GameObject: {fileID: 303634356}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.3852518}
-  m_LocalScale: {x: 1.2026782, y: 1, z: 0.23449482}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.3915165}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.19096608}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1569813291}
@@ -903,8 +903,8 @@ Transform:
   m_GameObject: {fileID: 429506973}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.09023708}
-  m_LocalScale: {x: 1.2026782, y: 1, z: 0.22915597}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.08319783}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.2425819}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1569813291}
@@ -2259,7 +2259,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d520999e2b96148baea7c5dd66d0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentDeliveryType: 0
+  currentDeliveryType: 2
   enableDeliverySystem: 1
   flatDelivery: {fileID: 1212878762}
   seamInDelivery: {fileID: 1212878761}
@@ -2332,8 +2332,8 @@ Transform:
   m_GameObject: {fileID: 1213891545}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.14284563}
-  m_LocalScale: {x: 1.2026782, y: 1, z: 0.23449482}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: 0.16354087}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.24823357}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1569813291}
@@ -2987,8 +2987,8 @@ Transform:
   m_GameObject: {fileID: 1569813287}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.7286, y: 0.58, z: 42.5001}
-  m_LocalScale: {x: 3.0518038, y: 0.04, z: 4.946627}
+  m_LocalPosition: {x: 4.7286, y: 0.58, z: 42.4425}
+  m_LocalScale: {x: 3.0518038, y: 0.04, z: 4.672851}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 303634357}
@@ -3026,8 +3026,8 @@ Transform:
   m_GameObject: {fileID: 1582262649}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.5211831}
-  m_LocalScale: {x: 1.2026782, y: 1, z: 0.2519855}
+  m_LocalPosition: {x: -0.006190532, y: 0, z: -0.530126}
+  m_LocalScale: {x: 1.2026782, y: 1, z: 0.24823661}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1569813291}
@@ -3348,7 +3348,7 @@ MonoBehaviour:
   speedText: {fileID: 77483797}
   ballSettingsPrefab: {fileID: 5986885649269739266, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
   bowlingController: {fileID: 2114426370}
-  minSpeed: 11
+  minSpeed: 12
   maxSpeed: 16
   currentSpeed: 12
   showSpeedInKmh: 1
@@ -4115,7 +4115,7 @@ GameObject:
   - component: {fileID: 2114426368}
   - component: {fileID: 2114426370}
   m_Layer: 0
-  m_Name: Bowling Machine
+  m_Name: Bowling Controller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

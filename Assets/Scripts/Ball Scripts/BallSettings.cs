@@ -33,31 +33,43 @@ namespace CricketGame
         [SerializeField] private float yorkerArcHeight = 1.5f;
         [SerializeField] private float yorkerBounceForce = 1.2f;
         [SerializeField] private float yorkerBounceFriction = 0.9f;
-        [SerializeField] private float yorkerRotationX = 0f; // X rotation for downward angle (pitch)
+        [SerializeField] private float yorkerRotationXMin = 0f; // X rotation for low speed (slow ball)
+        [SerializeField] private float yorkerRotationXMax = 80f; // X rotation for high speed (fast ball)
         
         [Header("🟡 Full Length Settings")]
         [SerializeField] private float fullLengthArcHeight = 1.2f;
         [SerializeField] private float fullLengthBounceForce = 0.9f;
         [SerializeField] private float fullLengthBounceFriction = 0.8f;
-        [SerializeField] private float fullLengthRotationX = 1f; // X rotation for downward angle (pitch)
+        [SerializeField] private float fullLengthRotationXMin = 1f; // X rotation for low speed (slow ball)
+        [SerializeField] private float fullLengthRotationXMax = 110f; // X rotation for high speed (fast ball)
         
         [Header("🟢 Good Length Settings")]
         [SerializeField] private float goodLengthArcHeight = 1.5f;
         [SerializeField] private float goodLengthBounceForce = 0.7f;
         [SerializeField] private float goodLengthBounceFriction = 0.7f;
-        [SerializeField] private float goodLengthRotationX = 5f; // X rotation for downward angle (pitch)
+        [SerializeField] private float goodLengthRotationXMin = 5f; // X rotation for low speed (slow ball)
+        [SerializeField] private float goodLengthRotationXMax = 9f; // X rotation for high speed (fast ball)
         
         [Header("🔵 Short Length Settings")]
         [SerializeField] private float shortLengthArcHeight = 2.0f;
         [SerializeField] private float shortLengthBounceForce = 0.5f;
         [SerializeField] private float shortLengthBounceFriction = 0.6f;
-        [SerializeField] private float shortLengthRotationX = 10f; // X rotation for downward angle (pitch)
+        [SerializeField] private float shortLengthRotationXMin = 10f; // X rotation for low speed (slow ball)
+        [SerializeField] private float shortLengthRotationXMax = 50f; // X rotation for high speed (fast ball)
         
         [Header("🟣 Bouncer Settings")]
         [SerializeField] private float bouncerArcHeight = 1.0f;
         [SerializeField] private float bouncerBounceForce = 0.3f;
         [SerializeField] private float bouncerBounceFriction = 0.5f;
-        [SerializeField] private float bouncerRotationX = 15f; // Reduced from 25f to 15f for less extreme angle
+        [SerializeField] private float bouncerRotationXMin = -10f; // X rotation for low speed (slow ball)
+        [SerializeField] private float bouncerRotationXMax = 15f; // X rotation for high speed (fast ball)
+        
+        [Header("🎯 Current Dynamic Values (Read-Only)")]
+        [SerializeField] private float currentYorkerRotationX = 0f;
+        [SerializeField] private float currentFullLengthRotationX = 0f;
+        [SerializeField] private float currentGoodLengthRotationX = 0f;
+        [SerializeField] private float currentShortLengthRotationX = 0f;
+        [SerializeField] private float currentBouncerRotationX = 0f;
         
         [Header("🎯 Realistic Physics Bounce System")]
         [Header("Physics Parameters")]
@@ -101,7 +113,7 @@ namespace CricketGame
         [SerializeField] public float bouncerPhysicsFriction = 1.2f; // Bouncer friction
         
         // Public properties for other scripts to access
-        public float BallSpeed => globalBallSpeed; // Now uses global speed for all lengths
+        public float BallSpeed => Mathf.Round(globalBallSpeed); // Always return rounded integer
         public float ArcHeight => arcHeight;
         public float Gravity => gravity;
         public float Mass => mass;
@@ -115,43 +127,183 @@ namespace CricketGame
         public float DestroyDelay => destroyDelay;
         
         // Global speed control
-        public float GlobalBallSpeed => globalBallSpeed;
+        public float GlobalBallSpeed => Mathf.Round(globalBallSpeed); // Always return rounded integer
         
         // Bowling length settings getters (speed removed, only arc, bounce, and rotation remain)
         public float YorkerArcHeight => yorkerArcHeight;
         public float YorkerBounceForce => yorkerBounceForce;
         public float YorkerBounceFriction => yorkerBounceFriction;
-        public float YorkerRotationX => yorkerRotationX; // X rotation for downward angle (pitch)
+        public float YorkerRotationXMin => yorkerRotationXMin;
+        public float YorkerRotationXMax => yorkerRotationXMax;
         
         public float FullLengthArcHeight => fullLengthArcHeight;
         public float FullLengthBounceForce => fullLengthBounceForce;
         public float FullLengthBounceFriction => fullLengthBounceFriction;
-        public float FullLengthRotationX => fullLengthRotationX; // X rotation for downward angle (pitch)
+        public float FullLengthRotationXMin => fullLengthRotationXMin;
+        public float FullLengthRotationXMax => fullLengthRotationXMax;
         
         public float GoodLengthArcHeight => goodLengthArcHeight;
         public float GoodLengthBounceForce => goodLengthBounceForce;
         public float GoodLengthBounceFriction => goodLengthBounceFriction;
-        public float GoodLengthRotationX => goodLengthRotationX; // X rotation for downward angle (pitch)
+        public float GoodLengthRotationXMin => goodLengthRotationXMin;
+        public float GoodLengthRotationXMax => goodLengthRotationXMax;
         
         public float ShortLengthArcHeight => shortLengthArcHeight;
         public float ShortLengthBounceForce => shortLengthBounceForce;
         public float ShortLengthBounceFriction => shortLengthBounceFriction;
-        public float ShortLengthRotationX => shortLengthRotationX; // X rotation for downward angle (pitch)
+        public float ShortLengthRotationXMin => shortLengthRotationXMin;
+        public float ShortLengthRotationXMax => shortLengthRotationXMax;
         
         public float BouncerArcHeight => bouncerArcHeight;
         public float BouncerBounceForce => bouncerBounceForce;
         public float BouncerBounceFriction => bouncerBounceFriction;
-        public float BouncerRotationX => bouncerRotationX; // X rotation for downward angle (pitch)
+        public float BouncerRotationXMin => bouncerRotationXMin;
+        public float BouncerRotationXMax => bouncerRotationXMax;
         
         // Setter methods for dynamic adjustment
         public void SetBallSpeed(float newSpeed)
         {
-            globalBallSpeed = Mathf.Clamp(newSpeed, 1f, 30f); // Increased max speed for more realistic cricket bowling
+            // Round to nearest integer and clamp
+            float roundedSpeed = Mathf.Round(newSpeed);
+            globalBallSpeed = Mathf.Clamp(roundedSpeed, 12f, 16f); // Clamp to valid speed range
+            UpdateAllCurrentRotations();
         }
         
         public void SetGlobalBallSpeed(float newSpeed)
         {
-            globalBallSpeed = Mathf.Clamp(newSpeed, 1f, 30f);
+            // Round to nearest integer and clamp
+            float roundedSpeed = Mathf.Round(newSpeed);
+            globalBallSpeed = Mathf.Clamp(roundedSpeed, 12f, 16f); // Clamp to valid speed range
+            UpdateAllCurrentRotations();
+        }
+        
+        /// <summary>
+        /// Update all current rotation values based on current ball speed
+        /// </summary>
+        private void UpdateAllCurrentRotations()
+        {
+            // Calculate rotations without updating display (to avoid recursion)
+            currentYorkerRotationX = CalculateRotationX(BowlingLength.Yorker, globalBallSpeed);
+            currentFullLengthRotationX = CalculateRotationX(BowlingLength.FullLength, globalBallSpeed);
+            currentGoodLengthRotationX = CalculateRotationX(BowlingLength.GoodLength, globalBallSpeed);
+            currentShortLengthRotationX = CalculateRotationX(BowlingLength.ShortLength, globalBallSpeed);
+            currentBouncerRotationX = CalculateRotationX(BowlingLength.Bouncer, globalBallSpeed);
+        }
+        
+        /// <summary>
+        /// Calculate rotation X without updating display (internal method)
+        /// </summary>
+        private float CalculateRotationX(BowlingLength length, float ballSpeed)
+        {
+            float minRotation, maxRotation;
+            
+            switch (length)
+            {
+                case BowlingLength.Yorker:
+                    minRotation = yorkerRotationXMin;
+                    maxRotation = yorkerRotationXMax;
+                    break;
+                case BowlingLength.FullLength:
+                    minRotation = fullLengthRotationXMin;
+                    maxRotation = fullLengthRotationXMax;
+                    break;
+                case BowlingLength.GoodLength:
+                    minRotation = goodLengthRotationXMin;
+                    maxRotation = goodLengthRotationXMax;
+                    break;
+                case BowlingLength.ShortLength:
+                    minRotation = shortLengthRotationXMin;
+                    maxRotation = shortLengthRotationXMax;
+                    break;
+                case BowlingLength.Bouncer:
+                    minRotation = bouncerRotationXMin;
+                    maxRotation = bouncerRotationXMax;
+                    break;
+                default:
+                    return 0f;
+            }
+            
+            // Round speed to nearest integer for consistent calculations
+            float roundedSpeed = Mathf.Round(ballSpeed);
+            
+            // Interpolate between min and max based on speed (12-16 m/s range)
+            float speedFactor = Mathf.InverseLerp(12f, 16f, roundedSpeed);
+            float dynamicRotation = Mathf.Lerp(minRotation, maxRotation, speedFactor);
+            
+            // Ensure rotation is clamped between min and max
+            dynamicRotation = Mathf.Clamp(dynamicRotation, Mathf.Min(minRotation, maxRotation), Mathf.Max(minRotation, maxRotation));
+            
+            return dynamicRotation;
+        }
+        
+        /// <summary>
+        /// Calculate dynamic X rotation based on ball speed for specific bowling length
+        /// Low speed = min rotation, high speed = max rotation
+        /// </summary>
+        public float GetDynamicRotationX(BowlingLength length, float ballSpeed)
+        {
+            float dynamicRotation = CalculateRotationX(length, ballSpeed);
+            
+            // Update current rotation display
+            UpdateCurrentRotationDisplay(length, dynamicRotation);
+            
+            // Get min/max for debug logging
+            float minRotation, maxRotation;
+            switch (length)
+            {
+                case BowlingLength.Yorker:
+                    minRotation = yorkerRotationXMin;
+                    maxRotation = yorkerRotationXMax;
+                    break;
+                case BowlingLength.FullLength:
+                    minRotation = fullLengthRotationXMin;
+                    maxRotation = fullLengthRotationXMax;
+                    break;
+                case BowlingLength.GoodLength:
+                    minRotation = goodLengthRotationXMin;
+                    maxRotation = goodLengthRotationXMax;
+                    break;
+                case BowlingLength.ShortLength:
+                    minRotation = shortLengthRotationXMin;
+                    maxRotation = shortLengthRotationXMax;
+                    break;
+                case BowlingLength.Bouncer:
+                    minRotation = bouncerRotationXMin;
+                    maxRotation = bouncerRotationXMax;
+                    break;
+                default:
+                    minRotation = maxRotation = 0f;
+                    break;
+            }
+            
+            Debug.Log($"🎯 Dynamic Rotation {length}: Speed={ballSpeed:F1}m/s → {Mathf.Round(ballSpeed):F0}m/s (12-16 range), Min={minRotation:F1}°, Max={maxRotation:F1}°, Result={dynamicRotation:F1}°");
+            
+            return dynamicRotation;
+        }
+        
+        /// <summary>
+        /// Update the current rotation display values
+        /// </summary>
+        private void UpdateCurrentRotationDisplay(BowlingLength length, float currentRotation)
+        {
+            switch (length)
+            {
+                case BowlingLength.Yorker:
+                    currentYorkerRotationX = currentRotation;
+                    break;
+                case BowlingLength.FullLength:
+                    currentFullLengthRotationX = currentRotation;
+                    break;
+                case BowlingLength.GoodLength:
+                    currentGoodLengthRotationX = currentRotation;
+                    break;
+                case BowlingLength.ShortLength:
+                    currentShortLengthRotationX = currentRotation;
+                    break;
+                case BowlingLength.Bouncer:
+                    currentBouncerRotationX = currentRotation;
+                    break;
+            }
         }
         
         /// <summary>
@@ -319,6 +471,9 @@ namespace CricketGame
             {
                 StartDestroyTimer();
             }
+            
+            // Initialize current rotation values based on current ball speed
+            UpdateAllCurrentRotations();
         }
         
         /// <summary>

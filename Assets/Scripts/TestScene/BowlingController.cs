@@ -513,21 +513,8 @@ namespace CricketGame
         {
             if (ballSettings == null) return 0f;
             
-            switch (length)
-            {
-                case BowlingLength.Yorker:
-                    return ballSettings.YorkerRotationX; // X rotation for downward angle
-                case BowlingLength.FullLength:
-                    return ballSettings.FullLengthRotationX; // X rotation for downward angle
-                case BowlingLength.GoodLength:
-                    return ballSettings.GoodLengthRotationX; // X rotation for downward angle
-                case BowlingLength.ShortLength:
-                    return ballSettings.ShortLengthRotationX; // X rotation for downward angle
-                case BowlingLength.Bouncer:
-                    return ballSettings.BouncerRotationX; // X rotation for downward angle
-                default:
-                    return 0f;
-            }
+            // Use dynamic rotation based on current ball speed
+            return ballSettings.GetDynamicRotationX(length, ballSettings.BallSpeed);
         }
         
         /// <summary>
@@ -1374,20 +1361,16 @@ namespace CricketGame
             float arcHeight = ballSettings != null ? ballSettings.ArcHeight : 1f;
             float gravity = ballSettings != null ? ballSettings.Gravity : 9.81f;
             
-            // Use ball speed for kinematic movement (simpler and more predictable)
-            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
-            
             // ?? FIXED: Use realistic cricket bowling arc (much lower)
             float realisticArcHeight = arcHeight * 0.2f; // Same reduction as physics version
-            
-            // Speed-based arc reduction: slower balls get lower arc to avoid going too high
-            float speedFactor = Mathf.Clamp(ballSpeed / 12f, 0.5f, 1.2f); // Normalize around 12 m/s
-            realisticArcHeight *= speedFactor;
             
             // 🎯 SIMPLIFIED KINEMATIC: Use simpler duration calculation
             Vector3 horizontalStart = new Vector3(startPos.x, 0, startPos.z);
             Vector3 horizontalEnd = new Vector3(endPos.x, 0, endPos.z);
             float horizontalDistance = Vector3.Distance(horizontalStart, horizontalEnd);
+            
+            // Use ball speed for kinematic movement (simpler and more predictable)
+            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
             float baseDuration = horizontalDistance / ballSpeed;
             
             // Apply small correction for arc height

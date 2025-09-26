@@ -18,9 +18,9 @@ namespace CricketGame
         [SerializeField] private BowlingController bowlingController; // Reference to bowling controller
         
         [Header("Speed Settings")]
-        [SerializeField] private float minSpeed = 9f;
-        [SerializeField] private float maxSpeed = 16f;
-        [SerializeField] private float currentSpeed = 12f;
+        [SerializeField] private int minSpeed = 12;
+        [SerializeField] private int maxSpeed = 17;
+        [SerializeField] private int currentSpeed = 12;
         
         [Header("Display Settings")]
         [SerializeField] private bool showSpeedInKmh = true; // Show as 90km/h, 100km/h etc.
@@ -28,11 +28,12 @@ namespace CricketGame
         
         void Start()
         {
-            // Initialize slider
+            // Initialize slider with integer steps
             if (speedSlider != null)
             {
                 speedSlider.minValue = minSpeed;
                 speedSlider.maxValue = maxSpeed;
+                speedSlider.wholeNumbers = true; // Only allow integer values
                 speedSlider.value = currentSpeed;
                 speedSlider.onValueChanged.AddListener(OnSpeedChanged);
             }
@@ -47,7 +48,7 @@ namespace CricketGame
         /// </summary>
         public void OnSpeedChanged(float newSpeed)
         {
-            currentSpeed = newSpeed;
+            currentSpeed = Mathf.RoundToInt(newSpeed); // Convert to integer
             UpdateSpeedDisplay();
             UpdateBallSpeed();
         }
@@ -99,7 +100,7 @@ namespace CricketGame
         /// <summary>
         /// Get current speed (for other scripts to access)
         /// </summary>
-        public float GetCurrentSpeed()
+        public int GetCurrentSpeed()
         {
             return currentSpeed;
         }
@@ -107,7 +108,7 @@ namespace CricketGame
         /// <summary>
         /// Set speed programmatically
         /// </summary>
-        public void SetSpeed(float newSpeed)
+        public void SetSpeed(int newSpeed)
         {
             newSpeed = Mathf.Clamp(newSpeed, minSpeed, maxSpeed);
             currentSpeed = newSpeed;
@@ -126,7 +127,7 @@ namespace CricketGame
         /// </summary>
         public void ResetToDefault()
         {
-            SetSpeed(12f);
+            SetSpeed(12);
         }
         
         void OnValidate()
