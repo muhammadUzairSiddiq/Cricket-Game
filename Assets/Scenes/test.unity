@@ -3346,10 +3346,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speedSlider: {fileID: 1702820267}
   speedText: {fileID: 77483797}
-  ballSettingsPrefab: {fileID: 5986885649269739266, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
+  ballSettingsSO: {fileID: 11400000, guid: e7114db5e977b7f498ff2bfbf25e2b8a, type: 2}
   bowlingController: {fileID: 2114426370}
   minSpeed: 12
-  maxSpeed: 16
+  maxSpeed: 17
   currentSpeed: 12
   showSpeedInKmh: 1
   speedMultiplier: 10
@@ -4154,7 +4154,7 @@ MonoBehaviour:
   umpireWicket: {fileID: 623630493}
   batsmanWicket: {fileID: 1791918235}
   useDynamicSettings: 1
-  ballSettings: {fileID: 5986885649269739266, guid: 0c5f141c13f9f044abe8d753818208bc, type: 3}
+  ballSettingsSO: {fileID: 11400000, guid: e7114db5e977b7f498ff2bfbf25e2b8a, type: 2}
   speedController: {fileID: 1702820268}
   showBowlingZones: 1
   pitchingArea: {fileID: 1569813291}

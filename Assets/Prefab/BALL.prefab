@@ -289,7 +289,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9691eecc65771642af16473bac24e47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalBallSpeed: 12
+  globalBallSpeed: 16
   arcHeight: 1
   gravity: 10.5
   mass: 0.16
@@ -303,34 +303,34 @@ MonoBehaviour:
   destroyDelay: 3
   startTimerOnStart: 1
   yorkerArcHeight: 0
-  yorkerBounceForce: 0.7991972
+  yorkerBounceForce: 0.8541764
   yorkerBounceFriction: 1.2
   yorkerRotationXMin: 40
   yorkerRotationXMax: 88
   fullLengthArcHeight: 0
-  fullLengthBounceForce: 0.9136451
+  fullLengthBounceForce: 0.9439156
   fullLengthBounceFriction: 1.2
   fullLengthRotationXMin: 120
   fullLengthRotationXMax: 108
   goodLengthArcHeight: 0
-  goodLengthBounceForce: 0.7821158
+  goodLengthBounceForce: 0.80641246
   goodLengthBounceFriction: 1.0200001
   goodLengthRotationXMin: 5
   goodLengthRotationXMax: 9
   shortLengthArcHeight: 2
-  shortLengthBounceForce: 0.69043034
-  shortLengthBounceFriction: 0.93500006
+  shortLengthBounceForce: 0.7690461
+  shortLengthBounceFriction: 1.122
   shortLengthRotationXMin: 40
   shortLengthRotationXMax: 50
   bouncerArcHeight: 1
-  bouncerBounceForce: 0.7640406
-  bouncerBounceFriction: 0.85
+  bouncerBounceForce: 0.88263446
+  bouncerBounceFriction: 1.02
   bouncerRotationXMin: -50
   bouncerRotationXMax: -50
-  currentYorkerRotationX: 40
-  currentFullLengthRotationX: 120
-  currentGoodLengthRotationX: 5
-  currentShortLengthRotationX: 40
+  currentYorkerRotationX: 88
+  currentFullLengthRotationX: 108
+  currentGoodLengthRotationX: 9
+  currentShortLengthRotationX: 50
   currentBouncerRotationX: -50
   baseRestitutionCoefficient: 0.6
   randomVariation: 0.05

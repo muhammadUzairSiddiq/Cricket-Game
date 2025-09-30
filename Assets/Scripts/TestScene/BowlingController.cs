@@ -22,7 +22,7 @@ namespace CricketGame
         [SerializeField] private bool useDynamicSettings = true;
         
         [Header("Ball Settings Reference")]
-        [SerializeField] private BallSettings ballSettings; // Single BallSettings component with all bowling length settings
+        [SerializeField] private BallSettingsSO ballSettingsSO; // ScriptableObject with all ball settings
         [SerializeField] private SpeedController speedController; // Speed controller reference
         
         [Header("Length Zone Visualization")]
@@ -183,10 +183,17 @@ namespace CricketGame
             
             Debug.Log($"<color=#FFD700>🔍 ZONE REFERENCES: yorkerZone={yorkerZone != null}, fullTossZone={fullTossZone != null}, lengthZone={lengthZone != null}, slotZone={slotZone != null}, shortZone={shortZone != null}</color>");
             
+            // Check if ballSettingsSO is assigned
+            if (ballSettingsSO == null)
+            {
+                Debug.LogError("🚨 ballSettingsSO is not assigned! Please assign the BallSettingsSO ScriptableObject in the Inspector.");
+                return;
+            }
+            
             // Store original values for comparison
-            float originalSpeed = ballSettings.GlobalBallSpeed;
-            float originalArc = ballSettings.ArcHeight;
-            float originalBounce = ballSettings.BounceForce;
+            float originalSpeed = ballSettingsSO.GlobalBallSpeed;
+            float originalArc = ballSettingsSO.ArcHeight;
+            float originalBounce = ballSettingsSO.BounceForce;
             
             // Get current bowling length based on zone detection
             BowlingLength lengthCategory = GetCurrentBowlingLength();
@@ -199,14 +206,14 @@ namespace CricketGame
             
             // Colorful debug information with before/after comparison
             string lengthColor = GetLengthColor(lengthCategory);
-            string speedColor = originalSpeed != ballSettings.GlobalBallSpeed ? "<color=#00FF00>" : "<color=#FF0000>";
-            string arcColor = originalArc != ballSettings.ArcHeight ? "<color=#00FF00>" : "<color=#FF0000>";
-            string bounceColor = originalBounce != ballSettings.BounceForce ? "<color=#00FF00>" : "<color=#FF0000>";
+            string speedColor = originalSpeed != ballSettingsSO.GlobalBallSpeed ? "<color=#00FF00>" : "<color=#FF0000>";
+            string arcColor = originalArc != ballSettingsSO.ArcHeight ? "<color=#00FF00>" : "<color=#FF0000>";
+            string bounceColor = originalBounce != ballSettingsSO.BounceForce ? "<color=#00FF00>" : "<color=#FF0000>";
             
             Debug.Log($"{lengthColor}🎯 BOWLING LENGTH: {lengthCategory} (Zone-based detection)</color>");
-            Debug.Log($"{speedColor}⚡ GLOBAL BALL SPEED: {originalSpeed:F1} → {ballSettings.GlobalBallSpeed:F1} m/s (applies to all lengths)</color>");
-            Debug.Log($"{arcColor}📈 ARC HEIGHT: {originalArc:F1} → {ballSettings.ArcHeight:F1} m</color>");
-            Debug.Log($"{bounceColor}🏀 BOUNCE FORCE: {originalBounce:F2} → {ballSettings.BounceForce:F2}</color>");
+            Debug.Log($"{speedColor}⚡ GLOBAL BALL SPEED: {originalSpeed:F1} → {ballSettingsSO.GlobalBallSpeed:F1} m/s (applies to all lengths)</color>");
+            Debug.Log($"{arcColor}📈 ARC HEIGHT: {originalArc:F1} → {ballSettingsSO.ArcHeight:F1} m</color>");
+            Debug.Log($"{bounceColor}🏀 BOUNCE FORCE: {originalBounce:F2} → {ballSettingsSO.BounceForce:F2}</color>");
             Debug.Log($"<color=#FFD700>✅ DYNAMIC SETTINGS APPLIED SUCCESSFULLY!</color>");
         }
         
@@ -233,9 +240,9 @@ namespace CricketGame
         void AdjustBallSettingsForLength(BallSettings targetBallSettings, BowlingLength length)
         {
             Debug.Log($"<color=#FFD700>🔍 AdjustBallSettingsForLength called for {length}</color>");
-            Debug.Log($"<color=#FFD700>🔍 ballSettings reference: {ballSettings != null}</color>");
+            Debug.Log($"<color=#FFD700>🔍 ballSettingsSO reference: {ballSettingsSO != null}</color>");
             
-            if (ballSettings == null)
+            if (ballSettingsSO == null)
             {
                 Debug.LogWarning($"⚠️ No BallSettings reference found! Using hardcoded values for {length}.");
                 // Use hardcoded values as fallback
@@ -245,49 +252,49 @@ namespace CricketGame
             
             Debug.Log($"<color=#FFD700>🔍 Using Inspector BallSettings for {length}</color>");
             
-            // 🎯 NEW: Calculate realistic physics bounce values based on speed and energy
-            ballSettings.CalculatePhysicsBounce(length);
+            // Get length-specific settings from ScriptableObject
+            var lengthSettings = ballSettingsSO.GetLengthSettings(length);
             
             // Apply settings based on bowling length from the single BallSettings component
             // Note: Speed is now global, only arc, bounce, and rotation are length-specific
             switch (length)
             {
                 case BowlingLength.Yorker:
-                    Debug.Log($"<color=#FF0000>🔍 Yorker Inspector Values: Global Speed={ballSettings.GlobalBallSpeed}, Arc={ballSettings.YorkerArcHeight}, Bounce={ballSettings.YorkerBounceForce}</color>");
-                    targetBallSettings.SetArcHeight(ballSettings.YorkerArcHeight);
-                    targetBallSettings.SetBounceForce(ballSettings.YorkerBounceForce);
-                    targetBallSettings.SetBounceFriction(ballSettings.YorkerBounceFriction);
+                    Debug.Log($"<color=#FF0000>🔍 Yorker Inspector Values: Global Speed={ballSettingsSO.GlobalBallSpeed}, Arc={lengthSettings.arcHeight}, Bounce={lengthSettings.bounceForce}</color>");
+                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
+                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
+                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
                     break;
                     
                 case BowlingLength.FullLength:
-                    targetBallSettings.SetArcHeight(ballSettings.FullLengthArcHeight);
-                    targetBallSettings.SetBounceForce(ballSettings.FullLengthBounceForce);
-                    targetBallSettings.SetBounceFriction(ballSettings.FullLengthBounceFriction);
+                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
+                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
+                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
                     break;
                     
                 case BowlingLength.GoodLength:
-                    targetBallSettings.SetArcHeight(ballSettings.GoodLengthArcHeight);
-                    targetBallSettings.SetBounceForce(ballSettings.GoodLengthBounceForce);
-                    targetBallSettings.SetBounceFriction(ballSettings.GoodLengthBounceFriction);
+                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
+                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
+                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
                     break;
                     
                 case BowlingLength.ShortLength:
-                    targetBallSettings.SetArcHeight(ballSettings.ShortLengthArcHeight);
-                    targetBallSettings.SetBounceForce(ballSettings.ShortLengthBounceForce);
-                    targetBallSettings.SetBounceFriction(ballSettings.ShortLengthBounceFriction);
+                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
+                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
+                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
                     break;
                     
                 case BowlingLength.Bouncer:
-                    targetBallSettings.SetArcHeight(ballSettings.BouncerArcHeight);
-                    targetBallSettings.SetBounceForce(ballSettings.BouncerBounceForce);
-                    targetBallSettings.SetBounceFriction(ballSettings.BouncerBounceFriction);
+                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
+                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
+                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
                     break;
             }
             
             // Copy common settings
-            targetBallSettings.SetGravity(ballSettings.Gravity);
-            targetBallSettings.SetMaxBounces(ballSettings.MaxBounces);
-            targetBallSettings.SetUseRealisticPhysics(ballSettings.UseRealisticPhysics);
+            targetBallSettings.SetGravity(lengthSettings.gravity); // Use length-specific gravity
+            targetBallSettings.SetMaxBounces(ballSettingsSO.MaxBounces);
+            targetBallSettings.SetUseRealisticPhysics(ballSettingsSO.UseRealisticPhysics);
             
             Debug.Log($"✅ Applied {length} settings from single BallSettings component");
         }
@@ -511,10 +518,10 @@ namespace CricketGame
         /// </summary>
         float GetRotationForLength(BowlingLength length)
         {
-            if (ballSettings == null) return 0f;
+            if (ballSettingsSO == null) return 0f;
             
             // Use dynamic rotation based on current ball speed
-            return ballSettings.GetDynamicRotationX(length, ballSettings.BallSpeed);
+            return ballSettingsSO.GetDynamicRotationX(length, ballSettingsSO.GlobalBallSpeed);
         }
         
         /// <summary>
@@ -896,6 +903,13 @@ namespace CricketGame
             ApplyDynamicBowlingSettings(ballSettings);
             Debug.Log($"<color=#FFD700>🔍 ApplyDynamicBowlingSettings completed!</color>");
             
+            // Check if ballSettingsSO is assigned
+            if (ballSettingsSO == null)
+            {
+                Debug.LogError("🚨 ballSettingsSO is not assigned in BowlToTarget! Please assign the BallSettingsSO ScriptableObject in the Inspector.");
+                yield break; // Exit the coroutine
+            }
+            
             // ?? NEW: Read ball speed from speed controller if available, otherwise use ball settings
             float ballSpeed;
             if (speedController != null)
@@ -905,11 +919,13 @@ namespace CricketGame
             }
             else
             {
-                ballSpeed = ballSettings.BallSpeed;
+                ballSpeed = ballSettingsSO.GlobalBallSpeed;
                 Debug.Log($"🎯 SPEED FROM BALL SETTINGS: {ballSpeed} m/s");
             }
-            float arcHeight = ballSettings.ArcHeight;
-            float gravity = ballSettings.Gravity;
+            float arcHeight = ballSettingsSO.ArcHeight;
+            // Get length-specific gravity
+            var lengthSettings = ballSettingsSO.GetLengthSettings(GetCurrentBowlingLength());
+            float gravity = lengthSettings.gravity;
             
             // 🎯 DELIVERY TRAJECTORY: Calculate delivery-modified target position
             Vector3 finalTargetPosition = CalculateDeliveryTrajectory(startPosition, targetPosition, ballSpeed);
@@ -1066,7 +1082,7 @@ namespace CricketGame
             Debug.Log($"🎯 ROTATION EFFECT: X rotation {spawnPoint?.rotation.eulerAngles.x ?? 0f}°, Rotation effect {rotationEffect:F3}, Y velocity {preAdjustY:F2} → {adjustedYVelocity:F2}");
             
             // Apply velocity to ball with smooth movement
-            Debug.Log($"🎯 APPLYING VELOCITY: UseRealisticPhysics={ballSettings.UseRealisticPhysics}, useSmoothMovement={useSmoothMovement}");
+            Debug.Log($"🎯 APPLYING VELOCITY: UseRealisticPhysics={ballSettingsSO.UseRealisticPhysics}, useSmoothMovement={useSmoothMovement}");
             Debug.Log($"🎯 VELOCITY VALUES: initialVelocity={initialVelocity}, magnitude={initialVelocity.magnitude:F2}");
             Debug.Log($"🎯 RIGIDBODY STATUS: ballRigidbodyToUse={ballRigidbodyToUse != null}, isKinematic={ballRigidbodyToUse?.isKinematic}");
             
@@ -1176,7 +1192,7 @@ namespace CricketGame
                     StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
                 }
             }
-            else if (!ballSettings.UseRealisticPhysics)
+            else if (!ballSettingsSO.UseRealisticPhysics)
             {
                 Debug.Log("🎯 Using kinematic movement");
                 StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
@@ -1200,7 +1216,7 @@ namespace CricketGame
             Debug.Log($"?? Ball launched with velocity: {initialVelocity.magnitude:F1} m/s");
             Debug.Log($"?? Expected time to target: {timeToReach:F2} seconds");
             Debug.Log($"<color=#00FF00>✅ FINAL BALL SETTINGS: Speed={ballSpeed}, Arc={arcHeight}, Gravity={gravity}</color>");
-            Debug.Log($"<color=#FFD700>🎯 Using ball settings: Speed={ballSpeed}, Arc={arcHeight}, Bounce={ballSettings.BounceForce}, Gravity={gravity}</color>");
+            Debug.Log($"<color=#FFD700>🎯 Using ball settings: Speed={ballSpeed}, Arc={arcHeight}, Bounce={ballSettingsSO.BounceForce}, Gravity={gravity}</color>");
             
             // Wait for ball to reach target area
             float waitTime = Mathf.Clamp(timeToReach, 0.1f, 5f);
@@ -1358,8 +1374,8 @@ namespace CricketGame
             
             // ?? NEW: Get ball settings for kinematic movement
             BallSettings ballSettings = currentBallInstance?.GetComponent<BallSettings>();
-            float arcHeight = ballSettings != null ? ballSettings.ArcHeight : 1f;
-            float gravity = ballSettings != null ? ballSettings.Gravity : 9.81f;
+            float arcHeight = ballSettings != null ? ballSettingsSO.ArcHeight : 1f;
+            float gravity = ballSettings != null ? ballSettingsSO.Gravity : 9.81f;
             
             // ?? FIXED: Use realistic cricket bowling arc (much lower)
             float realisticArcHeight = arcHeight * 0.2f; // Same reduction as physics version
@@ -1370,7 +1386,7 @@ namespace CricketGame
             float horizontalDistance = Vector3.Distance(horizontalStart, horizontalEnd);
             
             // Use ball speed for kinematic movement (simpler and more predictable)
-            float ballSpeed = ballSettings != null ? ballSettings.BallSpeed : 12f;
+            float ballSpeed = ballSettingsSO != null ? ballSettingsSO.GlobalBallSpeed : 12f;
             float baseDuration = horizontalDistance / ballSpeed;
             
             // Apply small correction for arc height
@@ -1540,10 +1556,10 @@ namespace CricketGame
             GameObject ballToBounce = currentBallInstance != null ? currentBallInstance : ball;
             BallSettings ballSettings = ballToBounce?.GetComponent<BallSettings>();
             
-            if (ballSettings != null && currentBounces <= ballSettings.MaxBounces)
+            if (ballSettings != null && currentBounces <= ballSettingsSO.MaxBounces)
             {
                 // Calculate bounce velocity with friction
-                Vector3 newVelocity = bounceVelocity * ballSettings.BounceFriction;
+                Vector3 newVelocity = bounceVelocity * ballSettingsSO.BounceFriction;
                 
                 // Bounce force tuning
                 // Identify bouncer lengths (short/mid) and reduce bounce to avoid too-high hop
@@ -1552,12 +1568,12 @@ namespace CricketGame
                 if (isBouncerLength)
                 {
                     // Reduce bounce to ~60% of base for bouncers (user request)
-                    enhancedBounceForce = ballSettings.BounceForce * 0.6f;
+                    enhancedBounceForce = ballSettingsSO.BounceForce * 0.6f;
                 }
                 else
                 {
                     // Gentle scaling for other lengths; avoid exceeding base by much
-                    enhancedBounceForce = ballSettings.BounceForce;
+                    enhancedBounceForce = ballSettingsSO.BounceForce;
                     if (currentBounces == 1)
                         enhancedBounceForce *= 1.05f; // very slight first-bounce lift
                     else if (currentBounces == 2)
@@ -1591,7 +1607,7 @@ namespace CricketGame
             }
             
             // Stop bouncing if max bounces reached
-            if (ballSettings != null && currentBounces >= ballSettings.MaxBounces)
+            if (ballSettings != null && currentBounces >= ballSettingsSO.MaxBounces)
             {
                 isBouncing = false;
                 Debug.Log("?? Max bounces reached - ball settling");

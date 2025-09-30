@@ -14,7 +14,7 @@ namespace CricketGame
         [SerializeField] private TextMeshProUGUI speedText;
         
         [Header("Ball Settings")]
-        [SerializeField] private BallSettings ballSettingsPrefab; // Reference to ball prefab's BallSettings
+        [SerializeField] private BallSettingsSO ballSettingsSO; // Reference to ball settings ScriptableObject
         [SerializeField] private BowlingController bowlingController; // Reference to bowling controller
         
         [Header("Speed Settings")]
@@ -77,23 +77,16 @@ namespace CricketGame
         /// </summary>
         private void UpdateBallSpeed()
         {
-            // Update ball settings prefab
-            if (ballSettingsPrefab != null)
+            // Update ball settings ScriptableObject
+            if (ballSettingsSO != null)
             {
-                ballSettingsPrefab.SetGlobalBallSpeed(currentSpeed);
-                Debug.Log($"🎯 SPEED CONTROLLER: Updated ball prefab speed to {currentSpeed} m/s");
+                Debug.Log($"🎯 SPEED CONTROLLER: Calling SetGlobalBallSpeed({currentSpeed}) on ballSettingsSO");
+                ballSettingsSO.SetGlobalBallSpeed(currentSpeed);
+                Debug.Log($"🎯 SPEED CONTROLLER: Updated ball settings speed to {currentSpeed} m/s");
             }
-            
-            // Update bowling controller if it has a ball settings reference
-            if (bowlingController != null)
+            else
             {
-                // Get the ball settings from bowling controller and update it
-                var ballSettings = bowlingController.GetComponent<BallSettings>();
-                if (ballSettings != null)
-                {
-                    ballSettings.SetGlobalBallSpeed(currentSpeed);
-                    Debug.Log($"🎯 SPEED CONTROLLER: Updated bowling controller speed to {currentSpeed} m/s");
-                }
+                Debug.LogError("🚨 SPEED CONTROLLER: ballSettingsSO is null! Please assign it in the Inspector.");
             }
         }
         
