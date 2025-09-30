@@ -1118,36 +1118,61 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
-                if (currentDelivery == DeliveryType.Inswing)
+                if (currentDelivery == DeliveryType.Inswing || currentDelivery == DeliveryType.Outswing)
                 {
-                    // Get InswingDelivery component from DeliverySystem
-                    InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>();
-                    if (inswingDelivery == null)
+                    // Get appropriate swing delivery component
+                    bool curvedEnabled = false;
+                    if (currentDelivery == DeliveryType.Inswing)
                     {
-                        // Try to find it on the same GameObject as DeliverySystem
-                        inswingDelivery = deliverySystem.transform.GetComponent<InswingDelivery>();
+                        InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
+                        curvedEnabled = inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled();
                     }
-                    
-                    if (inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled())
+                    else if (currentDelivery == DeliveryType.Outswing)
+                    {
+                        OutswingDelivery outswingDelivery = deliverySystem.GetComponent<OutswingDelivery>() ?? deliverySystem.transform.GetComponent<OutswingDelivery>();
+                        curvedEnabled = outswingDelivery != null && outswingDelivery.IsCurvedPathEnabled();
+                    }
+
+                    if (curvedEnabled)
                     {
                         useKinematicForCurvedPath = true;
                         Debug.Log("🎯 CURVED PATH: Forcing kinematic movement for curved path delivery");
                     }
                     else
                     {
-                        Debug.LogWarning($"🎯 CURVED PATH: InswingDelivery not found or curved path disabled. InswingDelivery: {inswingDelivery != null}, CurvedPathEnabled: {inswingDelivery?.IsCurvedPathEnabled()}");
+                        Debug.LogWarning($"🎯 CURVED PATH: Swing delivery not found or curved path disabled for {currentDelivery}");
                     }
                 }
             }
             
-            // 🎯 USE PATH FOLLOWER FOR INSWING CURVED PATH
+            // 🎯 USE PATH FOLLOWER FOR SWING CURVED PATH
             if (useKinematicForCurvedPath)
             {
-                Debug.Log("🎯 Using PathFollower for Inswing curved path");
-                InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
-                if (inswingDelivery != null)
+                Debug.Log("🎯 Using PathFollower for swing curved path");
+                Vector3[] path = null;
+                float addedArc = 0f;
+                // Prefer component based on current type
+                if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Inswing)
                 {
-                    Vector3[] path = inswingDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                    InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
+                    if (inswingDelivery != null)
+                    {
+                        path = inswingDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = inswingDelivery.pathArcHeight;
+                    }
+                }
+                else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Outswing)
+                {
+                    OutswingDelivery outswingDelivery = deliverySystem.GetComponent<OutswingDelivery>() ?? deliverySystem.transform.GetComponent<OutswingDelivery>();
+                    if (outswingDelivery != null)
+                    {
+                        path = outswingDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = outswingDelivery.pathArcHeight;
+                    }
+                }
+
+                if (path != null)
+                {
                     // Ensure physics won't fight the scripted motion
                     Rigidbody rbFollow = currentBallInstance.GetComponent<Rigidbody>();
                     if (rbFollow != null)
@@ -1161,8 +1186,6 @@ namespace CricketGame
                     Vector3 finalDir = (path[path.Length - 1] - path[path.Length - 2]).normalized;
 
                     var follower = currentBallInstance.AddComponent<PathFollower>();
-                    // Use InswingDelivery's public pathArcHeight so you can tune elevation in the Inspector
-                    float addedArc = inswingDelivery.pathArcHeight;
                     follower.Initialize(path, ballSpeed, addedArc, () =>
                     {
                         hasLanded = true;

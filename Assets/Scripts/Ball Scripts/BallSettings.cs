@@ -8,109 +8,109 @@ namespace CricketGame
     /// </summary>
     public class BallSettings : MonoBehaviour
     {
-        [Header("Ball Physics")]
-        [SerializeField] private float globalBallSpeed = 12f; // Single global speed for all bowling lengths
-        [SerializeField] private float arcHeight = 1f;
-        [SerializeField] private float gravity = 9.81f;
-        [SerializeField] private float mass = 0.16f;
-        [SerializeField] private float drag = 0.02f;
-        [SerializeField] private float angularDrag = 0.02f;
+        [Header("Ball Physics (Managed by BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float globalBallSpeed = 12f; // Managed via ScriptableObject/SpeedController
+        [SerializeField, HideInInspector] private float arcHeight = 1f;        // Applied at runtime by controller
+        [SerializeField, HideInInspector] private float gravity = 9.81f;       // Length-specific gravity now in SO
+        [SerializeField, HideInInspector] private float mass = 0.16f;
+        [SerializeField, HideInInspector] private float drag = 0.02f;
+        [SerializeField, HideInInspector] private float angularDrag = 0.02f;
         
-        [Header("Bounce Physics")]
-        [SerializeField] private float bounceForce = 0.8f;
-        [SerializeField] private float bounceFriction = 0.85f;
-        [SerializeField] private int maxBounces = 3;
+        [Header("Bounce Physics (Managed by BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float bounceForce = 0.8f;     // Applied at runtime by controller
+        [SerializeField, HideInInspector] private float bounceFriction = 0.85f; // Applied at runtime by controller
+        [SerializeField, HideInInspector] private int maxBounces = 3;
         
-        [Header("Ball Properties")]
-        [SerializeField] private float ballRadius = 0.036f;
-        [SerializeField] private bool useRealisticPhysics = true;
+        [Header("Ball Properties (Runtime Only)")]
+        [SerializeField, HideInInspector] private float ballRadius = 0.036f;
+        [SerializeField, HideInInspector] private bool useRealisticPhysics = true;
         
         [Header("Auto Destroy")]
-        [SerializeField] private float destroyDelay = 5f;
-        [SerializeField] private bool startTimerOnStart = true;
+        [SerializeField, HideInInspector] private float destroyDelay = 5f;
+        [SerializeField, HideInInspector] private bool startTimerOnStart = true;
         
-        [Header("🔴 Yorker Settings")]
-        [SerializeField] private float yorkerArcHeight = 1.5f;
-        [SerializeField] private float yorkerBounceForce = 1.2f;
-        [SerializeField] private float yorkerBounceFriction = 0.9f;
-        [SerializeField] private float yorkerRotationXMin = 0f; // X rotation for low speed (slow ball)
-        [SerializeField] private float yorkerRotationXMax = 80f; // X rotation for high speed (fast ball)
+        [Header("🔴 Yorker Settings (Deprecated - now in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float yorkerArcHeight = 1.5f;
+        [SerializeField, HideInInspector] private float yorkerBounceForce = 1.2f;
+        [SerializeField, HideInInspector] private float yorkerBounceFriction = 0.9f;
+        [SerializeField, HideInInspector] private float yorkerRotationXMin = 0f; // X rotation for low speed (slow ball)
+        [SerializeField, HideInInspector] private float yorkerRotationXMax = 80f; // X rotation for high speed (fast ball)
         
-        [Header("🟡 Full Length Settings")]
-        [SerializeField] private float fullLengthArcHeight = 1.2f;
-        [SerializeField] private float fullLengthBounceForce = 0.9f;
-        [SerializeField] private float fullLengthBounceFriction = 0.8f;
-        [SerializeField] private float fullLengthRotationXMin = 1f; // X rotation for low speed (slow ball)
-        [SerializeField] private float fullLengthRotationXMax = 110f; // X rotation for high speed (fast ball)
+        [Header("🟡 Full Length Settings (Deprecated - now in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float fullLengthArcHeight = 1.2f;
+        [SerializeField, HideInInspector] private float fullLengthBounceForce = 0.9f;
+        [SerializeField, HideInInspector] private float fullLengthBounceFriction = 0.8f;
+        [SerializeField, HideInInspector] private float fullLengthRotationXMin = 1f; // X rotation for low speed (slow ball)
+        [SerializeField, HideInInspector] private float fullLengthRotationXMax = 110f; // X rotation for high speed (fast ball)
         
-        [Header("🟢 Good Length Settings")]
-        [SerializeField] private float goodLengthArcHeight = 1.5f;
-        [SerializeField] private float goodLengthBounceForce = 0.7f;
-        [SerializeField] private float goodLengthBounceFriction = 0.7f;
-        [SerializeField] private float goodLengthRotationXMin = 5f; // X rotation for low speed (slow ball)
-        [SerializeField] private float goodLengthRotationXMax = 9f; // X rotation for high speed (fast ball)
+        [Header("🟢 Good Length Settings (Deprecated - now in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float goodLengthArcHeight = 1.5f;
+        [SerializeField, HideInInspector] private float goodLengthBounceForce = 0.7f;
+        [SerializeField, HideInInspector] private float goodLengthBounceFriction = 0.7f;
+        [SerializeField, HideInInspector] private float goodLengthRotationXMin = 5f; // X rotation for low speed (slow ball)
+        [SerializeField, HideInInspector] private float goodLengthRotationXMax = 9f; // X rotation for high speed (fast ball)
         
-        [Header("🔵 Short Length Settings")]
-        [SerializeField] private float shortLengthArcHeight = 2.0f;
-        [SerializeField] private float shortLengthBounceForce = 0.5f;
-        [SerializeField] private float shortLengthBounceFriction = 0.6f;
-        [SerializeField] private float shortLengthRotationXMin = 10f; // X rotation for low speed (slow ball)
-        [SerializeField] private float shortLengthRotationXMax = 50f; // X rotation for high speed (fast ball)
+        [Header("🔵 Short Length Settings (Deprecated - now in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float shortLengthArcHeight = 2.0f;
+        [SerializeField, HideInInspector] private float shortLengthBounceForce = 0.5f;
+        [SerializeField, HideInInspector] private float shortLengthBounceFriction = 0.6f;
+        [SerializeField, HideInInspector] private float shortLengthRotationXMin = 10f; // X rotation for low speed (slow ball)
+        [SerializeField, HideInInspector] private float shortLengthRotationXMax = 50f; // X rotation for high speed (fast ball)
         
-        [Header("🟣 Bouncer Settings")]
-        [SerializeField] private float bouncerArcHeight = 1.0f;
-        [SerializeField] private float bouncerBounceForce = 0.3f;
-        [SerializeField] private float bouncerBounceFriction = 0.5f;
-        [SerializeField] private float bouncerRotationXMin = -10f; // X rotation for low speed (slow ball)
-        [SerializeField] private float bouncerRotationXMax = 15f; // X rotation for high speed (fast ball)
+        [Header("🟣 Bouncer Settings (Deprecated - now in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float bouncerArcHeight = 1.0f;
+        [SerializeField, HideInInspector] private float bouncerBounceForce = 0.3f;
+        [SerializeField, HideInInspector] private float bouncerBounceFriction = 0.5f;
+        [SerializeField, HideInInspector] private float bouncerRotationXMin = -10f; // X rotation for low speed (slow ball)
+        [SerializeField, HideInInspector] private float bouncerRotationXMax = 15f; // X rotation for high speed (fast ball)
         
-        [Header("🎯 Current Dynamic Values (Read-Only)")]
-        [SerializeField] private float currentYorkerRotationX = 0f;
-        [SerializeField] private float currentFullLengthRotationX = 0f;
-        [SerializeField] private float currentGoodLengthRotationX = 0f;
-        [SerializeField] private float currentShortLengthRotationX = 0f;
-        [SerializeField] private float currentBouncerRotationX = 0f;
+        [Header("🎯 Current Dynamic Values (Read-Only - now displayed in BallSettingsSO)")]
+        [SerializeField, HideInInspector] private float currentYorkerRotationX = 0f;
+        [SerializeField, HideInInspector] private float currentFullLengthRotationX = 0f;
+        [SerializeField, HideInInspector] private float currentGoodLengthRotationX = 0f;
+        [SerializeField, HideInInspector] private float currentShortLengthRotationX = 0f;
+        [SerializeField, HideInInspector] private float currentBouncerRotationX = 0f;
         
-        [Header("🎯 Realistic Physics Bounce System")]
+        [Header("🎯 Realistic Physics Bounce System (Advanced)")]
         [Header("Physics Parameters")]
-        [SerializeField] public float baseRestitutionCoefficient = 0.6f; // Base bounce energy retention
-        [SerializeField] public float randomVariation = 0.05f; // Random variation for realism
+        [SerializeField, HideInInspector] public float baseRestitutionCoefficient = 0.6f; // Base bounce energy retention
+        [SerializeField, HideInInspector] public float randomVariation = 0.05f; // Random variation for realism
         
-        [Header("Speed Response Values (Simple Numbers)")]
+        [Header("Speed Response Values (Managed by SO)")]
         [Tooltip("Bounce multiplier for different speeds - higher = more bounce")]
-        [SerializeField] public float speed9Bounce = 1.08f;
-        [SerializeField] public float speed10Bounce = 1.10f;
-        [SerializeField] public float speed11Bounce = 1.08f;
-        [SerializeField] public float speed12Bounce = 1.06f;
-        [SerializeField] public float speed13Bounce = 1.03f;
-        [SerializeField] public float speed14Bounce = 1.00f;
-        [SerializeField] public float speed15Bounce = 0.85f;
-        [SerializeField] public float speed16Bounce = 0.80f;
-        [SerializeField] public float speed18Bounce = 0.75f;
-        [SerializeField] public float speed20Bounce = 0.72f;
+        [SerializeField, HideInInspector] public float speed9Bounce = 1.08f;
+        [SerializeField, HideInInspector] public float speed10Bounce = 1.10f;
+        [SerializeField, HideInInspector] public float speed11Bounce = 1.08f;
+        [SerializeField, HideInInspector] public float speed12Bounce = 1.06f;
+        [SerializeField, HideInInspector] public float speed13Bounce = 1.03f;
+        [SerializeField, HideInInspector] public float speed14Bounce = 1.00f;
+        [SerializeField, HideInInspector] public float speed15Bounce = 0.85f;
+        [SerializeField, HideInInspector] public float speed16Bounce = 0.80f;
+        [SerializeField, HideInInspector] public float speed18Bounce = 0.75f;
+        [SerializeField, HideInInspector] public float speed20Bounce = 0.72f;
         
         [Tooltip("Friction multiplier for different speeds - higher = more friction/damping")]
-        [SerializeField] public float speed9Friction = 0.80f;
-        [SerializeField] public float speed10Friction = 0.82f;
-        [SerializeField] public float speed12Friction = 0.85f;
-        [SerializeField] public float speed15Friction = 0.95f;
-        [SerializeField] public float speed16Friction = 1.02f;
-        [SerializeField] public float speed18Friction = 1.08f;
-        [SerializeField] public float speed20Friction = 1.10f;
+        [SerializeField, HideInInspector] public float speed9Friction = 0.80f;
+        [SerializeField, HideInInspector] public float speed10Friction = 0.82f;
+        [SerializeField, HideInInspector] public float speed12Friction = 0.85f;
+        [SerializeField, HideInInspector] public float speed15Friction = 0.95f;
+        [SerializeField, HideInInspector] public float speed16Friction = 1.02f;
+        [SerializeField, HideInInspector] public float speed18Friction = 1.08f;
+        [SerializeField, HideInInspector] public float speed20Friction = 1.10f;
         
-        [Header("Length-Specific Physics Multipliers")]
-        [SerializeField] public float yorkerPhysicsMultiplier = 0.8f; // Yorker bounces less
-        [SerializeField] public float fullLengthPhysicsMultiplier = 0.6f; // Full length bounces least
-        [SerializeField] public float goodLengthPhysicsMultiplier = 1.0f; // Good length standard bounce
-        [SerializeField] public float shortLengthPhysicsMultiplier = 1.2f; // Short length bounces more
-        [SerializeField] public float bouncerPhysicsMultiplier = 1.5f; // Bouncer bounces most
+        [Header("Length-Specific Physics Multipliers (Deprecated)")]
+        [SerializeField, HideInInspector] public float yorkerPhysicsMultiplier = 0.8f; // Yorker bounces less
+        [SerializeField, HideInInspector] public float fullLengthPhysicsMultiplier = 0.6f; // Full length bounces least
+        [SerializeField, HideInInspector] public float goodLengthPhysicsMultiplier = 1.0f; // Good length standard bounce
+        [SerializeField, HideInInspector] public float shortLengthPhysicsMultiplier = 1.2f; // Short length bounces more
+        [SerializeField, HideInInspector] public float bouncerPhysicsMultiplier = 1.5f; // Bouncer bounces most
         
-        [Header("Length-Specific Physics Friction")]
-        [SerializeField] public float yorkerPhysicsFriction = 0.9f; // Yorker friction
-        [SerializeField] public float fullLengthPhysicsFriction = 0.8f; // Full length friction
-        [SerializeField] public float goodLengthPhysicsFriction = 1.0f; // Good length friction
-        [SerializeField] public float shortLengthPhysicsFriction = 1.1f; // Short length friction
-        [SerializeField] public float bouncerPhysicsFriction = 1.2f; // Bouncer friction
+        [Header("Length-Specific Physics Friction (Deprecated)")]
+        [SerializeField, HideInInspector] public float yorkerPhysicsFriction = 0.9f; // Yorker friction
+        [SerializeField, HideInInspector] public float fullLengthPhysicsFriction = 0.8f; // Full length friction
+        [SerializeField, HideInInspector] public float goodLengthPhysicsFriction = 1.0f; // Good length friction
+        [SerializeField, HideInInspector] public float shortLengthPhysicsFriction = 1.1f; // Short length friction
+        [SerializeField, HideInInspector] public float bouncerPhysicsFriction = 1.2f; // Bouncer friction
         
         // Public properties for other scripts to access
         public float BallSpeed => Mathf.Round(globalBallSpeed); // Always return rounded integer

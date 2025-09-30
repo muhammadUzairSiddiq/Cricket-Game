@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 433b8a829b5949c48b238bcfd2014c28, type: 3}
   m_Name: BallSettings
   m_EditorClassIdentifier: 
-  globalBallSpeed: 16
+  globalBallSpeed: 12
   arcHeight: 1
   gravity: 10.8
   mass: 0.16
@@ -28,29 +28,29 @@ MonoBehaviour:
     arcHeight: 0
     bounceForce: 1.5
     bounceFriction: 1.45
-    gravity: 12
-    rotationXMin: 40
+    gravity: 11.5
+    rotationXMin: 0
     rotationXMax: 90
   fullLength:
     arcHeight: 1
     bounceForce: 1.5
     bounceFriction: 1.45
     gravity: 12
-    rotationXMin: 120
-    rotationXMax: 108
+    rotationXMin: 0
+    rotationXMax: 65
   goodLength:
     arcHeight: 1
     bounceForce: 1.4
     bounceFriction: 1.2
-    gravity: 10.8
-    rotationXMin: 5
-    rotationXMax: 4
+    gravity: 11
+    rotationXMin: 40
+    rotationXMax: 15
   shortLength:
     arcHeight: 1
     bounceForce: 1.25
     bounceFriction: 1.1
-    gravity: 10.8
-    rotationXMin: 40
+    gravity: 11
+    rotationXMin: 30
     rotationXMax: 60
   bouncer:
     arcHeight: 1
@@ -59,8 +59,8 @@ MonoBehaviour:
     gravity: 10.8
     rotationXMin: -50
     rotationXMax: -50
-  currentYorkerRotationX: 90
-  currentFullLengthRotationX: 108
-  currentGoodLengthRotationX: 4
-  currentShortLengthRotationX: 60
+  currentYorkerRotationX: 0
+  currentFullLengthRotationX: 0
+  currentGoodLengthRotationX: 40
+  currentShortLengthRotationX: 30
   currentBouncerRotationX: -50

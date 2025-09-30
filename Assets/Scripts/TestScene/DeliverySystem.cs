@@ -7,7 +7,8 @@ namespace CricketGame
         Flat,       // Straight delivery
         SeamIn,     // Seam in delivery (curves in)
         SeamOut,    // Seam out delivery (curves out)
-        Inswing     // In swing delivery (curves in towards batsman)
+        Inswing,    // In swing delivery (curves in towards batsman)
+        Outswing    // Out swing delivery (curves away from batsman)
     }
 
     /// <summary>
@@ -24,6 +25,7 @@ namespace CricketGame
         [SerializeField] private SeamInDelivery seamInDelivery;
         [SerializeField] private SeamOutDelivery seamOutDelivery;
         [SerializeField] private InswingDelivery inswingDelivery;
+        [SerializeField] private OutswingDelivery outswingDelivery;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -39,6 +41,8 @@ namespace CricketGame
                 seamOutDelivery = GetComponent<SeamOutDelivery>();
             if (inswingDelivery == null)
                 inswingDelivery = GetComponent<InswingDelivery>();
+            if (outswingDelivery == null)
+                outswingDelivery = GetComponent<OutswingDelivery>();
             
             if (showDebugLogs)
             {
@@ -74,6 +78,10 @@ namespace CricketGame
                 case DeliveryType.Inswing:
                     if (inswingDelivery != null)
                         return inswingDelivery.CalculateTrajectory(startPos, targetPos, ballSpeed);
+                    break;
+                case DeliveryType.Outswing:
+                    if (outswingDelivery != null)
+                        return outswingDelivery.CalculateTrajectory(startPos, targetPos, ballSpeed);
                     break;
             }
             
@@ -152,6 +160,10 @@ namespace CricketGame
                     if (inswingDelivery != null)
                         return inswingDelivery.GetDeliveryDirection(startPos, targetPos, ballSpeed);
                     break;
+                case DeliveryType.Outswing:
+                    if (outswingDelivery != null)
+                        return outswingDelivery.GetDeliveryDirection(startPos, targetPos, ballSpeed);
+                    break;
             }
             
             // Fallback to straight direction
@@ -173,6 +185,8 @@ namespace CricketGame
                     return seamOutDelivery != null ? seamOutDelivery.GetDeliveryInfo() : "Seam Out Delivery - Curves away from batsman";
                 case DeliveryType.Inswing:
                     return inswingDelivery != null ? inswingDelivery.GetDeliveryInfo() : "In Swing Delivery - Curves in towards batsman";
+                case DeliveryType.Outswing:
+                    return outswingDelivery != null ? outswingDelivery.GetDeliveryInfo() : "Out Swing Delivery - Curves away from batsman";
                 default:
                     return "Unknown Delivery Type";
             }
@@ -208,6 +222,14 @@ namespace CricketGame
         public void SwitchToInswingDelivery()
         {
             SetDeliveryType(DeliveryType.Inswing);
+        }
+        
+        /// <summary>
+        /// Switch to outswing delivery
+        /// </summary>
+        public void SwitchToOutswingDelivery()
+        {
+            SetDeliveryType(DeliveryType.Outswing);
         }
         
         /// <summary>
@@ -262,6 +284,12 @@ namespace CricketGame
         void SwitchToInswingContext()
         {
             SwitchToInswingDelivery();
+        }
+        
+        [ContextMenu("Switch to Outswing")]
+        void SwitchToOutswingContext()
+        {
+            SwitchToOutswingDelivery();
         }
     }
 }
