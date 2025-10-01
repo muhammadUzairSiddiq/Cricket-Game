@@ -399,6 +399,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47095a859cf78f84c8a400fa5778e30b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 0
-  arcHeight: 0
+  speed: 12
+  arcHeight: 0.2
   faceVelocity: 0
+  obstacleCheckRadius: 0.1
+  enableObstacleDetection: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295

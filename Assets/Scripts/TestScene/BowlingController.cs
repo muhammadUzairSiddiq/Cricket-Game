@@ -753,6 +753,17 @@ namespace CricketGame
                     Debug.LogWarning("🎯 No BallSettings component found on ball instance!");
                 }
                 
+                // Ensure the target has a trigger to notify exact contact
+                if (target != null)
+                {
+                    var trigger = target.GetComponent<TargetHitTrigger>();
+                    if (trigger == null)
+                    {
+                        trigger = target.gameObject.AddComponent<TargetHitTrigger>();
+                    }
+                    trigger.GetType().GetField("bowlingController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)?.SetValue(trigger, this);
+                }
+
                 Debug.Log("🎯 Ball ready for bowling! Press SPACE to bowl");
             }
             else
@@ -1207,6 +1218,11 @@ namespace CricketGame
                             OnBallBounce(currentBallInstance.transform.position, resumeVelocity);
                         }
                     });
+                    
+                    // 🎯 DEBUG: Verify PathFollower initialization
+                    Debug.Log($"🎯 PATHFOLLOWER INIT: Speed={ballSpeed}, Arc={addedArc}, PathLength={path.Length}");
+                    Debug.Log($"🎯 PATHFOLLOWER SETTINGS: ObstacleDetection={follower.IsObstacleDetectionEnabled}, Radius={follower.ObstacleCheckRadius}");
+                    
                     follower.Begin();
                 }
                 else
@@ -1245,24 +1261,12 @@ namespace CricketGame
             float waitTime = Mathf.Clamp(timeToReach, 0.1f, 5f);
             yield return new WaitForSeconds(waitTime);
             
-            // Mark as landed
+            // Mark as landed (time-based fallback). Exact contact handled by TargetHitTrigger.
             hasLanded = true;
-            Debug.Log("?? Ball has landed on target!");
-            
-            // 🎯 SPEED BOOST: Trigger speed boost when ball hits target
-            BallSpeedBoost targetSpeedBoost = currentBallInstance?.GetComponent<BallSpeedBoost>();
-            if (targetSpeedBoost != null)
-            {
-                targetSpeedBoost.OnTargetHit();
-                DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
-                Debug.Log($"🎯 SPEED BOOST: Triggered for {currentDelivery} delivery with initial speed {ballSpeed:F1} m/s");
-                Debug.Log($"🎯 DELIVERY CONFIRMATION: Speed boost applied to {currentDelivery} delivery");
-            }
-            else
-            {
-                Debug.LogWarning($"🎯 SPEED BOOST: BallSpeedBoost component not found when ball hit target!");
-                Debug.LogWarning($"🎯 SPEED BOOST: This should not happen if speed boost was set up correctly during ball launch.");
-            }
+            Debug.Log("?? Ball reached target window (time-based)");
+
+            // Also trigger speed boost here as a fallback (exact event may also trigger it)
+            TryApplySpeedBoostOnTargetHit(ballSpeed);
         }
 
         // --- Delivery System ---
@@ -1330,6 +1334,49 @@ namespace CricketGame
             {
                 deliverySystem.SetDeliveryType(DeliveryType.SeamOut);
                 Debug.Log("🎯 DELIVERY: Switched to Seam Out delivery");
+            }
+        }
+
+        // --- Target hit integration ---
+        public void OnTargetTouched(Rigidbody ballBody)
+        {
+            if (ballBody == null) return;
+            // Apply post-target effects exactly on contact
+            float currentSpeed = speedController != null ? speedController.GetCurrentSpeed() : (ballSettingsSO != null ? ballSettingsSO.GlobalBallSpeed : 12f);
+            TryApplySpeedBoostOnTargetHit(currentSpeed);
+
+            if (deliverySystem != null && deliverySystem.GetCurrentDeliveryType() == DeliveryType.LegSpin)
+            {
+                var legSpin = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
+                if (legSpin != null)
+                {
+                    float deflectDeg = legSpin.GetPostTargetDeflectionAngleDeg();
+                    Vector3 v = ballBody.linearVelocity;
+                    Vector3 horiz = new Vector3(v.x, 0f, v.z);
+                    if (horiz.magnitude < 0.1f)
+                    {
+                        Vector3 baseDir = spawnPoint != null ? spawnPoint.forward : Vector3.forward;
+                        baseDir.y = 0f; baseDir.Normalize();
+                        horiz = baseDir * Mathf.Max(6f, currentSpeed * 0.6f);
+                    }
+                    Quaternion yaw = Quaternion.AngleAxis(deflectDeg, Vector3.up);
+                    Vector3 deflectedHoriz = yaw * horiz;
+                    float newY = v.y * 0.6f;
+                    Vector3 newVel = new Vector3(deflectedHoriz.x, newY, deflectedHoriz.z);
+                    ballBody.linearVelocity = newVel;
+                    Debug.Log($"🎯 LEG SPIN DEFLECTION (EVENT): {deflectDeg}° yaw applied");
+                }
+            }
+        }
+
+        private void TryApplySpeedBoostOnTargetHit(float ballSpeed)
+        {
+            BallSpeedBoost targetSpeedBoost = currentBallInstance?.GetComponent<BallSpeedBoost>();
+            if (targetSpeedBoost != null)
+            {
+                targetSpeedBoost.OnTargetHit();
+                DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
+                Debug.Log($"🎯 SPEED BOOST: Triggered for {currentDelivery} delivery with initial speed {ballSpeed:F1} m/s");
             }
         }
         
@@ -1456,6 +1503,10 @@ namespace CricketGame
                 }
             }
             
+            // 🎯 OBSTACLE DETECTION: Track previous position for collision detection
+            Vector3 previousPos = startPos;
+            float obstacleCheckRadius = 0.1f; // Ball radius for obstacle detection
+            
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
@@ -1516,13 +1567,77 @@ namespace CricketGame
                     }
                 }
                 
+                // 🎯 OBSTACLE DETECTION: Check for obstacles between previous and current position
+                Vector3 movementDirection = (currentPos - previousPos).normalized;
+                float movementDistance = Vector3.Distance(previousPos, currentPos);
+                
+                if (movementDistance > 0.001f) // Only check if there's actual movement
+                {
+                    // Cast a sphere along the movement path to detect obstacles
+                    RaycastHit[] hits = Physics.SphereCastAll(previousPos, obstacleCheckRadius, movementDirection, movementDistance);
+                    
+                    foreach (RaycastHit hit in hits)
+                    {
+                        // Skip self-collision and target collision (target is handled by TargetHitTrigger)
+                        if (hit.collider.gameObject == ball || hit.collider.gameObject == target.gameObject)
+                            continue;
+                            
+                        // Check if this is an obstacle (has Rigidbody or specific tag)
+                        if (hit.collider.attachedRigidbody != null || hit.collider.CompareTag("Obstacle"))
+                        {
+                            Debug.Log($"🎯 OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during kinematic movement");
+                            
+                            // Apply physics response to the obstacle
+                            ApplyObstaclePhysicsResponse(hit, movementDirection, ballSpeed);
+                            
+                            // Adjust ball position to collision point
+                            currentPos = hit.point + hit.normal * obstacleCheckRadius;
+                            
+                            // Apply bounce/deflection based on obstacle properties
+                            Vector3 reflectedDirection = Vector3.Reflect(movementDirection, hit.normal);
+                            float bounceForce = 0.7f; // Configurable bounce strength
+                            
+                            // Update trajectory direction for remaining movement
+                            trajectoryDirection = reflectedDirection;
+                            trajectoryDirection.y = 0f; // Keep horizontal
+                            trajectoryDirection = trajectoryDirection.normalized;
+                            
+                            Debug.Log($"🎯 OBSTACLE DEFLECTION: New direction {trajectoryDirection}");
+                            break; // Only handle first obstacle hit
+                        }
+                    }
+                }
+                
                 ball.transform.position = currentPos;
+                previousPos = currentPos;
                 
                 yield return null;
             }
             
             // Ensure ball is exactly at target
             ball.transform.position = endPos;
+        }
+        
+        /// <summary>
+        /// Apply physics response to obstacles hit during kinematic movement
+        /// </summary>
+        private void ApplyObstaclePhysicsResponse(RaycastHit hit, Vector3 ballDirection, float ballSpeed)
+        {
+            Rigidbody obstacleRb = hit.collider.attachedRigidbody;
+            if (obstacleRb != null)
+            {
+                // Apply force to the obstacle
+                Vector3 forceDirection = hit.normal;
+                float forceMagnitude = ballSpeed * 0.5f; // Configurable force multiplier
+                Vector3 force = forceDirection * forceMagnitude;
+                
+                obstacleRb.AddForceAtPosition(force, hit.point, ForceMode.Impulse);
+                
+                Debug.Log($"🎯 OBSTACLE FORCE: Applied {force.magnitude:F1}N force to {hit.collider.name}");
+            }
+            
+            // Optional: Add visual/audio effects here
+            // Example: Particle effects, sound effects, etc.
         }
         
         /// <summary>

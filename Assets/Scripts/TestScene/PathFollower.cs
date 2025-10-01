@@ -12,9 +12,17 @@ namespace CricketGame
         [SerializeField] private float speed = 12f; // m/s along the path
         [SerializeField] private float arcHeight = 0.2f; // subtle cricket arc added on top of path
         [SerializeField] private bool faceVelocity = true;
+        [SerializeField] private float obstacleCheckRadius = 0.1f; // Ball radius for obstacle detection
+        [SerializeField] private bool enableObstacleDetection = true;
+        [SerializeField] private LayerMask obstacleMask = ~0; // Which layers to detect during path following
+        
+        // Public getters for debugging
+        public bool IsObstacleDetectionEnabled => enableObstacleDetection;
+        public float ObstacleCheckRadius => obstacleCheckRadius;
 
         private Vector3[] path;
         private System.Action onComplete;
+        private Vector3 previousPosition;
 
         public void Initialize(Vector3[] worldPath, float pathSpeed, float addedArcHeight, System.Action onDone)
         {
@@ -50,6 +58,7 @@ namespace CricketGame
             if (totalLen < 0.0001f) { onComplete?.Invoke(); Destroy(this); yield break; }
 
             float traveled = 0f;
+            previousPosition = transform.position; // Initialize previous position
 
             while (traveled < totalLen)
             {
@@ -66,7 +75,75 @@ namespace CricketGame
                 Vector3 dir = (b - a).normalized;
                 Vector3 pos = Vector3.Lerp(a, b, segT);
                 pos.y += Mathf.Sin((targetDist / totalLen) * Mathf.PI) * arcHeight;
+                
+                // 🎯 OBSTACLE DETECTION: Check for obstacles during path following
+                if (enableObstacleDetection)
+                {
+                    Vector3 movementDirection = (pos - previousPosition).normalized;
+                    float movementDistance = Vector3.Distance(previousPosition, pos);
+                    
+                    if (movementDistance > 0.001f) // Only check if there's actual movement
+                    {
+                        // Cast a sphere along the movement path to detect obstacles
+                        RaycastHit[] hits = Physics.SphereCastAll(previousPosition, obstacleCheckRadius, movementDirection, movementDistance, obstacleMask, QueryTriggerInteraction.Ignore);
+                        
+                        // 🎯 DEBUG: Log all hits for debugging
+                        if (hits.Length > 0)
+                        {
+                            Debug.Log($"🎯 PATHFOLLOWER CAST: Found {hits.Length} hits at distance {movementDistance:F3}");
+                            foreach (var hit in hits)
+                            {
+                                Debug.Log($"🎯 PATHFOLLOWER HIT: {hit.collider.name} (Layer: {hit.collider.gameObject.layer}, Tag: {hit.collider.tag}, HasRB: {hit.collider.attachedRigidbody != null})");
+                            }
+                        }
+                        
+                        foreach (RaycastHit hit in hits)
+                        {
+                            // Skip self-collision
+                            if (hit.collider.gameObject == gameObject)
+                                continue;
+                                
+                            // Treat any solid (non-trigger) collider that isn't the ball/ground as an obstacle
+                            bool isSolid = hit.collider != null && hit.collider.enabled && !hit.collider.isTrigger;
+                            bool isBall = hit.collider.CompareTag("Ball");
+                            bool isGround = hit.collider.CompareTag("Ground");
+                            if (isSolid && !isBall && !isGround)
+                            {
+                                Debug.Log($"🎯 PATHFOLLOWER OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during curved path movement");
+                                
+                                // Apply physics response to the obstacle
+                                ApplyObstaclePhysicsResponse(hit, movementDirection, speed);
+                                
+                                // Hand control to physics immediately to respect colliders
+                                Rigidbody rb = GetComponent<Rigidbody>();
+                                if (rb != null)
+                                {
+                                    // Place ball at safe contact point
+                                    Vector3 contactPos = hit.point + hit.normal * obstacleCheckRadius;
+                                    transform.position = contactPos;
+                                    
+                                    // Enable physics and apply a reflected velocity
+                                    rb.isKinematic = false;
+                                    rb.useGravity = true;
+                                    Vector3 reflected = Vector3.Reflect(movementDirection, hit.normal).normalized;
+                                    float resumeSpeed = Mathf.Max(8f, speed);
+                                    Vector3 resumeVelocity = reflected * resumeSpeed + Vector3.down * 2f;
+                                    rb.linearVelocity = resumeVelocity;
+                                    
+                                    Debug.Log($"🎯 PATHFOLLOWER HANDOFF: Physics resumed with velocity {resumeVelocity}");
+                                }
+                                // Stop following the scripted path; physics now takes over
+                                onComplete = null; // prevent delivery callback that repositions to target
+                                Destroy(this);
+                                yield break;
+                            }
+                        }
+                    }
+                }
+                
                 transform.position = pos;
+                previousPosition = pos;
+                
                 if (faceVelocity && dir.sqrMagnitude > 0.0001f) transform.forward = Vector3.Lerp(transform.forward, dir, 0.5f);
 
                 yield return null;
@@ -74,6 +151,28 @@ namespace CricketGame
 
             onComplete?.Invoke();
             Destroy(this);
+        }
+        
+        /// <summary>
+        /// Apply physics response to obstacles hit during path following
+        /// </summary>
+        private void ApplyObstaclePhysicsResponse(RaycastHit hit, Vector3 ballDirection, float ballSpeed)
+        {
+            Rigidbody obstacleRb = hit.collider.attachedRigidbody;
+            if (obstacleRb != null)
+            {
+                // Apply force to the obstacle
+                Vector3 forceDirection = hit.normal;
+                float forceMagnitude = ballSpeed * 0.5f; // Configurable force multiplier
+                Vector3 force = forceDirection * forceMagnitude;
+                
+                obstacleRb.AddForceAtPosition(force, hit.point, ForceMode.Impulse);
+                
+                Debug.Log($"🎯 PATHFOLLOWER OBSTACLE FORCE: Applied {force.magnitude:F1}N force to {hit.collider.name}");
+            }
+            
+            // Optional: Add visual/audio effects here
+            // Example: Particle effects, sound effects, etc.
         }
     }
 }
