@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 433b8a829b5949c48b238bcfd2014c28, type: 3}
   m_Name: BallSettings
   m_EditorClassIdentifier: 
-  globalBallSpeed: 16
+  globalBallSpeed: 12
   arcHeight: 1
   gravity: 10.8
   mass: 0.16
@@ -59,8 +59,8 @@ MonoBehaviour:
     gravity: 10.8
     rotationXMin: -50
     rotationXMax: -50
-  currentYorkerRotationX: 90
-  currentFullLengthRotationX: 65
-  currentGoodLengthRotationX: 15
-  currentShortLengthRotationX: 60
+  currentYorkerRotationX: 0
+  currentFullLengthRotationX: 0
+  currentGoodLengthRotationX: 40
+  currentShortLengthRotationX: 30
   currentBouncerRotationX: -50

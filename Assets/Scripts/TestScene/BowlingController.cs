@@ -1129,7 +1129,7 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
-                if (currentDelivery == DeliveryType.Inswing || currentDelivery == DeliveryType.Outswing)
+                if (currentDelivery == DeliveryType.Inswing || currentDelivery == DeliveryType.Outswing || currentDelivery == DeliveryType.LegSpin)
                 {
                     // Get appropriate swing delivery component
                     bool curvedEnabled = false;
@@ -1142,6 +1142,11 @@ namespace CricketGame
                     {
                         OutswingDelivery outswingDelivery = deliverySystem.GetComponent<OutswingDelivery>() ?? deliverySystem.transform.GetComponent<OutswingDelivery>();
                         curvedEnabled = outswingDelivery != null && outswingDelivery.IsCurvedPathEnabled();
+                    }
+                    else if (currentDelivery == DeliveryType.LegSpin)
+                    {
+                        LegSpinDelivery legSpinDelivery = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
+                        curvedEnabled = legSpinDelivery != null && legSpinDelivery.IsCurvedPathEnabled();
                     }
 
                     if (curvedEnabled)
@@ -1157,9 +1162,44 @@ namespace CricketGame
             }
             
             // 🎯 USE PATH FOLLOWER FOR SWING CURVED PATH
+            // 🎯 DEBUG: Check current delivery type
+            if (deliverySystem != null)
+            {
+                DeliveryType currentType = deliverySystem.GetCurrentDeliveryType();
+                Debug.Log($"🎯 CURRENT DELIVERY TYPE: {currentType}");
+            }
+            
             if (useKinematicForCurvedPath)
             {
                 Debug.Log("🎯 Using PathFollower for swing curved path");
+                
+                // 🎯 LEG SPIN SPEED RESISTANCE: Apply speed resistance for leg spin deliveries (PathFollower)
+                float effectiveSpeed = ballSpeed;
+                if (deliverySystem != null && deliverySystem.GetCurrentDeliveryType() == DeliveryType.LegSpin)
+                {
+                    Debug.Log("🎯 LEG SPIN (PathFollower): Checking for speed resistance...");
+                    LegSpinDelivery legSpinDelivery = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
+                    if (legSpinDelivery != null)
+                    {
+                        Debug.Log($"🎯 LEG SPIN (PathFollower): Found LegSpinDelivery component, resistance factor: {legSpinDelivery.speedResistanceFactor}");
+                        
+                        // 🎯 SAFETY CHECK: Prevent 100% resistance (would cause zero speed)
+                        float safeResistanceFactor = Mathf.Clamp(legSpinDelivery.speedResistanceFactor, 0f, 0.99f);
+                        if (safeResistanceFactor != legSpinDelivery.speedResistanceFactor)
+                        {
+                            Debug.LogWarning($"🎯 LEG SPIN (PathFollower): Resistance factor clamped from {legSpinDelivery.speedResistanceFactor:P0} to {safeResistanceFactor:P0} to prevent zero speed");
+                        }
+                        
+                        float resistanceMultiplier = 1f - safeResistanceFactor;
+                        effectiveSpeed = ballSpeed * resistanceMultiplier;
+                        Debug.Log($"🎯 LEG SPIN SPEED RESISTANCE (PathFollower): Original speed {ballSpeed:F1} → Reduced speed {effectiveSpeed:F1} (Resistance: {safeResistanceFactor:P0})");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("🎯 LEG SPIN (PathFollower): LegSpinDelivery component not found!");
+                    }
+                }
+                
                 Vector3[] path = null;
                 float addedArc = 0f;
                 // Prefer component based on current type
@@ -1181,6 +1221,15 @@ namespace CricketGame
                         addedArc = outswingDelivery.pathArcHeight;
                     }
                 }
+                else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.LegSpin)
+                {
+                    LegSpinDelivery legSpin = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
+                    if (legSpin != null)
+                    {
+                        path = legSpin.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = legSpin.pathArcHeight;
+                    }
+                }
 
                 if (path != null)
                 {
@@ -1197,7 +1246,7 @@ namespace CricketGame
                     Vector3 finalDir = (path[path.Length - 1] - path[path.Length - 2]).normalized;
 
                     var follower = currentBallInstance.AddComponent<PathFollower>();
-                    follower.Initialize(path, ballSpeed, addedArc, () =>
+                    follower.Initialize(path, effectiveSpeed, addedArc, () =>
                     {
                         hasLanded = true;
                         Debug.Log("🎯 PathFollower complete");
@@ -1220,7 +1269,7 @@ namespace CricketGame
                     });
                     
                     // 🎯 DEBUG: Verify PathFollower initialization
-                    Debug.Log($"🎯 PATHFOLLOWER INIT: Speed={ballSpeed}, Arc={addedArc}, PathLength={path.Length}");
+                    Debug.Log($"🎯 PATHFOLLOWER INIT: Speed={effectiveSpeed}, Arc={addedArc}, PathLength={path.Length}");
                     Debug.Log($"🎯 PATHFOLLOWER SETTINGS: ObstacleDetection={follower.IsObstacleDetectionEnabled}, Radius={follower.ObstacleCheckRadius}");
                     
                     follower.Begin();
@@ -1238,7 +1287,34 @@ namespace CricketGame
             }
             else
             {
-                // 🎯 USE PHYSICS FOR STRAIGHT DELIVERIES
+                // 🎯 LEG SPIN SPEED RESISTANCE: Apply speed resistance for leg spin deliveries
+                if (deliverySystem != null && deliverySystem.GetCurrentDeliveryType() == DeliveryType.LegSpin)
+                {
+                    Debug.Log("🎯 LEG SPIN (Physics): Checking for speed resistance...");
+                    LegSpinDelivery legSpinDelivery = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
+                    if (legSpinDelivery != null)
+                    {
+                        Debug.Log($"🎯 LEG SPIN (Physics): Found LegSpinDelivery component, resistance factor: {legSpinDelivery.speedResistanceFactor}");
+                        
+                        // 🎯 SAFETY CHECK: Prevent 100% resistance (would cause zero speed)
+                        float safeResistanceFactor = Mathf.Clamp(legSpinDelivery.speedResistanceFactor, 0f, 0.99f);
+                        if (safeResistanceFactor != legSpinDelivery.speedResistanceFactor)
+                        {
+                            Debug.LogWarning($"🎯 LEG SPIN (Physics): Resistance factor clamped from {legSpinDelivery.speedResistanceFactor:P0} to {safeResistanceFactor:P0} to prevent zero speed");
+                        }
+                        
+                        float originalSpeed = initialVelocity.magnitude;
+                        float resistanceMultiplier = 1f - safeResistanceFactor;
+                        initialVelocity = initialVelocity.normalized * (originalSpeed * resistanceMultiplier);
+                        Debug.Log($"🎯 LEG SPIN SPEED RESISTANCE: Original speed {originalSpeed:F1} → Reduced speed {initialVelocity.magnitude:F1} (Resistance: {safeResistanceFactor:P0})");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("🎯 LEG SPIN (Physics): LegSpinDelivery component not found!");
+                    }
+                }
+            
+            // 🎯 USE PHYSICS FOR STRAIGHT DELIVERIES
                 if (useSmoothMovement)
                 {
                     Debug.Log("🎯 Using smooth velocity application");
@@ -1337,6 +1413,33 @@ namespace CricketGame
             }
         }
 
+        /// <summary>
+        /// Test method to switch to LegSpin and apply speed resistance
+        /// </summary>
+        [ContextMenu("Test LegSpin Speed Resistance")]
+        public void TestLegSpinSpeedResistance()
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.SwitchToLegSpinDelivery();
+                Debug.Log("🎯 TEST: Switched to LegSpin delivery");
+                
+                LegSpinDelivery legSpin = deliverySystem.GetComponent<LegSpinDelivery>();
+                if (legSpin != null)
+                {
+                    Debug.Log($"🎯 TEST: LegSpin component found, resistance factor: {legSpin.speedResistanceFactor}");
+                }
+                else
+                {
+                    Debug.LogError("🎯 TEST: LegSpin component NOT found!");
+                }
+            }
+            else
+            {
+                Debug.LogError("🎯 TEST: DeliverySystem not found!");
+            }
+        }
+
         // --- Target hit integration ---
         public void OnTargetTouched(Rigidbody ballBody)
         {
@@ -1344,29 +1447,6 @@ namespace CricketGame
             // Apply post-target effects exactly on contact
             float currentSpeed = speedController != null ? speedController.GetCurrentSpeed() : (ballSettingsSO != null ? ballSettingsSO.GlobalBallSpeed : 12f);
             TryApplySpeedBoostOnTargetHit(currentSpeed);
-
-            if (deliverySystem != null && deliverySystem.GetCurrentDeliveryType() == DeliveryType.LegSpin)
-            {
-                var legSpin = deliverySystem.GetComponent<LegSpinDelivery>() ?? deliverySystem.transform.GetComponent<LegSpinDelivery>();
-                if (legSpin != null)
-                {
-                    float deflectDeg = legSpin.GetPostTargetDeflectionAngleDeg();
-                    Vector3 v = ballBody.linearVelocity;
-                    Vector3 horiz = new Vector3(v.x, 0f, v.z);
-                    if (horiz.magnitude < 0.1f)
-                    {
-                        Vector3 baseDir = spawnPoint != null ? spawnPoint.forward : Vector3.forward;
-                        baseDir.y = 0f; baseDir.Normalize();
-                        horiz = baseDir * Mathf.Max(6f, currentSpeed * 0.6f);
-                    }
-                    Quaternion yaw = Quaternion.AngleAxis(deflectDeg, Vector3.up);
-                    Vector3 deflectedHoriz = yaw * horiz;
-                    float newY = v.y * 0.6f;
-                    Vector3 newVel = new Vector3(deflectedHoriz.x, newY, deflectedHoriz.z);
-                    ballBody.linearVelocity = newVel;
-                    Debug.Log($"🎯 LEG SPIN DEFLECTION (EVENT): {deflectDeg}° yaw applied");
-                }
-            }
         }
 
         private void TryApplySpeedBoostOnTargetHit(float ballSpeed)
@@ -1499,6 +1579,15 @@ namespace CricketGame
                     {
                         useCurvedPath = true;
                         Debug.Log($"🎯 CURVED PATH: Using curved path for Inswing delivery");
+                    }
+                }
+                else if (currentDelivery == DeliveryType.LegSpin)
+                {
+                    LegSpinDelivery legSpinDelivery = deliverySystem.GetComponent<LegSpinDelivery>();
+                    if (legSpinDelivery != null && legSpinDelivery.IsCurvedPathEnabled())
+                    {
+                        useCurvedPath = true;
+                        Debug.Log($"🎯 CURVED PATH: Using curved path for LegSpin delivery");
                     }
                 }
             }
