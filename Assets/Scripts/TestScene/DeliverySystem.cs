@@ -9,7 +9,8 @@ namespace CricketGame
         SeamOut,    // Seam out delivery (curves out)
         Inswing,    // In swing delivery (curves in towards batsman)
         Outswing,   // Out swing delivery (curves away from batsman)
-        LegSpin     // Leg spin delivery (pre-target tail in, post-target turn)
+        LegSpin,    // Leg spin delivery (spins right after bounce)
+        OffSpin     // Off spin delivery (spins left after bounce)
     }
 
     /// <summary>
@@ -28,6 +29,7 @@ namespace CricketGame
         [SerializeField] private InswingDelivery inswingDelivery;
         [SerializeField] private OutswingDelivery outswingDelivery;
         [SerializeField] private LegSpinDelivery legSpinDelivery;
+        [SerializeField] private OffSpinDelivery offSpinDelivery;
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -47,6 +49,8 @@ namespace CricketGame
                 outswingDelivery = GetComponent<OutswingDelivery>();
             if (legSpinDelivery == null)
                 legSpinDelivery = GetComponent<LegSpinDelivery>();
+            if (offSpinDelivery == null)
+                offSpinDelivery = GetComponent<OffSpinDelivery>();
             
             if (showDebugLogs)
             {
@@ -90,6 +94,11 @@ namespace CricketGame
                 case DeliveryType.LegSpin:
                     if (legSpinDelivery != null)
                         return legSpinDelivery.CalculateTrajectory(startPos, targetPos, ballSpeed);
+                    break;
+                    
+                case DeliveryType.OffSpin:
+                    if (offSpinDelivery != null)
+                        return offSpinDelivery.CalculateTrajectory(startPos, targetPos, ballSpeed);
                     break;
             }
             
@@ -176,6 +185,11 @@ namespace CricketGame
                     if (legSpinDelivery != null)
                         return legSpinDelivery.GetDeliveryDirection(startPos, targetPos, ballSpeed);
                     break;
+                    
+                case DeliveryType.OffSpin:
+                    if (offSpinDelivery != null)
+                        return offSpinDelivery.GetDeliveryDirection(startPos, targetPos, ballSpeed);
+                    break;
             }
             
             // Fallback to straight direction
@@ -200,7 +214,9 @@ namespace CricketGame
                 case DeliveryType.Outswing:
                     return outswingDelivery != null ? outswingDelivery.GetDeliveryInfo() : "Out Swing Delivery - Curves away from batsman";
                 case DeliveryType.LegSpin:
-                    return legSpinDelivery != null ? legSpinDelivery.GetDeliveryInfo() : "Leg Spin Delivery - Curves in, then turns after pitching";
+                    return legSpinDelivery != null ? legSpinDelivery.GetDeliveryInfo() : "Leg Spin Delivery - Spins right after pitching";
+                case DeliveryType.OffSpin:
+                    return offSpinDelivery != null ? offSpinDelivery.GetDeliveryInfo() : "Off Spin Delivery - Spins left after pitching";
                 default:
                     return "Unknown Delivery Type";
             }
@@ -252,6 +268,14 @@ namespace CricketGame
         public void SwitchToLegSpinDelivery()
         {
             SetDeliveryType(DeliveryType.LegSpin);
+        }
+        
+        /// <summary>
+        /// Switch to off spin delivery
+        /// </summary>
+        public void SwitchToOffSpinDelivery()
+        {
+            SetDeliveryType(DeliveryType.OffSpin);
         }
         
         /// <summary>

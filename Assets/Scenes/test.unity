@@ -2192,6 +2192,7 @@ GameObject:
   - component: {fileID: 1212878765}
   - component: {fileID: 1212878766}
   - component: {fileID: 1212878767}
+  - component: {fileID: 1212878768}
   m_Layer: 0
   m_Name: Delievery System
   m_TagString: Untagged
@@ -2269,6 +2270,7 @@ MonoBehaviour:
   inswingDelivery: {fileID: 1212878765}
   outswingDelivery: {fileID: 1212878766}
   legSpinDelivery: {fileID: 1212878767}
+  offSpinDelivery: {fileID: 1212878768}
   showDebugLogs: 0
 --- !u!4 &1212878764
 Transform:
@@ -2344,17 +2346,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enableLegSpin: 1
-  baseSpinForce: 1
-  minSpinAtSpeed9: -0.2
-  maxSpinAtSpeed16: -1.35
-  spinDirection: {x: -1, y: 0, z: 0}
-  speedResistanceFactor: 0.2
-  enableCurvedPath: 1
+  enablePostBounceSpinEffect: 1
+  postBounceSpinStrength: -0.125
+  enableCurvedPath: 0
   curveIntensity: 0.1
   pathArcHeight: 0.5
   bendDistanceScale: 2
   showDebugLogs: 1
-  showCurvedPathInScene: 1
+  showCurvedPathInScene: 0
+--- !u!114 &1212878768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1212878759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b133ad9c8c25734b94b89989d07ece3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableOffSpin: 1
+  enablePostBounceSpinEffect: 1
+  postBounceSpinStrength: -0.5
+  enableCurvedPath: 0
+  curveIntensity: 1
+  pathArcHeight: 0.05
+  bendDistanceScale: 0.1
+  showDebugLogs: 1
+  showCurvedPathInScene: 0
 --- !u!1 &1213891545
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,23 +3,23 @@ using UnityEngine;
 namespace CricketGame
 {
 	/// <summary>
-	/// Leg Spin Delivery - Ball can follow curved or straight path with spin effect
+	/// Off Spin Delivery - Ball can follow curved or straight path with spin effect
 	/// Set enableCurvedPath = false for straight line delivery
 	/// Use context menu "Disable Curved Path (Use Straight Line)" to enable straight path
 	/// </summary>
-	public class LegSpinDelivery : MonoBehaviour
+	public class OffSpinDelivery : MonoBehaviour
 	{
-        [Header("Leg Spin Settings")]
-        [Tooltip("Enable/disable leg spin delivery")]
-        public bool enableLegSpin = true;
+        [Header("Off Spin Settings")]
+        [Tooltip("Enable/disable off spin delivery")]
+        public bool enableOffSpin = true;
         
         [Header("Post-Bounce Spin Effect")]
-        [Tooltip("Enable lateral spin movement AFTER ball bounces on pitch (realistic leg spin physics)")]
+        [Tooltip("Enable lateral spin movement AFTER ball bounces on pitch (realistic off spin physics)")]
         public bool enablePostBounceSpinEffect = true;
         
         [Tooltip("Multiplier for lateral spin strength after bounce (POSITIVE = spin right, NEGATIVE = spin left, higher magnitude = more sideways movement)")]
         [Range(-2.0f, 2.0f)]
-        public float postBounceSpinStrength = 0.5f;
+        public float postBounceSpinStrength = -0.5f; // Negative for off spin (left)
 
         [Header("Curved Path Settings")]
         [Tooltip("Enable curved path following (ball follows Bezier curve) - DISABLED for straight line with swing")]
@@ -44,13 +44,13 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 LegSpinDelivery: Ready for leg spin deliveries");
+                Debug.Log("🎯 OffSpinDelivery: Ready for off spin deliveries");
             }
         }
 
         public Vector3 CalculateTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableLegSpin)
+            if (!enableOffSpin)
                 return targetPos;
 
             // If curved path is disabled, return straight trajectory
@@ -58,7 +58,7 @@ namespace CricketGame
             {
                 if (showDebugLogs)
                 {
-                    Debug.Log($"🎯 LegSpinDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
+                    Debug.Log($"🎯 OffSpinDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
                 }
                 return targetPos;
             }
@@ -68,7 +68,7 @@ namespace CricketGame
 
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LegSpinDelivery: Calculated curved trajectory - Speed: {ballSpeed:F1}");
+                Debug.Log($"🎯 OffSpinDelivery: Calculated curved trajectory - Speed: {ballSpeed:F1}");
             }
 
             return spinTarget;
@@ -105,7 +105,7 @@ namespace CricketGame
 
         public Vector3 GetCurvedPathPoint(Vector3 startPos, Vector3 targetPos, float ballSpeed, float t)
         {
-            if (!enableLegSpin || !enableCurvedPath)
+            if (!enableOffSpin || !enableCurvedPath)
                 return Vector3.Lerp(startPos, targetPos, t);
 
             // Simple curved path calculation
@@ -120,7 +120,7 @@ namespace CricketGame
 
         public Vector3[] GetCurvedPathPoints(Vector3 startPos, Vector3 targetPos, float ballSpeed, int segments = 30)
         {
-            if (!enableLegSpin || !enableCurvedPath)
+            if (!enableOffSpin || !enableCurvedPath)
             {
                 Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
                 for (int i = 0; i < straight.Length; i++)
@@ -150,14 +150,14 @@ namespace CricketGame
 
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
-            if (!enableLegSpin)
+            if (!enableOffSpin)
                 return (targetPos - startPos).normalized;
 
             // Always return straight direction (post-bounce spin handles lateral movement)
             Vector3 straightDirection = (targetPos - startPos).normalized;
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LegSpinDelivery: Straight direction - Spin occurs after bounce");
+                Debug.Log($"🎯 OffSpinDelivery: Straight direction - Spin occurs after bounce");
             }
             return straightDirection;
         }
@@ -165,14 +165,14 @@ namespace CricketGame
 
         public bool IsCurvedPathEnabled()
         {
-            return enableLegSpin && enableCurvedPath;
+            return enableOffSpin && enableCurvedPath;
         }
 
         public void ResetDelivery()
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 LegSpinDelivery: Reset for new ball");
+                Debug.Log("🎯 OffSpinDelivery: Reset for new ball");
             }
         }
 
@@ -191,7 +191,7 @@ namespace CricketGame
                     spinInfo = " with no post-bounce spin";
             }
             
-            return $"Leg Spin Delivery - {pathInfo}{spinInfo}";
+            return $"Off Spin Delivery - {pathInfo}{spinInfo}";
         }
 
         public void UpdateSpinStrength(float strength)
@@ -201,7 +201,7 @@ namespace CricketGame
             if (showDebugLogs)
             {
                 string direction = strength > 0 ? "RIGHT" : strength < 0 ? "LEFT" : "NONE";
-                Debug.Log($"🎯 LegSpinDelivery: Updated spin strength to {strength:F2} ({direction})");
+                Debug.Log($"🎯 OffSpinDelivery: Updated spin strength to {strength:F2} ({direction})");
             }
         }
 
@@ -212,8 +212,8 @@ namespace CricketGame
         void ForceStraightPath()
         {
             enableCurvedPath = false;
-            Debug.Log("🎯 LegSpinDelivery: Curved path DISABLED - Ball will now follow straight line!");
-            Debug.Log($"🎯 LegSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
+            Debug.Log("🎯 OffSpinDelivery: Curved path DISABLED - Ball will now follow straight line!");
+            Debug.Log($"🎯 OffSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
         }
         
         /// <summary>
@@ -223,8 +223,8 @@ namespace CricketGame
         void ForceCurvedPath()
         {
             enableCurvedPath = true;
-            Debug.Log("🎯 LegSpinDelivery: Curved path ENABLED - Ball will follow Bezier curve!");
-            Debug.Log($"🎯 LegSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
+            Debug.Log("🎯 OffSpinDelivery: Curved path ENABLED - Ball will follow Bezier curve!");
+            Debug.Log($"🎯 OffSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
         }
         
         /// <summary>
@@ -233,13 +233,13 @@ namespace CricketGame
         [ContextMenu("Check Current Path Mode")]
         void CheckPathMode()
         {
-            Debug.Log($"🎯 LegSpinDelivery Path Mode:");
-            Debug.Log($"   - Enable Leg Spin: {enableLegSpin}");
+            Debug.Log($"🎯 OffSpinDelivery Path Mode:");
+            Debug.Log($"   - Enable Off Spin: {enableOffSpin}");
             Debug.Log($"   - Enable Curved Path: {enableCurvedPath}");
             Debug.Log($"   - Is Curved Path Enabled: {IsCurvedPathEnabled()}");
             Debug.Log($"   - Mode: {(IsCurvedPathEnabled() ? "CURVED PATH (Bezier)" : "STRAIGHT PATH")}");
             Debug.Log($"");
-            Debug.Log($"🎯 LegSpinDelivery Post-Bounce Spin Settings:");
+            Debug.Log($"🎯 OffSpinDelivery Post-Bounce Spin Settings:");
             Debug.Log($"   - Enable Post-Bounce Spin: {enablePostBounceSpinEffect}");
             Debug.Log($"   - Spin Strength: {postBounceSpinStrength:F2}");
             string spinDir = postBounceSpinStrength > 0 ? "RIGHT →" : postBounceSpinStrength < 0 ? "← LEFT" : "NONE";
@@ -247,13 +247,13 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Context menu to test leg spin configuration
+        /// Context menu to test off spin configuration
         /// </summary>
-        [ContextMenu("Show Complete Leg Spin Configuration")]
+        [ContextMenu("Show Complete Off Spin Configuration")]
         void ShowCompleteConfiguration()
         {
             Debug.Log("═══════════════════════════════════════════════════════");
-            Debug.Log("🎯 LEG SPIN DELIVERY - COMPLETE CONFIGURATION");
+            Debug.Log("🎯 OFF SPIN DELIVERY - COMPLETE CONFIGURATION");
             Debug.Log("═══════════════════════════════════════════════════════");
             Debug.Log($"");
             Debug.Log($"📍 PATH SETTINGS:");
@@ -275,7 +275,7 @@ namespace CricketGame
 
         void OnDrawGizmos()
         {
-            if (!showCurvedPathInScene || !enableLegSpin || !enableCurvedPath)
+            if (!showCurvedPathInScene || !enableOffSpin || !enableCurvedPath)
                 return;
 
             BowlingController bowlingController = FindObjectOfType<BowlingController>();
@@ -294,7 +294,7 @@ namespace CricketGame
             Vector3 targetPos = target.position;
             float ballSpeed = 12f;
 
-            Gizmos.color = Color.cyan;
+            Gizmos.color = Color.magenta; // Different color for off spin visualization
             int segments = 20;
             for (int i = 0; i < segments; i++)
             {
@@ -307,3 +307,4 @@ namespace CricketGame
         }
     }
 }
+
