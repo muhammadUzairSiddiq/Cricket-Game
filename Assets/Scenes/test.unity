@@ -2215,10 +2215,10 @@ MonoBehaviour:
   enableSeamOut: 1
   usePathFollower: 1
   pathArcHeight: 0.8
-  enableSeamAngle: 1
+  enableSeamAngle: 0
   seamAngleOffset: 0.3
   enablePostBounceSeam: 1
-  postBounceSeamStrength: 0.8
+  postBounceSeamStrength: -0.05
   disableObstacleDetection: 0
   showDebugLogs: 0
 --- !u!114 &1212878761
@@ -2271,7 +2271,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d520999e2b96148baea7c5dd66d0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentDeliveryType: 1
+  currentDeliveryType: 5
   enableDeliverySystem: 1
   flatDelivery: {fileID: 1212878762}
   seamInDelivery: {fileID: 1212878761}
@@ -2357,6 +2357,7 @@ MonoBehaviour:
   enableLegSpin: 1
   enablePostBounceSpinEffect: 1
   postBounceSpinStrength: -0.125
+  usePathFollower: 1
   enableCurvedPath: 0
   curveIntensity: 0.1
   pathArcHeight: 0.8
@@ -2378,6 +2379,7 @@ MonoBehaviour:
   enableOffSpin: 1
   enablePostBounceSpinEffect: 1
   postBounceSpinStrength: 0.125
+  usePathFollower: 1
   enableCurvedPath: 0
   curveIntensity: 1
   pathArcHeight: 0.8

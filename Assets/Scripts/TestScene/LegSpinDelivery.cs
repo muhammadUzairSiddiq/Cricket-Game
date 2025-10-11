@@ -21,6 +21,10 @@ namespace CricketGame
         [Range(-2.0f, 2.0f)]
         public float postBounceSpinStrength = 0.5f;
 
+        [Header("Path Settings")]
+        [Tooltip("Use PathFollower for guaranteed accuracy (straight path with post-bounce spin)")]
+        public bool usePathFollower = true;
+        
         [Header("Curved Path Settings")]
         [Tooltip("Enable curved path following (ball follows Bezier curve) - DISABLED for straight line with swing")]
         public bool enableCurvedPath = false; // Changed to false for straight path with swing effect
@@ -120,53 +124,24 @@ namespace CricketGame
 
         public Vector3[] GetCurvedPathPoints(Vector3 startPos, Vector3 targetPos, float ballSpeed, int segments = 30)
         {
-            if (!enableLegSpin || !enableCurvedPath)
+            // Leg Spin delivery uses perfectly straight path
+            Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
+            for (int i = 0; i < straight.Length; i++)
             {
-                Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
-                for (int i = 0; i < straight.Length; i++)
-                {
-                    float t = (float)i / (straight.Length - 1);
-                    straight[i] = Vector3.Lerp(startPos, targetPos, t);
-                }
-                
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 LEG SPIN PATH: Straight path - {straight.Length} points from {startPos} to {targetPos}");
-                }
-                
-                return straight;
+                float t = (float)i / (straight.Length - 1);
+                straight[i] = Vector3.Lerp(startPos, targetPos, t);
             }
-
-            // 🎯 DYNAMIC PATH CALCULATION: Works from ANY spawn point
-            // Calculate bowling direction from actual spawn-to-target positions
-            Vector3 dir = (targetPos - startPos).normalized;
             
-            // 🎯 CRITICAL: Calculate RIGHT direction relative to bowling direction
-            // Cross(dir, up) = perpendicular RIGHT direction (works from any orientation!)
-            Vector3 right = Vector3.Cross(dir, Vector3.up).normalized;
-            
-            float distance = Vector3.Distance(startPos, targetPos);
-            float lateralMeters = curveIntensity * (distance * bendDistanceScale);
-            Vector3 controlPoint = Vector3.Lerp(startPos, targetPos, 0.5f) + right * lateralMeters;
-
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LEG SPIN PATH GENERATION:");
-                Debug.Log($"   Start: {startPos}, Target: {targetPos}");
-                Debug.Log($"   Bowling Direction: {dir}");
-                Debug.Log($"   Lateral Right: {right}");
-                Debug.Log($"   Control Point Offset: {lateralMeters:F2}m");
-                Debug.Log($"   ✅ Directions calculated DYNAMICALLY - works from ANY spawn point!");
+                Debug.Log($"🎯 LEG SPIN PATH: Perfectly straight path - {straight.Length} points");
+                Debug.Log($"   Start: {startPos}");
+                Debug.Log($"   Target: {targetPos}");
+                Debug.Log($"   Direction: {(targetPos - startPos).normalized}");
+                Debug.Log($"   ✅ Pure straight line - 100% ACCURATE - works from ANY spawn point!");
             }
-
-            int count = Mathf.Max(2, segments + 1);
-            Vector3[] points = new Vector3[count];
-            for (int i = 0; i < count; i++)
-            {
-                float t = (float)i / (count - 1);
-                points[i] = CalculateBezierPoint(startPos, controlPoint, targetPos, t);
-            }
-            return points;
+            
+            return straight;
         }
 
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
@@ -184,9 +159,12 @@ namespace CricketGame
         }
 
 
+        /// <summary>
+        /// Check if path follower is enabled
+        /// </summary>
         public bool IsCurvedPathEnabled()
         {
-            return enableLegSpin && enableCurvedPath;
+            return enableLegSpin && usePathFollower;
         }
 
         public void ResetDelivery()
