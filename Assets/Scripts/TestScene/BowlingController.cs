@@ -252,47 +252,11 @@ namespace CricketGame
             
             Debug.Log($"<color=#FFD700>🔍 Using Inspector BallSettings for {length}</color>");
             
-            // Get length-specific settings from ScriptableObject
-            var lengthSettings = ballSettingsSO.GetLengthSettings(length);
-            
-            // Apply settings based on bowling length from the single BallSettings component
-            // Note: Speed is now global, only arc, bounce, and rotation are length-specific
-            switch (length)
-            {
-                case BowlingLength.Yorker:
-                    Debug.Log($"<color=#FF0000>🔍 Yorker Inspector Values: Global Speed={ballSettingsSO.GlobalBallSpeed}, Arc={lengthSettings.arcHeight}, Bounce={lengthSettings.bounceForce}</color>");
-                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
-                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
-                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
-                    break;
-                    
-                case BowlingLength.FullLength:
-                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
-                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
-                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
-                    break;
-                    
-                case BowlingLength.GoodLength:
-                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
-                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
-                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
-                    break;
-                    
-                case BowlingLength.ShortLength:
-                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
-                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
-                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
-                    break;
-                    
-                case BowlingLength.Bouncer:
-                    targetBallSettings.SetArcHeight(lengthSettings.arcHeight);
-                    targetBallSettings.SetBounceForce(lengthSettings.bounceForce);
-                    targetBallSettings.SetBounceFriction(lengthSettings.bounceFriction);
-                    break;
-            }
-            
-            // Copy common settings
-            targetBallSettings.SetGravity(lengthSettings.gravity); // Use length-specific gravity
+            // Apply global settings (all settings are now global for simplicity)
+            targetBallSettings.SetArcHeight(ballSettingsSO.ArcHeight); // Use global arc height
+            targetBallSettings.SetGravity(ballSettingsSO.Gravity); // Use global gravity
+            targetBallSettings.SetBounceForce(ballSettingsSO.BounceForce); // Use global bounce force
+            targetBallSettings.SetBounceFriction(ballSettingsSO.BounceFriction); // Use global bounce friction
             targetBallSettings.SetMaxBounces(ballSettingsSO.MaxBounces);
             targetBallSettings.SetUseRealisticPhysics(ballSettingsSO.UseRealisticPhysics);
             
@@ -521,7 +485,7 @@ namespace CricketGame
             if (ballSettingsSO == null) return 0f;
             
             // Use dynamic rotation based on current ball speed
-            return ballSettingsSO.GetDynamicRotationX(length, ballSettingsSO.GlobalBallSpeed);
+            return 0f; // X rotation removed - no longer used
         }
         
         /// <summary>
@@ -952,9 +916,8 @@ namespace CricketGame
                 Debug.Log($"🎯 SPEED FROM BALL SETTINGS: {ballSpeed} m/s");
             }
             float arcHeight = ballSettingsSO.ArcHeight;
-            // Get length-specific gravity
-            var lengthSettings = ballSettingsSO.GetLengthSettings(GetCurrentBowlingLength());
-            float gravity = lengthSettings.gravity;
+            // Use global gravity (no longer per-section)
+            float gravity = ballSettingsSO.Gravity;
             
             // 🎯 DELIVERY TRAJECTORY: Calculate delivery-modified target position
             Vector3 finalTargetPosition = CalculateDeliveryTrajectory(startPosition, targetPosition, ballSpeed);

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 433b8a829b5949c48b238bcfd2014c28, type: 3}
   m_Name: BallSettings
   m_EditorClassIdentifier: 
-  globalBallSpeed: 12
+  globalBallSpeed: 16
   arcHeight: 1
   gravity: 10.8
   mass: 0.16
@@ -21,46 +21,6 @@ MonoBehaviour:
   ballRadius: 0.036
   useRealisticPhysics: 1
   destroyDelay: 5
-  bounceForce: 0.8
-  bounceFriction: 0.8
-  maxBounces: 3
-  yorker:
-    arcHeight: 0
-    bounceForce: 1.5
-    bounceFriction: 1.45
-    gravity: 11.5
-    rotationXMin: 0
-    rotationXMax: 90
-  fullLength:
-    arcHeight: 1
-    bounceForce: 1.5
-    bounceFriction: 1.45
-    gravity: 12
-    rotationXMin: 0
-    rotationXMax: 65
-  goodLength:
-    arcHeight: 1
-    bounceForce: 1.4
-    bounceFriction: 1.2
-    gravity: 11
-    rotationXMin: 40
-    rotationXMax: 15
-  shortLength:
-    arcHeight: 1
-    bounceForce: 1.25
-    bounceFriction: 1.1
-    gravity: 11
-    rotationXMin: 30
-    rotationXMax: 60
-  bouncer:
-    arcHeight: 1
-    bounceForce: 1.44
-    bounceFriction: 1
-    gravity: 10.8
-    rotationXMin: 0
-    rotationXMax: 0
-  currentYorkerRotationX: 0
-  currentFullLengthRotationX: 0
-  currentGoodLengthRotationX: 40
-  currentShortLengthRotationX: 30
-  currentBouncerRotationX: -50
+  bounceForce: 0.9
+  bounceFriction: 0.9
+  maxBounces: 6
