@@ -10,8 +10,8 @@ AnimatorStateMachine:
   m_Name: Base Layer
   m_ChildStates:
   - serializedVersion: 1
-    m_State: {fileID: 4166835503255165570}
-    m_Position: {x: 480, y: 460, z: 0}
+    m_State: {fileID: 8223310096093347464}
+    m_Position: {x: 254.35226, y: 233.1101, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -21,7 +21,7 @@ AnimatorStateMachine:
   m_EntryPosition: {x: 50, y: 120, z: 0}
   m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
-  m_DefaultState: {fileID: 4166835503255165570}
+  m_DefaultState: {fileID: 8223310096093347464}
 --- !u!91 &9100000
 AnimatorController:
   m_ObjectHideFlags: 0
@@ -44,15 +44,15 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
---- !u!1102 &4166835503255165570
+--- !u!1102 &8223310096093347464
 AnimatorState:
   serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: left arm fast new
-  m_Speed: 0.78
+  m_Name: R Off-Spin
+  m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -64,7 +64,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 8358699699580610853, guid: 0001febf4dade448481c634cf92a28b2, type: 3}
+  m_Motion: {fileID: -6382022663981613832, guid: 0001febf4dade448481c634cf92a28b2, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

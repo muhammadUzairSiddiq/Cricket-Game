@@ -55,7 +55,7 @@ namespace CricketGame
         [SerializeField] private KeyCode stopKey = KeyCode.Escape;
         
         // Private variables
-        private Vector3 originalBallPosition;
+        // 🎯 REMOVED: originalBallPosition (was cached, now use spawnPoint.position dynamically)
         private Rigidbody ballRigidbody;
         private bool isRunning = false;
         private bool isReturning = false;
@@ -118,8 +118,8 @@ namespace CricketGame
             // Store spawn point reference
             spawnPoint = ballSpawnPoint;
             
-            // Store original position
-            originalBallPosition = spawnPoint.position;
+            // 🎯 DYNAMIC SPAWN: Don't cache position - always use current spawnPoint.position
+            // This allows spawn point to be moved at runtime!
             
             // Initialize smooth movement variables
             previousPosition = ball.transform.position;
@@ -725,8 +725,10 @@ namespace CricketGame
             // Instantiate new ball at spawn point
             if (ball != null && spawnPoint != null)
             {
+                // 🎯 DYNAMIC SPAWN: Always use current spawn point position
                 currentBallInstance = Instantiate(ball, spawnPoint.position, spawnPoint.rotation);
-                Debug.Log($"🎯 New ball instantiated at: {spawnPoint.position}");
+                Debug.Log($"🎯 DYNAMIC SPAWN: Ball instantiated at CURRENT spawn point position: {spawnPoint.position}");
+                Debug.Log($"🎯 DYNAMIC SPAWN: Spawn rotation: {spawnPoint.rotation.eulerAngles}");
                 Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
                 
                 // Reset state
@@ -861,10 +863,11 @@ namespace CricketGame
             }
             
             // ?? SAFETY: Ensure ball is at correct starting position
-            if (Vector3.Distance(ballToBowl.transform.position, originalBallPosition) > 0.1f)
+            // 🎯 DYNAMIC: Use current spawn point position, not cached value
+            if (Vector3.Distance(ballToBowl.transform.position, spawnPoint.position) > 0.1f)
             {
-                Debug.LogWarning("?? Ball not at original position! Forcing reset...");
-                ballToBowl.transform.position = originalBallPosition;
+                Debug.LogWarning("?? Ball not at spawn position! Forcing reset...");
+                ballToBowl.transform.position = spawnPoint.position;
                 if (ballRigidbodyToUse != null)
                 {
                     ballRigidbodyToUse.linearVelocity = Vector3.zero;
@@ -883,10 +886,25 @@ namespace CricketGame
             Vector3 targetPosition = target.position;
             Vector3 startPosition = ballToBowl.transform.position;
             
+            // 🎯 VERIFICATION: Log spawn and start positions
+            Debug.Log($"═══════════════════════════════════════════════════════");
+            Debug.Log($"🎯 DYNAMIC SPAWN VERIFICATION:");
+            Debug.Log($"   Spawn Point Transform Position: {spawnPoint.position}");
+            Debug.Log($"   Ball Start Position: {startPosition}");
+            Debug.Log($"   Target Position: {targetPosition}");
+            Debug.Log($"   Positions Match: {Vector3.Distance(spawnPoint.position, startPosition) < 0.01f}");
+            
             // Calculate horizontal distance to target
             Vector3 horizontalStart = new Vector3(startPosition.x, 0, startPosition.z);
             Vector3 horizontalTarget = new Vector3(targetPosition.x, 0, targetPosition.z);
             float horizontalDistance = Vector3.Distance(horizontalStart, horizontalTarget);
+            
+            // 🎯 BOWLING DIRECTION: Calculate actual bowling direction
+            Vector3 bowlingDirection = (targetPosition - startPosition).normalized;
+            Vector3 bowlingDirectionHorizontal = (horizontalTarget - horizontalStart).normalized;
+            Debug.Log($"   Bowling Direction (3D): {bowlingDirection}");
+            Debug.Log($"   Bowling Direction (Horizontal): {bowlingDirectionHorizontal}");
+            Debug.Log($"═══════════════════════════════════════════════════════");
 
             // ?? LENGTH-BASED LOGIC: compute length factor using wicket references if available
             if (umpireWicket != null && batsmanWicket != null)
@@ -1124,16 +1142,34 @@ namespace CricketGame
             
             // 🎯 SWING TRAJECTORY: Calculate swing-modified trajectory (already calculated above)
             
-             // 🎯 CURVED PATH CHECK: Force kinematic movement for curved path deliveries
+             // 🎯 PATH FOLLOWER CHECK: Use PathFollower for ALL deliveries for 100% accuracy
+            // PathFollower guarantees ball reaches target - more accurate than physics!
             bool useKinematicForCurvedPath = false;
             if (deliverySystem != null)
             {
                 DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
-                if (currentDelivery == DeliveryType.Inswing || currentDelivery == DeliveryType.Outswing || currentDelivery == DeliveryType.LegSpin || currentDelivery == DeliveryType.OffSpin)
+                if (currentDelivery == DeliveryType.Flat || currentDelivery == DeliveryType.SeamIn || currentDelivery == DeliveryType.SeamOut || 
+                    currentDelivery == DeliveryType.Inswing || currentDelivery == DeliveryType.Outswing || 
+                    currentDelivery == DeliveryType.LegSpin || currentDelivery == DeliveryType.OffSpin)
                 {
-                    // Get appropriate swing delivery component
+                    // Get appropriate delivery component and check if path follower enabled
                     bool curvedEnabled = false;
-                    if (currentDelivery == DeliveryType.Inswing)
+                    if (currentDelivery == DeliveryType.Flat)
+                    {
+                        FlatDelivery flatDelivery = deliverySystem.GetComponent<FlatDelivery>() ?? deliverySystem.transform.GetComponent<FlatDelivery>();
+                        curvedEnabled = flatDelivery != null && flatDelivery.IsCurvedPathEnabled();
+                    }
+                    else if (currentDelivery == DeliveryType.SeamIn)
+                    {
+                        SeamInDelivery seamInDelivery = deliverySystem.GetComponent<SeamInDelivery>() ?? deliverySystem.transform.GetComponent<SeamInDelivery>();
+                        curvedEnabled = seamInDelivery != null && seamInDelivery.IsCurvedPathEnabled();
+                    }
+                    else if (currentDelivery == DeliveryType.SeamOut)
+                    {
+                        SeamOutDelivery seamOutDelivery = deliverySystem.GetComponent<SeamOutDelivery>() ?? deliverySystem.transform.GetComponent<SeamOutDelivery>();
+                        curvedEnabled = seamOutDelivery != null && seamOutDelivery.IsCurvedPathEnabled();
+                    }
+                    else if (currentDelivery == DeliveryType.Inswing)
                     {
                         InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
                         curvedEnabled = inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled();
@@ -1157,11 +1193,11 @@ namespace CricketGame
                     if (curvedEnabled)
                     {
                         useKinematicForCurvedPath = true;
-                        Debug.Log("🎯 CURVED PATH: Forcing kinematic movement for curved path delivery");
+                        Debug.Log("🎯 CURVED PATH: Using PathFollower for curved delivery");
                     }
                     else
                     {
-                        Debug.LogWarning($"🎯 CURVED PATH: Swing delivery not found or curved path disabled for {currentDelivery}");
+                        Debug.LogWarning($"🎯 PATH FOLLOWER: Delivery not found or path disabled for {currentDelivery}");
                     }
                 }
             }
@@ -1176,15 +1212,45 @@ namespace CricketGame
             
             if (useKinematicForCurvedPath)
             {
-                Debug.Log("🎯 Using PathFollower for swing curved path");
+                Debug.Log("🎯 Using PathFollower for delivery path (100% ACCURACY guaranteed)");
                 
-                // Use normal ball speed for leg spin deliveries
+                // Use normal ball speed for all deliveries
                 float effectiveSpeed = ballSpeed;
                 
                 Vector3[] path = null;
                 float addedArc = 0f;
-                // Prefer component based on current type
-                if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Inswing)
+                // Generate path based on current delivery type
+                if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Flat)
+                {
+                    FlatDelivery flatDelivery = deliverySystem.GetComponent<FlatDelivery>() ?? deliverySystem.transform.GetComponent<FlatDelivery>();
+                    if (flatDelivery != null)
+                    {
+                        path = flatDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = flatDelivery.pathArcHeight;
+                        Debug.Log("🎯 FLAT DELIVERY: Straight path generated (100% accurate)");
+                    }
+                }
+                else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.SeamIn)
+                {
+                    SeamInDelivery seamInDelivery = deliverySystem.GetComponent<SeamInDelivery>() ?? deliverySystem.transform.GetComponent<SeamInDelivery>();
+                    if (seamInDelivery != null)
+                    {
+                        path = seamInDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = seamInDelivery.pathArcHeight;
+                        Debug.Log("🎯 SEAM IN DELIVERY: Straight path generated (100% accurate)");
+                    }
+                }
+                else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.SeamOut)
+                {
+                    SeamOutDelivery seamOutDelivery = deliverySystem.GetComponent<SeamOutDelivery>() ?? deliverySystem.transform.GetComponent<SeamOutDelivery>();
+                    if (seamOutDelivery != null)
+                    {
+                        path = seamOutDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
+                        addedArc = seamOutDelivery.pathArcHeight;
+                        Debug.Log("🎯 SEAM OUT DELIVERY: Straight path generated (100% accurate)");
+                    }
+                }
+                else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Inswing)
                 {
                     InswingDelivery inswingDelivery = deliverySystem.GetComponent<InswingDelivery>() ?? deliverySystem.transform.GetComponent<InswingDelivery>();
                     if (inswingDelivery != null)
@@ -1223,6 +1289,14 @@ namespace CricketGame
 
                 if (path != null)
                 {
+                    // 🎯 PATH VERIFICATION: Show path details
+                    Debug.Log($"🎯 PATH GENERATED SUCCESSFULLY:");
+                    Debug.Log($"   Path Points: {path.Length}");
+                    Debug.Log($"   Start Point: {path[0]}");
+                    Debug.Log($"   End Point: {path[path.Length - 1]}");
+                    Debug.Log($"   Mid Point: {path[path.Length / 2]}");
+                    Debug.Log($"   ✅ Path created from current spawn position to current target!");
+                    
                     // Ensure physics won't fight the scripted motion
                     Rigidbody rbFollow = currentBallInstance.GetComponent<Rigidbody>();
                     if (rbFollow != null)
@@ -1234,6 +1308,45 @@ namespace CricketGame
 
                     // Compute final forward direction of the path (used to resume physics)
                     Vector3 finalDir = (path[path.Length - 1] - path[path.Length - 2]).normalized;
+
+                    // 🎯 OBSTACLE DETECTION: Check if delivery wants to disable obstacles
+                    // Note: PathFollower now intelligently ignores ground/plane objects automatically
+                    bool shouldDisableObstacles = false;
+                    DeliveryType currentDel = deliverySystem.GetCurrentDeliveryType();
+                    if (currentDel == DeliveryType.Flat)
+                    {
+                        FlatDelivery flatDel = deliverySystem.GetComponent<FlatDelivery>();
+                        shouldDisableObstacles = flatDel != null && flatDel.disableObstacleDetection;
+                    }
+                    else if (currentDel == DeliveryType.SeamIn)
+                    {
+                        SeamInDelivery seamInDel = deliverySystem.GetComponent<SeamInDelivery>();
+                        shouldDisableObstacles = seamInDel != null && seamInDel.disableObstacleDetection;
+                    }
+                    else if (currentDel == DeliveryType.SeamOut)
+                    {
+                        SeamOutDelivery seamOutDel = deliverySystem.GetComponent<SeamOutDelivery>();
+                        shouldDisableObstacles = seamOutDel != null && seamOutDel.disableObstacleDetection;
+                    }
+                    else if (currentDel == DeliveryType.LegSpin)
+                    {
+                        LegSpinDelivery legSpinDel = deliverySystem.GetComponent<LegSpinDelivery>();
+                        shouldDisableObstacles = legSpinDel != null && !legSpinDel.enableCurvedPath; // Disable for straight leg spin only if requested
+                    }
+                    else if (currentDel == DeliveryType.OffSpin)
+                    {
+                        OffSpinDelivery offSpinDel = deliverySystem.GetComponent<OffSpinDelivery>();
+                        shouldDisableObstacles = offSpinDel != null && !offSpinDel.enableCurvedPath; // Disable for straight off spin only if requested
+                    }
+                    
+                    if (shouldDisableObstacles)
+                    {
+                        Debug.Log($"🎯 OBSTACLE DETECTION: Will be DISABLED for {currentDel} delivery");
+                    }
+                    else
+                    {
+                        Debug.Log($"🎯 OBSTACLE DETECTION: ENABLED for {currentDel} delivery (ignores ground/plane automatically)");
+                    }
 
                     var follower = currentBallInstance.AddComponent<PathFollower>();
                     follower.Initialize(path, effectiveSpeed, addedArc, () =>
@@ -1256,7 +1369,7 @@ namespace CricketGame
                             // Explicitly trigger first bounce using controller bounce logic for reliability
                             OnBallBounce(currentBallInstance.transform.position, resumeVelocity);
                         }
-                    });
+                    }, shouldDisableObstacles); // 🎯 PASS disable obstacles flag!
                     
                     // 🎯 DEBUG: Verify PathFollower initialization
                     Debug.Log($"🎯 PATHFOLLOWER INIT: Speed={effectiveSpeed}, Arc={addedArc}, PathLength={path.Length}");
@@ -1787,6 +1900,7 @@ namespace CricketGame
                 newVelocity.z *= 0.9f; // Keep 90% of horizontal velocity
                 
                 // 🎯 SPIN SWING EFFECT: Add lateral spin AFTER bounce (realistic cricket physics!)
+                // 🎯 DYNAMIC LATERAL CALCULATION: Works from ANY spawn point/direction
                 if (deliverySystem != null && currentBounces == 1)
                 {
                     DeliveryType currentDelivery = deliverySystem.GetCurrentDeliveryType();
@@ -1800,17 +1914,23 @@ namespace CricketGame
                             // Simple lateral spin calculation based on ball speed and spin strength
                             float ballSpeed = bounceVelocity.magnitude;
                             
-                            // Apply lateral spin: postBounceSpinStrength directly controls direction and intensity
-                            // Positive = spin right, Negative = spin left
-                            float lateralSpinForce = ballSpeed * legSpinDelivery.postBounceSpinStrength;
+                            // 🎯 CRITICAL FIX: Calculate lateral direction based on CURRENT ball direction
+                            // This works from ANY spawn point, not just hardcoded X-axis
+                            Vector3 forwardDirection = new Vector3(bounceVelocity.x, 0, bounceVelocity.z).normalized; // Ball's horizontal direction
+                            Vector3 lateralDirection = Vector3.Cross(Vector3.up, forwardDirection).normalized; // Right direction relative to ball movement
                             
-                            // Add spin to X velocity (positive value = spin right, negative value = spin left)
-                            newVelocity.x += lateralSpinForce;
+                            // Apply lateral spin: postBounceSpinStrength controls direction and intensity
+                            // Positive = spin right (relative to ball direction), Negative = spin left
+                            float spinStrength = ballSpeed * legSpinDelivery.postBounceSpinStrength;
+                            Vector3 lateralSpinVelocity = lateralDirection * spinStrength;
                             
-                            string spinDirection = lateralSpinForce > 0 ? "RIGHT →" : lateralSpinForce < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 LEG SPIN BOUNCE SWING: Applied lateral spin force {lateralSpinForce:F2} m/s (strength: {legSpinDelivery.postBounceSpinStrength:F2})");
-                            Debug.Log($"🎯 LEG SPIN: Ball speed {ballSpeed:F1} → Lateral movement {lateralSpinForce:F2} {spinDirection}");
-                            Debug.Log($"🎯 LEG SPIN: New velocity = ({newVelocity.x:F2}, {newVelocity.y:F2}, {newVelocity.z:F2})");
+                            // Add lateral spin to velocity
+                            newVelocity += lateralSpinVelocity;
+                            
+                            string spinDirection = spinStrength > 0 ? "RIGHT →" : spinStrength < 0 ? "← LEFT" : "NONE";
+                            Debug.Log($"🎯 LEG SPIN BOUNCE SWING: Applied lateral spin {spinStrength:F2} m/s (strength: {legSpinDelivery.postBounceSpinStrength:F2})");
+                            Debug.Log($"🎯 LEG SPIN: Ball speed {ballSpeed:F1} → Lateral movement {spinStrength:F2} {spinDirection}");
+                            Debug.Log($"🎯 LEG SPIN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                     // Check for Off Spin
@@ -1822,17 +1942,76 @@ namespace CricketGame
                             // Simple lateral spin calculation based on ball speed and spin strength
                             float ballSpeed = bounceVelocity.magnitude;
                             
-                            // Apply lateral spin: postBounceSpinStrength directly controls direction and intensity
-                            // Positive = spin right, Negative = spin left
-                            float lateralSpinForce = ballSpeed * offSpinDelivery.postBounceSpinStrength;
+                            // 🎯 CRITICAL FIX: Calculate lateral direction based on CURRENT ball direction
+                            // This works from ANY spawn point, not just hardcoded X-axis
+                            Vector3 forwardDirection = new Vector3(bounceVelocity.x, 0, bounceVelocity.z).normalized; // Ball's horizontal direction
+                            Vector3 lateralDirection = Vector3.Cross(Vector3.up, forwardDirection).normalized; // Right direction relative to ball movement
                             
-                            // Add spin to X velocity (positive value = spin right, negative value = spin left)
-                            newVelocity.x += lateralSpinForce;
+                            // Apply lateral spin: postBounceSpinStrength controls direction and intensity
+                            // Positive = spin right (relative to ball direction), Negative = spin left
+                            float spinStrength = ballSpeed * offSpinDelivery.postBounceSpinStrength;
+                            Vector3 lateralSpinVelocity = lateralDirection * spinStrength;
                             
-                            string spinDirection = lateralSpinForce > 0 ? "RIGHT →" : lateralSpinForce < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 OFF SPIN BOUNCE SWING: Applied lateral spin force {lateralSpinForce:F2} m/s (strength: {offSpinDelivery.postBounceSpinStrength:F2})");
-                            Debug.Log($"🎯 OFF SPIN: Ball speed {ballSpeed:F1} → Lateral movement {lateralSpinForce:F2} {spinDirection}");
-                            Debug.Log($"🎯 OFF SPIN: New velocity = ({newVelocity.x:F2}, {newVelocity.y:F2}, {newVelocity.z:F2})");
+                            // Add lateral spin to velocity
+                            newVelocity += lateralSpinVelocity;
+                            
+                            string spinDirection = spinStrength > 0 ? "RIGHT →" : spinStrength < 0 ? "← LEFT" : "NONE";
+                            Debug.Log($"🎯 OFF SPIN BOUNCE SWING: Applied lateral spin {spinStrength:F2} m/s (strength: {offSpinDelivery.postBounceSpinStrength:F2})");
+                            Debug.Log($"🎯 OFF SPIN: Ball speed {ballSpeed:F1} → Lateral movement {spinStrength:F2} {spinDirection}");
+                            Debug.Log($"🎯 OFF SPIN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
+                        }
+                    }
+                    // Check for Seam In
+                    else if (currentDelivery == DeliveryType.SeamIn)
+                    {
+                        SeamInDelivery seamInDelivery = deliverySystem.GetComponent<SeamInDelivery>() ?? deliverySystem.transform.GetComponent<SeamInDelivery>();
+                        if (seamInDelivery != null && seamInDelivery.enablePostBounceSeam)
+                        {
+                            float ballSpeed = bounceVelocity.magnitude;
+                            
+                            // Calculate lateral direction based on CURRENT ball direction
+                            Vector3 forwardDirection = new Vector3(bounceVelocity.x, 0, bounceVelocity.z).normalized; // Ball's horizontal direction
+                            Vector3 lateralDirection = Vector3.Cross(Vector3.up, forwardDirection).normalized; // Right direction relative to ball movement
+                            
+                            // Apply lateral seam movement: postBounceSeamStrength controls direction and intensity
+                            // Positive = continues moving right (relative to ball direction), Negative = reverses
+                            float seamStrength = ballSpeed * seamInDelivery.postBounceSeamStrength;
+                            Vector3 lateralSeamVelocity = lateralDirection * seamStrength;
+                            
+                            // Add lateral seam movement to velocity
+                            newVelocity += lateralSeamVelocity;
+                            
+                            string seamDirection = seamStrength > 0 ? "RIGHT →" : seamStrength < 0 ? "← LEFT" : "NONE";
+                            Debug.Log($"🎯 SEAM IN BOUNCE: Applied lateral seam {seamStrength:F2} m/s (strength: {seamInDelivery.postBounceSeamStrength:F2})");
+                            Debug.Log($"🎯 SEAM IN: Ball speed {ballSpeed:F1} → Lateral movement {seamStrength:F2} {seamDirection}");
+                            Debug.Log($"🎯 SEAM IN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
+                        }
+                    }
+                    // Check for Seam Out
+                    else if (currentDelivery == DeliveryType.SeamOut)
+                    {
+                        SeamOutDelivery seamOutDelivery = deliverySystem.GetComponent<SeamOutDelivery>() ?? deliverySystem.transform.GetComponent<SeamOutDelivery>();
+                        if (seamOutDelivery != null && seamOutDelivery.enablePostBounceSeam)
+                        {
+                            float ballSpeed = bounceVelocity.magnitude;
+                            
+                            // Calculate lateral direction based on CURRENT ball direction
+                            Vector3 forwardDirection = new Vector3(bounceVelocity.x, 0, bounceVelocity.z).normalized; // Ball's horizontal direction
+                            Vector3 lateralDirection = Vector3.Cross(Vector3.up, forwardDirection).normalized; // Right direction relative to ball movement
+                            
+                            // Apply lateral seam movement: postBounceSeamStrength controls direction and intensity
+                            // Positive = continues moving right, but we want LEFT movement for seam out
+                            // So we use NEGATIVE of the strength to move LEFT
+                            float seamStrength = ballSpeed * (-seamOutDelivery.postBounceSeamStrength); // Negative for LEFT movement
+                            Vector3 lateralSeamVelocity = lateralDirection * seamStrength;
+                            
+                            // Add lateral seam movement to velocity
+                            newVelocity += lateralSeamVelocity;
+                            
+                            string seamDirection = seamStrength > 0 ? "RIGHT →" : seamStrength < 0 ? "← LEFT" : "NONE";
+                            Debug.Log($"🎯 SEAM OUT BOUNCE: Applied lateral seam {seamStrength:F2} m/s (strength: {seamOutDelivery.postBounceSeamStrength:F2})");
+                            Debug.Log($"🎯 SEAM OUT: Ball speed {ballSpeed:F1} → Lateral movement {seamStrength:F2} {seamDirection}");
+                            Debug.Log($"🎯 SEAM OUT: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                 }
@@ -1885,7 +2064,8 @@ namespace CricketGame
             isReturning = true;
             
             Vector3 currentPos = ball.transform.position;
-            Vector3 targetPos = originalBallPosition;
+            // 🎯 DYNAMIC: Use current spawn point position, not cached value
+            Vector3 targetPos = spawnPoint.position;
             float distance = Vector3.Distance(currentPos, targetPos);
             float timeToReturn = distance / returnSpeed;
             
@@ -1984,7 +2164,8 @@ namespace CricketGame
                 }
                 
                 // ?? FORCE: Set position
-                ball.transform.position = originalBallPosition;
+                // 🎯 DYNAMIC: Use current spawn point position, not cached value
+                ball.transform.position = spawnPoint.position;
                 
                 // ?? RESET: Physics state
                 if (ballRigidbody != null)
@@ -2093,8 +2274,9 @@ namespace CricketGame
                 // ?? PRECISE: Draw original position
                 if (Application.isPlaying)
                 {
+                    // 🎯 DYNAMIC: Draw current spawn point position
                     Gizmos.color = Color.blue;
-                    Gizmos.DrawWireSphere(originalBallPosition, 0.15f);
+                    Gizmos.DrawWireSphere(spawnPoint.position, 0.15f);
                 }
                 
                 // ?? PRECISE: Draw bounce positions

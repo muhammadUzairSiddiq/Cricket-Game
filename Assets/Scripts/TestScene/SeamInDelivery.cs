@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace CricketGame
 {
+    /// <summary>
+    /// Seam In Delivery - Ball seams towards the batsman
+    /// 🎯 WORKS FROM ANY SPAWN POINT - Uses PathFollower for 100% accuracy
+    /// </summary>
     public class SeamInDelivery : MonoBehaviour
     {
         [Header("Seam In Settings")]
@@ -9,18 +13,31 @@ namespace CricketGame
         [UnityEngine.Serialization.FormerlySerializedAs("enableInSwing")]
         [SerializeField] private bool enableSeamIn = true;
         
-        [Tooltip("Base swing force multiplier")]
-        [SerializeField] private float baseSwingForce = 1.0f;
+        [Tooltip("Use PathFollower for guaranteed accuracy (straight path)")]
+        [SerializeField] private bool usePathFollower = true;
         
-        [Tooltip("Minimum swing at speed 9 (low speed = less swing)")]
-        [SerializeField] private float minSwingAtSpeed9 = 0.2f;
+        [Header("Path Settings")]
+        [Tooltip("Vertical arc height for realistic cricket trajectory (0.5-1.5 for realistic arc)")]
+        public float pathArcHeight = 0.8f; // Realistic cricket bowling arc
         
-        [Tooltip("Maximum swing at speed 16 (high speed = extreme swing)")]
-        [SerializeField] private float maxSwingAtSpeed16 = 2.5f;
+        [Header("Seam Angle Settings")]
+        [Tooltip("Enable seam angle offset (ball lands slightly off-center)")]
+        public bool enableSeamAngle = true;
         
-        [Header("Swing Direction")]
-        [Tooltip("Direction of seam in (negative X = left, positive X = right)")]
-        [SerializeField] private Vector3 swingDirection = new Vector3(-1f, 0f, 0f);
+        [Tooltip("Lateral offset distance (meters) - Ball lands this far to the RIGHT of target center")]
+        [Range(0.1f, 1.0f)]
+        public float seamAngleOffset = 0.3f; // Ball lands 0.3m to the RIGHT (seam in effect)
+        
+        [Header("Post-Bounce Seam Movement")]
+        [Tooltip("Enable seam movement after ball bounces (ball continues moving right after landing)")]
+        public bool enablePostBounceSeam = true;
+        
+        [Tooltip("Seam movement strength after bounce (positive = continues moving right, negative = reverses)")]
+        [Range(-2.0f, 2.0f)]
+        public float postBounceSeamStrength = 0.8f; // Continue moving right after bounce
+        
+        [Tooltip("Disable obstacle detection during path following (only disable if having issues with ground detection)")]
+        public bool disableObstacleDetection = false; // Enabled for real obstacle detection (bat, stumps, etc.)
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -34,100 +51,97 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Calculate in swing trajectory (curves left towards batsman)
+        /// Calculate seam in trajectory (straight path for PathFollower)
         /// </summary>
         public Vector3 CalculateTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
             if (!enableSeamIn)
                 return targetPos;
-                
-            // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
-            float swingForce = CalculateSwingForce(ballSpeed);
             
-            // Create a curved path using Bezier curve control points
-            Vector3 swingTarget = CalculateBezierCurveTarget(startPos, targetPos, swingForce);
-            
+            // Seam deliveries use straight path to target for 100% accuracy
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamInDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
+                Debug.Log($"🎯 SeamInDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
             }
             
-            return swingTarget;
+            return targetPos;
         }
         
         /// <summary>
-        /// Calculate Bezier curve target for smooth seam in trajectory
-        /// </summary>
-        private Vector3 CalculateBezierCurveTarget(Vector3 startPos, Vector3 targetPos, float swingForce)
-        {
-            // Calculate distance and direction
-            Vector3 direction = (targetPos - startPos).normalized;
-            float distance = Vector3.Distance(startPos, targetPos);
-            
-            // Create control points for Bezier curve
-            Vector3 midPoint = Vector3.Lerp(startPos, targetPos, 0.5f);
-            
-            // Control point for left curve (seam in)
-            Vector3 leftOffset = new Vector3(-swingForce * 3f, 0, 0); // Curve left
-            Vector3 controlPoint = midPoint + leftOffset;
-            
-            // Calculate final target using Bezier curve
-            Vector3 curveTarget = CalculateBezierPoint(startPos, controlPoint, targetPos, 0.8f);
-            
-            return curveTarget;
-        }
-        
-        /// <summary>
-        /// Calculate point on Bezier curve
-        /// </summary>
-        private Vector3 CalculateBezierPoint(Vector3 p0, Vector3 p1, Vector3 p2, float t)
-        {
-            float u = 1 - t;
-            float tt = t * t;
-            float uu = u * u;
-            float uuu = uu * u;
-            float ttt = tt * t;
-            
-            Vector3 p = uuu * p0; // (1-t)^3 * P0
-            p += 3 * uu * t * p1; // 3(1-t)^2 * t * P1
-            p += 3 * u * tt * p2; // 3(1-t) * t^2 * P2
-            p += ttt * p2; // t^3 * P2
-            
-            return p;
-        }
-        
-        /// <summary>
-        /// Get seam in direction for trajectory calculation
+        /// Get seam in direction (straight to target)
         /// </summary>
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
             if (!enableSeamIn)
                 return (targetPos - startPos).normalized;
-                
-            float swingForce = CalculateSwingForce(ballSpeed);
-            Vector3 baseDirection = (targetPos - startPos).normalized;
             
-            // Add leftward curve to the direction
-            Vector3 swingDirection = baseDirection + new Vector3(-swingForce * 0.3f, 0, 0);
+            // Return straight direction to target
+            Vector3 straightDirection = (targetPos - startPos).normalized;
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamInDelivery: Swing direction calculated - Force: {swingForce:F2}");
+                Debug.Log($"🎯 SeamInDelivery: Straight direction to target");
             }
             
-            return swingDirection.normalized;
+            return straightDirection;
         }
         
         /// <summary>
-        /// Calculate swing force based on ball speed
+        /// Generate straight path points for PathFollower with seam angle offset
+        /// 🎯 WORKS FROM ANY SPAWN POINT - Straight line to offset target (seam effect)
         /// </summary>
-        private float CalculateSwingForce(float speed)
+        public Vector3[] GetCurvedPathPoints(Vector3 startPos, Vector3 targetPos, float ballSpeed, int segments = 30)
         {
-            // Linear interpolation between min swing (speed 9) and max swing (speed 16)
-            float normalizedSpeed = Mathf.InverseLerp(9f, 16f, speed);
-            float swingForce = Mathf.Lerp(minSwingAtSpeed9, maxSwingAtSpeed16, normalizedSpeed);
+            // 🎯 SEAM ANGLE: Apply lateral offset to target (ball lands to RIGHT of center)
+            Vector3 adjustedTarget = targetPos;
             
-            return swingForce;
+            if (enableSeamAngle && seamAngleOffset > 0)
+            {
+                // Calculate bowling direction
+                Vector3 bowlingDirection = (targetPos - startPos).normalized;
+                
+                // Calculate RIGHT direction (perpendicular to bowling direction)
+                // Cross(bowlingDirection, up) = RIGHT relative to bowling direction
+                Vector3 rightDirection = Vector3.Cross(bowlingDirection, Vector3.up).normalized;
+                
+                // Apply offset to the RIGHT (seam in effect)
+                adjustedTarget = targetPos + rightDirection * seamAngleOffset;
+                
+                if (showDebugLogs)
+                {
+                    Debug.Log($"🎯 SEAM IN ANGLE: Target offset {seamAngleOffset:F2}m to the RIGHT");
+                    Debug.Log($"   Original Target: {targetPos}");
+                    Debug.Log($"   Adjusted Target: {adjustedTarget}");
+                    Debug.Log($"   Right Direction: {rightDirection}");
+                }
+            }
+            
+            // Generate straight path to adjusted target
+            Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
+            for (int i = 0; i < straight.Length; i++)
+            {
+                float t = (float)i / (straight.Length - 1);
+                straight[i] = Vector3.Lerp(startPos, adjustedTarget, t);
+            }
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"🎯 SEAM IN PATH: Straight path with angle - {straight.Length} points");
+                Debug.Log($"   Start: {startPos}");
+                Debug.Log($"   Target (Offset): {adjustedTarget}");
+                Debug.Log($"   Direction: {(adjustedTarget - startPos).normalized}");
+                Debug.Log($"   ✅ Seam angle applied - works from ANY spawn point!");
+            }
+            
+            return straight;
+        }
+        
+        /// <summary>
+        /// Check if path follower is enabled
+        /// </summary>
+        public bool IsCurvedPathEnabled()
+        {
+            return enableSeamIn && usePathFollower;
         }
         
         /// <summary>
@@ -146,22 +160,12 @@ namespace CricketGame
         /// </summary>
         public string GetDeliveryInfo()
         {
-            return "Seam In Delivery - Curves in towards batsman";
-        }
-        
-        /// <summary>
-        /// Update swing settings from UI
-        /// </summary>
-        public void UpdateSwingSettings(float minSwing, float maxSwing, float baseForce)
-        {
-            minSwingAtSpeed9 = minSwing;
-            maxSwingAtSpeed16 = maxSwing;
-            baseSwingForce = baseForce;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 SeamInDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
-            }
+            string info = "Seam In Delivery";
+            if (enableSeamAngle)
+                info += $" - Lands {seamAngleOffset:F2}m RIGHT of target";
+            if (enablePostBounceSeam)
+                info += $" + Continues RIGHT after bounce ({postBounceSeamStrength:F1})";
+            return info;
         }
     }
 }

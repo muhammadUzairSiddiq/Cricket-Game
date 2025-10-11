@@ -24,28 +24,65 @@ namespace CricketGame
         private System.Action onComplete;
         private Vector3 previousPosition;
 
-        public void Initialize(Vector3[] worldPath, float pathSpeed, float addedArcHeight, System.Action onDone)
+        public void Initialize(Vector3[] worldPath, float pathSpeed, float addedArcHeight, System.Action onDone, bool disableObstacles = false)
         {
             path = worldPath;
             speed = pathSpeed;
             arcHeight = addedArcHeight;
             onComplete = onDone;
+            
+            // 🎯 CRITICAL: Allow disabling obstacle detection to prevent unwanted collisions
+            if (disableObstacles)
+            {
+                enableObstacleDetection = false;
+                Debug.Log($"🎯 PATHFOLLOWER: Obstacle detection DISABLED (prevents ground/plane collisions)");
+            }
+            
+            // 🎯 DEBUG: Verify path initialization
+            Debug.Log($"🎯 PATHFOLLOWER INIT:");
+            Debug.Log($"   Path Points: {path.Length}");
+            Debug.Log($"   Start Point: {path[0]}");
+            Debug.Log($"   End Point: {path[path.Length - 1]}");
+            Debug.Log($"   Current Ball Position: {transform.position}");
+            Debug.Log($"   Speed: {pathSpeed} m/s");
+            Debug.Log($"   Arc Height: {addedArcHeight}");
         }
 
         public void Begin()
         {
             if (path == null || path.Length < 2)
             {
+                Debug.LogError("🎯 PATHFOLLOWER: Invalid path!");
                 onComplete?.Invoke();
                 Destroy(this);
                 return;
             }
+            
+            Debug.Log($"🎯 PATHFOLLOWER BEGIN: Starting to follow path from {transform.position}");
             StopAllCoroutines();
             StartCoroutine(FollowPath());
         }
 
         IEnumerator FollowPath()
         {
+            // 🎯 DEBUG: Verify path direction
+            Vector3 pathDirection = (path[path.Length - 1] - path[0]).normalized;
+            Vector3 ballToTarget = (path[path.Length - 1] - transform.position).normalized;
+            float directionDot = Vector3.Dot(pathDirection, ballToTarget);
+            
+            Debug.Log($"🎯 PATHFOLLOWER DIRECTION CHECK:");
+            Debug.Log($"   Ball Position: {transform.position}");
+            Debug.Log($"   Path Start: {path[0]}");
+            Debug.Log($"   Path End: {path[path.Length - 1]}");
+            Debug.Log($"   Path Direction: {pathDirection}");
+            Debug.Log($"   Ball-to-Target: {ballToTarget}");
+            Debug.Log($"   Direction Match: {directionDot:F2} (1.0 = same direction, -1.0 = opposite)");
+            
+            if (directionDot < 0)
+            {
+                Debug.LogError("🚨 PATHFOLLOWER ERROR: Path is REVERSED! Ball will go backwards!");
+            }
+            
             // Precompute cumulative distances for smooth, non-zigzag motion
             float totalLen = 0f;
             float[] cum = new float[path.Length];
@@ -56,6 +93,8 @@ namespace CricketGame
                 cum[i] = totalLen;
             }
             if (totalLen < 0.0001f) { onComplete?.Invoke(); Destroy(this); yield break; }
+
+            Debug.Log($"🎯 PATHFOLLOWER: Total path length: {totalLen:F2}m");
 
             float traveled = 0f;
             previousPosition = transform.position; // Initialize previous position
@@ -102,12 +141,27 @@ namespace CricketGame
                             // Skip self-collision
                             if (hit.collider.gameObject == gameObject)
                                 continue;
+                            
+                            // 🎯 CRITICAL FIX: Ignore ground, plane, pitching area during path following
+                            // Only detect REAL obstacles (bat, stumps, fielders, etc.)
+                            string objName = hit.collider.gameObject.name.ToLower();
+                            bool isGroundObject = hit.collider.CompareTag("Ground") || 
+                                                 objName.Contains("plane") || 
+                                                 objName.Contains("ground") || 
+                                                 objName.Contains("pitch") ||
+                                                 objName.Contains("field");
+                            
+                            // Skip if it's a ground/plane object
+                            if (isGroundObject)
+                            {
+                                Debug.Log($"🎯 PATHFOLLOWER: Ignoring ground object: {hit.collider.name}");
+                                continue;
+                            }
                                 
                             // Treat any solid (non-trigger) collider that isn't the ball/ground as an obstacle
                             bool isSolid = hit.collider != null && hit.collider.enabled && !hit.collider.isTrigger;
                             bool isBall = hit.collider.CompareTag("Ball");
-                            bool isGround = hit.collider.CompareTag("Ground");
-                            if (isSolid && !isBall && !isGround)
+                            if (isSolid && !isBall)
                             {
                                 Debug.Log($"🎯 PATHFOLLOWER OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during curved path movement");
                                 

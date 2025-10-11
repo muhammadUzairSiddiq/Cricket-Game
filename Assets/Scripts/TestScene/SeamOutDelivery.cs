@@ -2,25 +2,41 @@ using UnityEngine;
 
 namespace CricketGame
 {
+    /// <summary>
+    /// Seam Out Delivery - Ball goes straight to target
+    /// 🎯 WORKS FROM ANY SPAWN POINT - Uses PathFollower for 100% accuracy
+    /// </summary>
     public class SeamOutDelivery : MonoBehaviour
     {
         [Header("Seam Out Settings")]
         [Tooltip("Enable/disable seam out delivery")]
-        [UnityEngine.Serialization.FormerlySerializedAs("enableOutSwing")]
         [SerializeField] private bool enableSeamOut = true;
         
-        [Tooltip("Base swing force multiplier")]
-        [SerializeField] private float baseSwingForce = 1.0f;
+        [Tooltip("Use PathFollower for guaranteed accuracy (straight path)")]
+        [SerializeField] private bool usePathFollower = true;
         
-        [Tooltip("Minimum swing at speed 9 (low speed = less swing)")]
-        [SerializeField] private float minSwingAtSpeed9 = 0.2f;
+        [Header("Path Settings")]
+        [Tooltip("Vertical arc height for realistic cricket trajectory (0.5-1.5 for realistic arc)")]
+        public float pathArcHeight = 0.8f; // Realistic cricket bowling arc
         
-        [Tooltip("Maximum swing at speed 16 (high speed = extreme swing)")]
-        [SerializeField] private float maxSwingAtSpeed16 = 1.47f;
+        [Header("Seam Angle Settings")]
+        [Tooltip("Enable seam angle offset (ball lands slightly off-center)")]
+        public bool enableSeamAngle = true;
         
-        [Header("Swing Direction")]
-        [Tooltip("Direction of seam out (positive X = right, negative X = left)")]
-        [SerializeField] private Vector3 swingDirection = new Vector3(1f, 0f, 0f);
+        [Tooltip("Lateral offset distance (meters) - Ball lands this far to the LEFT of target center")]
+        [Range(0.1f, 1.0f)]
+        public float seamAngleOffset = 0.3f; // Ball lands 0.3m to the LEFT (seam out effect)
+        
+        [Header("Post-Bounce Seam Movement")]
+        [Tooltip("Enable seam movement after ball bounces (ball continues moving left after landing)")]
+        public bool enablePostBounceSeam = true;
+        
+        [Tooltip("Seam movement strength after bounce (positive = continues moving left, negative = reverses)")]
+        [Range(-2.0f, 2.0f)]
+        public float postBounceSeamStrength = 0.8f; // Continue moving left after bounce
+        
+        [Tooltip("Disable obstacle detection during path following (only disable if having issues with ground detection)")]
+        public bool disableObstacleDetection = false; // Enabled for real obstacle detection (bat, stumps, etc.)
         
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
@@ -34,100 +50,97 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Calculate seam out trajectory (curves away from batsman)
+        /// Calculate seam out trajectory (straight path for PathFollower)
         /// </summary>
         public Vector3 CalculateTrajectory(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
             if (!enableSeamOut)
                 return targetPos;
-                
-            // Calculate swing force based on speed (9 = less swing, 16 = extreme swing)
-            float swingForce = CalculateSwingForce(ballSpeed);
             
-            // Create a curved path using Bezier curve control points
-            Vector3 swingTarget = CalculateBezierCurveTarget(startPos, targetPos, swingForce);
-            
+            // Seam deliveries use straight path to target for 100% accuracy
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamOutDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
+                Debug.Log($"🎯 SeamOutDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
             }
             
-            return swingTarget;
+            return targetPos;
         }
         
         /// <summary>
-        /// Calculate Bezier curve target for smooth seam out trajectory
-        /// </summary>
-        private Vector3 CalculateBezierCurveTarget(Vector3 startPos, Vector3 targetPos, float swingForce)
-        {
-            // Calculate distance and direction
-            Vector3 direction = (targetPos - startPos).normalized;
-            float distance = Vector3.Distance(startPos, targetPos);
-            
-            // Create control points for Bezier curve
-            Vector3 midPoint = Vector3.Lerp(startPos, targetPos, 0.5f);
-            
-            // Control point for right curve (seam out) - POSITIVE values
-            Vector3 rightOffset = new Vector3(swingForce * 3f, 0, 0); // Curve right
-            Vector3 controlPoint = midPoint + rightOffset;
-            
-            // Calculate final target using Bezier curve
-            Vector3 curveTarget = CalculateBezierPoint(startPos, controlPoint, targetPos, 0.8f);
-            
-            return curveTarget;
-        }
-        
-        /// <summary>
-        /// Calculate point on Bezier curve
-        /// </summary>
-        private Vector3 CalculateBezierPoint(Vector3 p0, Vector3 p1, Vector3 p2, float t)
-        {
-            float u = 1 - t;
-            float tt = t * t;
-            float uu = u * u;
-            float uuu = uu * u;
-            float ttt = tt * t;
-            
-            Vector3 p = uuu * p0; // (1-t)^3 * P0
-            p += 3 * uu * t * p1; // 3(1-t)^2 * t * P1
-            p += 3 * u * tt * p2; // 3(1-t) * t^2 * P2
-            p += ttt * p2; // t^3 * P2
-            
-            return p;
-        }
-        
-        /// <summary>
-        /// Get seam out direction for trajectory calculation
+        /// Get seam out direction (straight to target)
         /// </summary>
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
             if (!enableSeamOut)
                 return (targetPos - startPos).normalized;
-                
-            float swingForce = CalculateSwingForce(ballSpeed);
-            Vector3 baseDirection = (targetPos - startPos).normalized;
             
-            // Add rightward curve to the direction - POSITIVE values
-            Vector3 swingDirection = baseDirection + new Vector3(swingForce * 0.3f, 0, 0);
+            // Return straight direction to target
+            Vector3 straightDirection = (targetPos - startPos).normalized;
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamOutDelivery: Swing direction calculated - Force: {swingForce:F2}");
+                Debug.Log($"🎯 SeamOutDelivery: Straight direction to target");
             }
             
-            return swingDirection.normalized;
+            return straightDirection;
         }
         
         /// <summary>
-        /// Calculate swing force based on ball speed
+        /// Generate straight path points for PathFollower with seam angle offset
+        /// 🎯 WORKS FROM ANY SPAWN POINT - Straight line to offset target (seam effect)
         /// </summary>
-        private float CalculateSwingForce(float speed)
+        public Vector3[] GetCurvedPathPoints(Vector3 startPos, Vector3 targetPos, float ballSpeed, int segments = 30)
         {
-            // Linear interpolation between min swing (speed 9) and max swing (speed 16)
-            float normalizedSpeed = Mathf.InverseLerp(9f, 16f, speed);
-            float swingForce = Mathf.Lerp(minSwingAtSpeed9, maxSwingAtSpeed16, normalizedSpeed);
+            // 🎯 SEAM ANGLE: Apply lateral offset to target (ball lands to LEFT of center)
+            Vector3 adjustedTarget = targetPos;
             
-            return swingForce;
+            if (enableSeamAngle && seamAngleOffset > 0)
+            {
+                // Calculate bowling direction
+                Vector3 bowlingDirection = (targetPos - startPos).normalized;
+                
+                // Calculate LEFT direction (perpendicular to bowling direction)
+                // Cross(up, bowlingDirection) = LEFT relative to bowling direction
+                Vector3 leftDirection = Vector3.Cross(Vector3.up, bowlingDirection).normalized;
+                
+                // Apply offset to the LEFT (seam out effect)
+                adjustedTarget = targetPos + leftDirection * seamAngleOffset;
+                
+                if (showDebugLogs)
+                {
+                    Debug.Log($"🎯 SEAM OUT ANGLE: Target offset {seamAngleOffset:F2}m to the LEFT");
+                    Debug.Log($"   Original Target: {targetPos}");
+                    Debug.Log($"   Adjusted Target: {adjustedTarget}");
+                    Debug.Log($"   Left Direction: {leftDirection}");
+                }
+            }
+            
+            // Generate straight path to adjusted target
+            Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
+            for (int i = 0; i < straight.Length; i++)
+            {
+                float t = (float)i / (straight.Length - 1);
+                straight[i] = Vector3.Lerp(startPos, adjustedTarget, t);
+            }
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"🎯 SEAM OUT PATH: Straight path with angle - {straight.Length} points");
+                Debug.Log($"   Start: {startPos}");
+                Debug.Log($"   Target (Offset): {adjustedTarget}");
+                Debug.Log($"   Direction: {(adjustedTarget - startPos).normalized}");
+                Debug.Log($"   ✅ Seam angle applied - works from ANY spawn point!");
+            }
+            
+            return straight;
+        }
+        
+        /// <summary>
+        /// Check if path follower is enabled
+        /// </summary>
+        public bool IsCurvedPathEnabled()
+        {
+            return enableSeamOut && usePathFollower;
         }
         
         /// <summary>
@@ -146,22 +159,12 @@ namespace CricketGame
         /// </summary>
         public string GetDeliveryInfo()
         {
-            return "Seam Out Delivery - Curves away from batsman";
-        }
-        
-        /// <summary>
-        /// Update swing settings from UI
-        /// </summary>
-        public void UpdateSwingSettings(float minSwing, float maxSwing, float baseForce)
-        {
-            minSwingAtSpeed9 = minSwing;
-            maxSwingAtSpeed16 = maxSwing;
-            baseSwingForce = baseForce;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 SeamOutDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
-            }
+            string info = "Seam Out Delivery";
+            if (enableSeamAngle)
+                info += $" - Lands {seamAngleOffset:F2}m LEFT of target";
+            if (enablePostBounceSeam)
+                info += $" + Continues LEFT after bounce ({postBounceSeamStrength:F1})";
+            return info;
         }
     }
 }

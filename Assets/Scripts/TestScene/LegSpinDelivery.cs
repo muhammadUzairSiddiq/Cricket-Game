@@ -29,8 +29,8 @@ namespace CricketGame
         public float curveIntensity = 1.0f;
 
         [Header("Vertical Arc (Elevation)")]
-        [Tooltip("Vertical arc added while following the curve (lower this to reduce elevation)")]
-        public float pathArcHeight = 0.05f;
+        [Tooltip("Vertical arc added while following the curve (0.5-1.5 for realistic cricket arc)")]
+        public float pathArcHeight = 0.8f; // Realistic cricket bowling arc
 
         [Header("Lateral Bend")]
         [Tooltip("How much of the start→target distance to use for sideways bend. Lower = less spin.")]
@@ -128,15 +128,36 @@ namespace CricketGame
                     float t = (float)i / (straight.Length - 1);
                     straight[i] = Vector3.Lerp(startPos, targetPos, t);
                 }
+                
+                if (showDebugLogs)
+                {
+                    Debug.Log($"🎯 LEG SPIN PATH: Straight path - {straight.Length} points from {startPos} to {targetPos}");
+                }
+                
                 return straight;
             }
 
-            // Simple curved path calculation
+            // 🎯 DYNAMIC PATH CALCULATION: Works from ANY spawn point
+            // Calculate bowling direction from actual spawn-to-target positions
             Vector3 dir = (targetPos - startPos).normalized;
+            
+            // 🎯 CRITICAL: Calculate RIGHT direction relative to bowling direction
+            // Cross(dir, up) = perpendicular RIGHT direction (works from any orientation!)
             Vector3 right = Vector3.Cross(dir, Vector3.up).normalized;
+            
             float distance = Vector3.Distance(startPos, targetPos);
             float lateralMeters = curveIntensity * (distance * bendDistanceScale);
             Vector3 controlPoint = Vector3.Lerp(startPos, targetPos, 0.5f) + right * lateralMeters;
+
+            if (showDebugLogs)
+            {
+                Debug.Log($"🎯 LEG SPIN PATH GENERATION:");
+                Debug.Log($"   Start: {startPos}, Target: {targetPos}");
+                Debug.Log($"   Bowling Direction: {dir}");
+                Debug.Log($"   Lateral Right: {right}");
+                Debug.Log($"   Control Point Offset: {lateralMeters:F2}m");
+                Debug.Log($"   ✅ Directions calculated DYNAMICALLY - works from ANY spawn point!");
+            }
 
             int count = Mathf.Max(2, segments + 1);
             Vector3[] points = new Vector3[count];

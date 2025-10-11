@@ -4,6 +4,7 @@ namespace CricketGame
 {
     /// <summary>
     /// In Swing Delivery - Ball curves in towards the batsman
+    /// 🎯 WORKS FROM ANY SPAWN POINT - Uses relative lateral directions
     /// Simplified implementation similar to SeamInDelivery but with curved path following
     /// </summary>
     public class InswingDelivery : MonoBehaviour
@@ -33,8 +34,8 @@ namespace CricketGame
         public float curveIntensity = 1.0f;
 
         [Header("Vertical Arc (Elevation)")]
-        [Tooltip("Vertical arc added while following the curve (lower this to reduce elevation)")]
-        public float pathArcHeight = 0.05f;
+        [Tooltip("Vertical arc added while following the curve (0.5-1.5 for realistic cricket arc)")]
+        public float pathArcHeight = 0.8f; // Realistic cricket bowling arc
 
         [Header("Lateral Bend")]
         [Tooltip("How much of the start→target distance to use for sideways bend. Lower = less swing.")]
@@ -76,6 +77,7 @@ namespace CricketGame
         
         /// <summary>
         /// Calculate Bezier curve target for smooth in swing trajectory
+        /// 🎯 WORKS FROM ANY SPAWN POINT - Uses relative directions
         /// </summary>
         private Vector3 CalculateBezierCurveTarget(Vector3 startPos, Vector3 targetPos, float swingForce)
         {
@@ -83,9 +85,10 @@ namespace CricketGame
             Vector3 direction = (targetPos - startPos).normalized;
             float distance = Vector3.Distance(startPos, targetPos);
             
-            // Create control point perpendicular to the bowling direction
+            // 🎯 DYNAMIC LATERAL: Calculate left direction relative to bowling direction
+            // This works from ANY spawn point orientation
             Vector3 midPoint = Vector3.Lerp(startPos, targetPos, 0.5f);
-            Vector3 left = Vector3.Cross(Vector3.up, direction).normalized; // left relative to path
+            Vector3 left = Vector3.Cross(Vector3.up, direction).normalized; // left relative to bowling direction
             float swing = swingForce * baseSwingForce; // apply base multiplier
             float lateralMeters = swing * curveIntensity * (distance * bendDistanceScale);
             Vector3 controlPoint = midPoint + left * lateralMeters;
@@ -117,6 +120,7 @@ namespace CricketGame
         
         /// <summary>
         /// Get curved path point for ball to follow during movement
+        /// 🎯 WORKS FROM ANY SPAWN POINT - Uses relative directions
         /// </summary>
         public Vector3 GetCurvedPathPoint(Vector3 startPos, Vector3 targetPos, float ballSpeed, float t)
         {
@@ -125,8 +129,9 @@ namespace CricketGame
                 
             float swingForce = CalculateSwingForce(ballSpeed);
             
+            // 🎯 DYNAMIC LATERAL: Calculate left direction relative to bowling direction
             Vector3 dir = (targetPos - startPos).normalized;
-            Vector3 left = Vector3.Cross(Vector3.up, dir).normalized;
+            Vector3 left = Vector3.Cross(Vector3.up, dir).normalized; // Left relative to bowling direction
             float distance = Vector3.Distance(startPos, targetPos);
             float swing = swingForce * baseSwingForce;
             float lateralMeters = swing * curveIntensity * (distance * bendDistanceScale);
@@ -153,16 +158,39 @@ namespace CricketGame
                     float t = (float)i / (straight.Length - 1);
                     straight[i] = Vector3.Lerp(startPos, targetPos, t);
                 }
+                
+                if (showDebugLogs)
+                {
+                    Debug.Log($"🎯 INSWING PATH: Straight path - {straight.Length} points from {startPos} to {targetPos}");
+                }
+                
                 return straight;
             }
 
+            // 🎯 DYNAMIC PATH CALCULATION: Works from ANY spawn point
             float swingForce = CalculateSwingForce(ballSpeed);
+            
+            // Calculate bowling direction from actual spawn-to-target positions
             Vector3 dir = (targetPos - startPos).normalized;
+            
+            // 🎯 CRITICAL: Calculate LEFT direction relative to bowling direction
+            // Cross(up, dir) = perpendicular LEFT direction (works from any orientation!)
             Vector3 left = Vector3.Cross(Vector3.up, dir).normalized;
+            
             float distance = Vector3.Distance(startPos, targetPos);
             float swing = swingForce * baseSwingForce;
             float lateralMeters = swing * curveIntensity * (distance * bendDistanceScale);
             Vector3 controlPoint = Vector3.Lerp(startPos, targetPos, 0.5f) + left * lateralMeters;
+
+            if (showDebugLogs)
+            {
+                Debug.Log($"🎯 INSWING PATH GENERATION:");
+                Debug.Log($"   Start: {startPos}, Target: {targetPos}");
+                Debug.Log($"   Bowling Direction: {dir}");
+                Debug.Log($"   Lateral Left: {left}");
+                Debug.Log($"   Control Point Offset: {lateralMeters:F2}m");
+                Debug.Log($"   ✅ Directions calculated DYNAMICALLY - works from ANY spawn point!");
+            }
 
             int count = Mathf.Max(2, segments + 1);
             Vector3[] points = new Vector3[count];
@@ -176,6 +204,7 @@ namespace CricketGame
         
         /// <summary>
         /// Get in swing direction for trajectory calculation
+        /// 🎯 WORKS FROM ANY SPAWN POINT - Uses relative lateral direction
         /// </summary>
         public Vector3 GetDeliveryDirection(Vector3 startPos, Vector3 targetPos, float ballSpeed)
         {
@@ -185,8 +214,12 @@ namespace CricketGame
             float swingForce = CalculateSwingForce(ballSpeed);
             Vector3 baseDirection = (targetPos - startPos).normalized;
             
+            // 🎯 CRITICAL FIX: Calculate LEFT direction relative to bowling direction
+            // This works from ANY spawn point, not just hardcoded X-axis!
+            Vector3 leftDirection = Vector3.Cross(Vector3.up, baseDirection).normalized;
+            
             // Add leftward curve to the direction
-            Vector3 swingDirection = baseDirection + new Vector3(-swingForce * 0.3f, 0, 0);
+            Vector3 swingDirection = baseDirection + leftDirection * swingForce * 0.3f;
             
             if (showDebugLogs)
             {
