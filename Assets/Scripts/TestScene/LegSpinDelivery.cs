@@ -12,7 +12,7 @@ namespace CricketGame
         [Header("Leg Spin Settings")]
         [Tooltip("Enable/disable leg spin delivery")]
         public bool enableLegSpin = true;
-        
+
         [Header("Post-Bounce Spin Effect")]
         [Tooltip("Enable lateral spin movement AFTER ball bounces on pitch (realistic leg spin physics)")]
         public bool enablePostBounceSpinEffect = true;
@@ -24,7 +24,7 @@ namespace CricketGame
         [Header("Path Settings")]
         [Tooltip("Use PathFollower for guaranteed accuracy (straight path with post-bounce spin)")]
         public bool usePathFollower = true;
-        
+
         [Header("Curved Path Settings")]
         [Tooltip("Enable curved path following (ball follows Bezier curve) - DISABLED for straight line with swing")]
         public bool enableCurvedPath = false; // Changed to false for straight path with swing effect
@@ -125,11 +125,11 @@ namespace CricketGame
         public Vector3[] GetCurvedPathPoints(Vector3 startPos, Vector3 targetPos, float ballSpeed, int segments = 30)
         {
             // Leg Spin delivery uses perfectly straight path
-            Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
-            for (int i = 0; i < straight.Length; i++)
-            {
-                float t = (float)i / (straight.Length - 1);
-                straight[i] = Vector3.Lerp(startPos, targetPos, t);
+                Vector3[] straight = new Vector3[Mathf.Max(2, segments + 1)];
+                for (int i = 0; i < straight.Length; i++)
+                {
+                    float t = (float)i / (straight.Length - 1);
+                    straight[i] = Vector3.Lerp(startPos, targetPos, t);
             }
             
             if (showDebugLogs)
@@ -196,7 +196,7 @@ namespace CricketGame
         public void UpdateSpinStrength(float strength)
         {
             postBounceSpinStrength = Mathf.Clamp(strength, -2.0f, 2.0f);
-            
+
             if (showDebugLogs)
             {
                 string direction = strength > 0 ? "RIGHT" : strength < 0 ? "LEFT" : "NONE";

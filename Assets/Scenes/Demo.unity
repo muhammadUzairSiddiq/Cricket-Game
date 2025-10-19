@@ -119,6 +119,143 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &69234260
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.12202597
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.1334348
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.7931767
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.98054373
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.19092815
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.04476801
+      objectReference: {fileID: 0}
+    - target: {fileID: 3135180960792856767, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.008733467
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.53
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 22.99
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5643356413543623041, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7918998504685283215, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      propertyPath: m_Name
+      value: CricketBowlerModel (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2776903411699404447, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 69234262}
+  m_SourcePrefab: {fileID: 100100000, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+--- !u!1 &69234261 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2776903411699404447, guid: d2907a69ca8514c2ba3287743ec34fb5, type: 3}
+  m_PrefabInstance: {fileID: 69234260}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &69234262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 69234261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_Version: 2
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
 --- !u!1001 &577960634
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -902,17 +1039,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0469560c7c48e8349a29042c9e1fc723, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bowlingMachine: {fileID: 2131567397}
-  ballPrefab: {fileID: 6663494593483768084, guid: 4b522e32de3aa2948bd113c71627683b, type: 3}
-  wicket: {fileID: 1583279615}
-  pitch: {fileID: 3876173186933251677}
-  ground: {fileID: 7144314409734036983}
-  pitchingArea: {fileID: 1827569050}
-  topLeftCorner: {fileID: 6663494593764837264}
-  topRightCorner: {fileID: 6663494594707020406}
-  bottomLeftCorner: {fileID: 8085890609470356764}
-  bottomRightCorner: {fileID: 8235299193256729248}
-  setupOnStart: 0
 --- !u!1 &1685665117
 GameObject:
   m_ObjectHideFlags: 0
@@ -1455,13 +1581,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 925f8ac353069c441aea85b40cfaf49b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoSetupOnStart: 1
-  createControlUI: 1
-  showSetupLogs: 1
-  positionOnRight: 1
-  positionOnLeft: 0
-  positionOnTop: 0
-  positionOnBottom: 0
 --- !u!4 &1870294579
 Transform:
   m_ObjectHideFlags: 0
@@ -1739,50 +1858,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 499fb9421c54b0a4dbf152b24f23f60e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ballSpawnPoint: {fileID: 1685665118}
-  ballPrefab: {fileID: 6663494593483768084, guid: 4b522e32de3aa2948bd113c71627683b, type: 3}
-  wicketTarget: {fileID: 0}
-  bowlingMachine: {fileID: 0}
-  pitchingArea: {fileID: 1827569051}
-  topLeftCorner: {fileID: 0}
-  topRightCorner: {fileID: 0}
-  bottomLeftCorner: {fileID: 0}
-  bottomRightCorner: {fileID: 0}
-  ballSpeed: 25
-  spinRate: 0
-  swingAmount: 0
-  seamMovement: 0
-  bounceHeight: 0.5
-  ballWeight: 0.16
-  speedBoostAfterBounce: 1.2
-  directionPreservation: 0.95
-  upwardBounceForce: 0.3
-  forwardMomentumBoost: 1.5
-  maxBounceHeight: 2
-  currentBowlingType: 0
-  lineVariation: 2
-  lengthVariation: 2
-  isYorker: 0
-  isBouncer: 0
-  airResistance: 0.02
-  groundFriction: 0.8
-  windEffect: 0
-  windDirection: {x: 0, y: 0, z: 0}
-  seamAngle: 0
-  ballRoughness: 0.5
-  reverseSwing: 0
-  reverseSwingThreshold: 15
-  bowlKey: 32
-  changeLineKey: 113
-  changeLengthKey: 101
-  changeTypeKey: 114
-  showTrajectory: 1
-  showPhysicsInfo: 1
-  trajectoryPoints: 50
-  showPitchPrediction: 1
-  pitchPredictionColor: {r: 1, g: 0, b: 0, a: 1}
-  showInGamePrediction: 1
-  pitchPredictionMarker: {fileID: 0}
 --- !u!1 &30262282983433511
 GameObject:
   m_ObjectHideFlags: 0
@@ -2788,7 +2863,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3448181169876156561}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 3.54, y: 0.585, z: 25.69}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -8797,7 +8872,7 @@ Transform:
   m_GameObject: {fileID: 7144314409734036983}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: 4.5946293, y: 0.5824329, z: 39.743145}
+  m_LocalPosition: {x: 4.5946293, y: 0.72, z: 39.743145}
   m_LocalScale: {x: 3209.866, y: 3518.0566, z: 3209.8655}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11652,7 +11727,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!33 &7300399952437379214
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -13823,3 +13898,4 @@ SceneRoots:
   - {fileID: 1253649722}
   - {fileID: 1827569051}
   - {fileID: 1870294579}
+  - {fileID: 69234260}

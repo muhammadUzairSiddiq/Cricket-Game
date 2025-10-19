@@ -19,6 +19,7 @@ namespace CricketGame
         [SerializeField] private float ballRadius = 0.036f;
         [SerializeField] private bool useRealisticPhysics = true;
         [SerializeField] private float destroyDelay = 5f;
+        [SerializeField] private bool enableAutoDestroy = false;
 
         [Header("Bounce Settings")]
         [SerializeField] private float bounceForce = 0.8f;
@@ -37,6 +38,7 @@ namespace CricketGame
         public float BallRadius => ballRadius;
         public bool UseRealisticPhysics => useRealisticPhysics;
         public float DestroyDelay => destroyDelay;
+        public bool EnableAutoDestroy => enableAutoDestroy;
         public float BounceForce => bounceForce;
         public float BounceFriction => bounceFriction;
         public int MaxBounces => maxBounces;

@@ -52,12 +52,37 @@ namespace CricketGame
         
         [Header("Controls")]
         [SerializeField] private KeyCode startKey = KeyCode.Space;
+        
+        // Toggle to allow manual key control (S = new ball, Space = bowl). When false, keys are ignored
+        [Header("Input Settings")]
+        [Tooltip("Enable manual key input (S to spawn ball, Space to bowl). Disable to drive from animation/bowler hand.")]
+        [SerializeField] private bool enableManualKeyInput = false;
         [SerializeField] private KeyCode stopKey = KeyCode.Escape;
+        
+        [Header("Bowler Types")]
+        [Tooltip("All available bowler prefabs. Drag and drop your bowler prefabs here.")]
+        public BowlerPrefabMapping[] bowlerPrefabs;
+        
+        [Header("Current Selection")]
+        [Tooltip("The currently selected bowler type. Updated when user chooses from main menu.")]
+        public BowlerType selectedBowlerType = BowlerType.OffSpinner;
+        
+        [Header("Auto-Instantiation Settings")]
+        [Tooltip("Automatically instantiate the selected bowler when the scene starts")]
+        public bool autoInstantiateBowler = true;
+        
+        [Tooltip("Position where the bowler will be instantiated")]
+        public Vector3 bowlerSpawnPosition = new Vector3(3.56f, 0.619f, 32.86f);
+        
+        [Tooltip("Rotation for the instantiated bowler")]
+        public Vector3 bowlerSpawnRotation = Vector3.zero;
         
         // Private variables
         // 🎯 REMOVED: originalBallPosition (was cached, now use spawnPoint.position dynamically)
         private Rigidbody ballRigidbody;
         private bool isRunning = false;
+        private GameObject currentBowlerInstance; // Store the instantiated bowler
+        private PlayerAnimationController playerAnimationController; // Cached reference to selected bowler's controller
         private bool isReturning = false;
         private bool hasLanded = false;
         private Coroutine bowlingCoroutine;
@@ -74,11 +99,167 @@ namespace CricketGame
         private Vector3 velocityAcceleration;
         private float lastUpdateTime;
         
+        void Awake()
+        {
+            // Get PlayerAnimationController from selected bowler
+            UpdatePlayerAnimationController();
+        }
+        
+        /// <summary>
+        /// Update PlayerAnimationController based on selected bowler
+        /// </summary>
+        public void UpdatePlayerAnimationController()
+        {
+            if (bowlerPrefabs != null && bowlerPrefabs.Length > 0)
+            {
+                // Find the bowler prefab for the selected type
+                GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
+                if (selectedBowlerPrefab != null)
+                {
+                    playerAnimationController = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
+                    if (playerAnimationController != null)
+                    {
+                        Debug.Log($"🎯 Found PlayerAnimationController in selected bowler: {selectedBowlerPrefab.name} (Type: {selectedBowlerType})");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"🎯 No PlayerAnimationController found in selected bowler: {selectedBowlerPrefab.name}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"🎯 No bowler prefab found for type: {selectedBowlerType}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("🎯 No bowler prefabs assigned");
+            }
+        }
+        
+        /// <summary>
+        /// Instantiate the selected bowler in the scene
+        /// </summary>
+        public void InstantiateSelectedBowler()
+        {
+            Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER START ===");
+            Debug.Log($"🎯 Selected bowler type: {selectedBowlerType}");
+            Debug.Log($"🎯 Bowler prefabs array: {(bowlerPrefabs != null ? bowlerPrefabs.Length.ToString() : "NULL")}");
+            
+            // Destroy existing bowler instance if any
+            if (currentBowlerInstance != null)
+            {
+                Debug.Log($"🎯 Destroying existing bowler instance: {currentBowlerInstance.name}");
+                DestroyImmediate(currentBowlerInstance);
+                currentBowlerInstance = null;
+            }
+            
+            // Get the selected bowler prefab
+            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
+            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
+            
+            if (selectedBowlerPrefab != null)
+            {
+                // Instantiate the bowler
+                currentBowlerInstance = Instantiate(selectedBowlerPrefab, bowlerSpawnPosition, Quaternion.Euler(bowlerSpawnRotation));
+                currentBowlerInstance.name = $"{selectedBowlerPrefab.name}(Clone)";
+                
+                Debug.Log($"🎯 ✅ Instantiated bowler: {currentBowlerInstance.name} at position {bowlerSpawnPosition}");
+                
+                // Get the PlayerAnimationController from the instantiated bowler
+                PlayerAnimationController instantiatedController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
+                if (instantiatedController != null)
+                {
+                    playerAnimationController = instantiatedController;
+                    Debug.Log($"🎯 ✅ Updated PlayerAnimationController reference to instantiated bowler: {currentBowlerInstance.name}");
+                    
+                    // Notify GameplayInputHandler that bowler is ready
+                    NotifyBowlerReady();
+                }
+                else
+                {
+                    Debug.LogError($"🎯 ❌ No PlayerAnimationController found on instantiated bowler: {currentBowlerInstance.name}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"🎯 ❌ Cannot instantiate bowler - no prefab found for type: {selectedBowlerType}");
+            }
+            
+            Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER END ===");
+        }
+        
+        /// <summary>
+        /// Notify GameplayInputHandler that bowler is ready
+        /// </summary>
+        private void NotifyBowlerReady()
+        {
+            // Find GameplayInputHandler and refresh its references
+            GameplayInputHandler inputHandler = FindObjectOfType<GameplayInputHandler>();
+            if (inputHandler != null)
+            {
+                Debug.Log("🎯 Notifying GameplayInputHandler that bowler is ready");
+                inputHandler.RefreshComponentReferences();
+            }
+        }
+        
+        /// <summary>
+        /// Get bowler prefab by type
+        /// </summary>
+        public GameObject GetBowlerPrefab(BowlerType bowlerType)
+        {
+            if (bowlerPrefabs != null)
+            {
+                foreach (BowlerPrefabMapping mapping in bowlerPrefabs)
+                {
+                    if (mapping.bowlerType == bowlerType && mapping.bowlerPrefab != null)
+                    {
+                        return mapping.bowlerPrefab;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// Get PlayerAnimationController from selected bowler (public getter)
+        /// </summary>
+        public PlayerAnimationController GetPlayerAnimationController()
+        {
+            return playerAnimationController;
+        }
+        
         void Start()
         {
+            Debug.Log("🎯 === BOWLING CONTROLLER START ===");
+            Debug.Log($"🎯 Auto-instantiate bowler: {autoInstantiateBowler}");
+            Debug.Log($"🎯 Selected bowler type: {selectedBowlerType}");
+            
             SetupTest();
+            
+            // Auto-instantiate bowler if enabled
+            if (autoInstantiateBowler)
+            {
+                Debug.Log("🎯 Auto-instantiation ENABLED - calling InstantiateSelectedBowler()");
+                InstantiateSelectedBowler();
+            }
+            else
+            {
+                Debug.Log("🎯 Auto-instantiation DISABLED - skipping bowler instantiation");
+            }
+            
             // Using existing bowling zones (manually created under Pitching Area)
             Debug.Log("🎯 Using existing bowling zones from Pitching Area");
+            
+            // Debug current settings
+            Debug.Log($"🎯 DEBUG: enableManualKeyInput = {enableManualKeyInput}");
+            PlayerAnimationController animController = GetPlayerAnimationController();
+            Debug.Log($"🎯 DEBUG: playerAnimationController = {(animController != null ? animController.name : "NULL")}");
+            if (animController != null)
+            {
+                Transform animSpawn = animController.GetAnimationSpawnPoint();
+                Debug.Log($"🎯 DEBUG: animationSpawnPoint = {(animSpawn != null ? animSpawn.name : "NULL")}");
+            }
         }
         
         void Update()
@@ -552,7 +733,15 @@ namespace CricketGame
             trail.autodestruct = false;
             
             Debug.Log("?? Trail renderer FORCED to light white visible color!");
-            Debug.Log($"?? Trail material color: {trail.material.color}");
+            // FIXED: Use sharedMaterial for prefab access
+            if (trail.sharedMaterial != null)
+            {
+                Debug.Log($"?? Trail material color: {trail.sharedMaterial.color}");
+            }
+            else
+            {
+                Debug.Log("?? Trail material: NULL");
+            }
             Debug.Log($"?? Trail start color: {trail.startColor}");
             Debug.Log($"?? Trail end color: {trail.endColor}");
         }
@@ -639,15 +828,15 @@ namespace CricketGame
         /// </summary>
         void HandleInput()
         {
-            // ?? NEW: Instantiate new ball with S key
-            if (Input.GetKeyDown(KeyCode.S))
+            // ?? NEW: Instantiate new ball with S key (only if manual input enabled)
+            if (enableManualKeyInput && Input.GetKeyDown(KeyCode.S))
             {
                 Debug.Log("🎯 S key pressed - Creating new ball");
                 InstantiateNewBall();
             }
             
-            // ?? NEW: Bowl current ball with SPACE key
-            if (Input.GetKeyDown(KeyCode.Space))
+            // ?? NEW: Bowl current ball with SPACE key (only if manual input enabled)
+            if (enableManualKeyInput && Input.GetKeyDown(KeyCode.Space))
             {
                 Debug.Log("🎯 SPACE key pressed - Attempting to bowl ball");
                 BowlCurrentBall();
@@ -679,21 +868,106 @@ namespace CricketGame
             Debug.Log("🎯 InstantiateNewBall called");
             
             // Destroy existing ball instance if any (NOT the prefab reference!)
+            // This is needed for manual ball creation (S key) - different from auto-destroy
             if (currentBallInstance != null)
             {
-                DestroyImmediate(currentBallInstance);
+                Destroy(currentBallInstance);
                 currentBallInstance = null;
-                Debug.Log("🎯 Destroyed previous ball instance");
+                Debug.Log("🎯 Destroyed previous ball instance for new ball creation");
             }
             
             // Instantiate new ball at spawn point
-            if (ball != null && spawnPoint != null)
+            if (ball != null)
             {
-                // 🎯 DYNAMIC SPAWN: Always use current spawn point position
-                currentBallInstance = Instantiate(ball, spawnPoint.position, spawnPoint.rotation);
-                Debug.Log($"🎯 DYNAMIC SPAWN: Ball instantiated at CURRENT spawn point position: {spawnPoint.position}");
-                Debug.Log($"🎯 DYNAMIC SPAWN: Spawn rotation: {spawnPoint.rotation.eulerAngles}");
+                // Determine which spawn point to use based on manual input setting
+                Transform spawnPointToUse = null;
+                string spawnPointType = "";
+                
+                if (enableManualKeyInput)
+                {
+                    // Use BowlingController's spawn point for manual testing
+                    spawnPointToUse = spawnPoint;
+                    spawnPointType = "Manual (BowlingController)";
+                    Debug.Log($"🎯 SPAWN POINT: Manual mode enabled - using BowlingController spawn point");
+                }
+                else
+                {
+                    // Use PlayerAnimationController's spawn point for animation-driven bowling
+                    PlayerAnimationController animController = GetPlayerAnimationController();
+                    if (animController != null)
+                    {
+                        spawnPointToUse = animController.GetAnimationSpawnPoint();
+                        if (spawnPointToUse != null)
+                        {
+                            spawnPointType = "Animation (PlayerAnimationController)";
+                            Debug.Log($"🎯 SPAWN POINT: Animation mode - using PlayerAnimationController spawn point: {spawnPointToUse.name}");
+                            
+                            // Refresh the spawn point position to get current world position
+                            animController.RefreshSpawnPointPosition();
+                            
+                            // Get the current animated position
+                            Vector3 animatedPosition = animController.GetCurrentAnimatedSpawnPosition();
+                            Debug.Log($"🎯 ANIMATED POSITION: Current RightHand position: {animatedPosition}");
+                        }
+                        else
+                        {
+                            // Animation spawn point not assigned
+                            spawnPointToUse = spawnPoint;
+                            spawnPointType = "Fallback (Animation Spawn Point Not Assigned)";
+                            Debug.LogWarning("🎯 PlayerAnimationController found but Animation Spawn Point is not assigned! Using BowlingController spawn point as fallback");
+                        }
+                    }
+                    else
+                    {
+                        // Fallback to BowlingController's spawn point if PlayerAnimationController not found
+                        spawnPointToUse = spawnPoint;
+                        spawnPointType = "Fallback (PlayerAnimationController Not Found)";
+                        Debug.LogWarning("🎯 PlayerAnimationController not found - using BowlingController spawn point as fallback");
+                    }
+                }
+                
+                if (spawnPointToUse != null)
+                {
+                    // Get the current world position of the spawn point (important for animated bowlers)
+                    Vector3 currentSpawnPosition = spawnPointToUse.position;
+                    Quaternion currentSpawnRotation = spawnPointToUse.rotation;
+                    
+                    // For animated spawn points, ensure we get the current world position
+                    if (spawnPointType.Contains("Animation"))
+                    {
+                        // Get the current world position of the animated bone
+                        currentSpawnPosition = spawnPointToUse.position;
+                        currentSpawnRotation = spawnPointToUse.rotation;
+                        Debug.Log($"🎯 ANIMATED SPAWN: Using current world position of {spawnPointToUse.name}: {currentSpawnPosition}");
+                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point parent: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
+                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point local position: {spawnPointToUse.localPosition}");
+                        
+                        // CRITICAL DEBUG: Check if the bone is actually moving
+                        Debug.Log($"🎯 BONE MOVEMENT CHECK: {spawnPointToUse.name} world position: {spawnPointToUse.position}");
+                        Debug.Log($"🎯 BONE MOVEMENT CHECK: {spawnPointToUse.name} local position: {spawnPointToUse.localPosition}");
+                        Debug.Log($"🎯 BONE MOVEMENT CHECK: Parent transform: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
+                        
+                        // Check if this is a bone in the avatar
+                        if (spawnPointToUse.parent != null)
+                        {
+                            Debug.Log($"🎯 BONE HIERARCHY: {spawnPointToUse.parent.name} -> {spawnPointToUse.name}");
+                            if (spawnPointToUse.parent.parent != null)
+                            {
+                                Debug.Log($"🎯 BONE HIERARCHY: {spawnPointToUse.parent.parent.name} -> {spawnPointToUse.parent.name} -> {spawnPointToUse.name}");
+                            }
+                        }
+                    }
+                    
+                    currentBallInstance = Instantiate(ball, currentSpawnPosition, currentSpawnRotation);
+                    Debug.Log($"🎯 DYNAMIC SPAWN: Ball instantiated at {spawnPointType} position: {currentSpawnPosition}");
+                    Debug.Log($"🎯 DYNAMIC SPAWN: Spawn rotation: {currentSpawnRotation.eulerAngles}");
                 Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
+                }
+                else
+                {
+                    Debug.LogError("🎯 No spawn point available! Please assign spawn points in the Inspector.");
+                    return;
+                }
                 
                 // Reset state
                 ballIsBowled = false;
@@ -765,23 +1039,75 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// ?? NEW: Bowl ball - ball will destroy itself after 5 seconds
+        /// ?? NEW: Bowl ball - ball will destroy itself after 5 seconds (only if auto-destroy enabled)
         /// </summary>
         IEnumerator BowlAndDestroy()
         {
+            Debug.Log("🏏 === BOWL AND DESTROY STARTED ===");
+            
             // Bowl the ball
+            Debug.Log("🏏 Starting BowlToTarget coroutine...");
             yield return StartCoroutine(BowlToTarget());
             
+            Debug.Log("🏏 ✅ BowlToTarget completed - ball has finished bowling to target");
+            
             // Wait for ball to land and bounce
+            Debug.Log("🏏 Starting WaitForLanding coroutine...");
             yield return StartCoroutine(WaitForLanding());
+            
+            Debug.Log("🏏 ✅ WaitForLanding completed - ball has landed and finished bouncing");
+            
+            // Alternative: Simple fixed wait (uncomment if WaitForLanding is problematic)
+            // Debug.Log("🏏 Using simple fixed wait instead of WaitForLanding...");
+            // yield return new WaitForSeconds(2f);
+            // Debug.Log("🏏 ✅ Fixed wait completed");
             
             // Reset ball state so new balls can be bowled
             ballIsBowled = false;
             hasLanded = false;
             ResetBounceState();
             
-            // Ball will destroy itself after 5 seconds via BallAutoDestroy script
-            Debug.Log("?? Ball has landed and bounced - it will destroy itself in 5 seconds");
+            // Check if auto-destroy is enabled
+            Debug.Log($"🏏 Checking auto-destroy: ballSettingsSO = {(ballSettingsSO != null ? "FOUND" : "NULL")}");
+            if (ballSettingsSO != null)
+            {
+                Debug.Log($"🏏 EnableAutoDestroy = {ballSettingsSO.EnableAutoDestroy}");
+                Debug.Log($"🏏 DestroyDelay = {ballSettingsSO.DestroyDelay}");
+            }
+            
+            if (ballSettingsSO != null && ballSettingsSO.EnableAutoDestroy)
+            {
+                Debug.Log($"🏏 ✅ Auto-destroy ENABLED - destroying ball in {ballSettingsSO.DestroyDelay} seconds");
+                Debug.Log($"🏏 Current ball instance: {(currentBallInstance != null ? currentBallInstance.name : "NULL")}");
+                
+                // Wait for destroy delay
+                yield return new WaitForSeconds(ballSettingsSO.DestroyDelay);
+                
+                Debug.Log("🏏 Destroy delay completed - attempting to destroy ball");
+                
+                // Destroy the ball
+                if (currentBallInstance != null)
+                {
+                    Debug.Log($"🏏 🗑️ DESTROYING ball instance: {currentBallInstance.name}");
+                    Destroy(currentBallInstance);
+                    currentBallInstance = null;
+                    Debug.Log("🏏 ✅ Ball instance destroyed and reference cleared");
+                }
+                else
+                {
+                    Debug.LogError("🏏 ❌ Ball instance is NULL - cannot destroy");
+                }
+            }
+            else
+            {
+                Debug.Log("🏏 ❌ Auto-destroy DISABLED - ball remains in scene");
+                if (ballSettingsSO == null)
+                {
+                    Debug.LogError("🏏 ❌ BallSettingsSO is NULL!");
+                }
+            }
+            
+            Debug.Log("🏏 === BOWL AND DESTROY COMPLETED ===");
             Debug.Log("?? Ball state reset - ready for new ball! Press S to create a new ball when ready!");
         }
         
@@ -827,11 +1153,33 @@ namespace CricketGame
             }
             
             // ?? SAFETY: Ensure ball is at correct starting position
-            // 🎯 DYNAMIC: Use current spawn point position, not cached value
-            if (Vector3.Distance(ballToBowl.transform.position, spawnPoint.position) > 0.1f)
+            // 🎯 DYNAMIC: Use the same spawn point that was used for instantiation
+            Transform correctSpawnPoint = enableManualKeyInput ? spawnPoint : 
+                (GetPlayerAnimationController() != null ? GetPlayerAnimationController().GetAnimationSpawnPoint() : spawnPoint);
+            
+            // Get the current animated position for comparison (important for animated bowlers)
+            Vector3 expectedPosition;
+            if (enableManualKeyInput)
             {
-                Debug.LogWarning("?? Ball not at spawn position! Forcing reset...");
-                ballToBowl.transform.position = spawnPoint.position;
+                expectedPosition = spawnPoint.position;
+            }
+            else
+            {
+                PlayerAnimationController animController = GetPlayerAnimationController();
+                if (animController != null)
+                {
+                    expectedPosition = animController.GetCurrentAnimatedSpawnPosition();
+                }
+                else
+                {
+                    expectedPosition = correctSpawnPoint.position;
+                }
+            }
+            
+            if (Vector3.Distance(ballToBowl.transform.position, expectedPosition) > 0.1f)
+            {
+                Debug.LogWarning($"?? Ball not at correct spawn position! Forcing reset to current animated position...");
+                ballToBowl.transform.position = expectedPosition;
                 if (ballRigidbodyToUse != null)
                 {
                     ballRigidbodyToUse.linearVelocity = Vector3.zero;
@@ -848,15 +1196,38 @@ namespace CricketGame
             
             // Calculate trajectory to target
             Vector3 targetPosition = target.position;
-            Vector3 startPosition = ballToBowl.transform.position;
+            
+            // Use the same spawn point that was used for ball creation (important for animated bowlers)
+            Vector3 startPosition;
+            if (enableManualKeyInput)
+            {
+                startPosition = spawnPoint.position;
+            }
+            else
+            {
+                PlayerAnimationController animController = GetPlayerAnimationController();
+                if (animController != null)
+                {
+                    // Refresh the spawn point position to get current world position
+                    animController.RefreshSpawnPointPosition();
+                    startPosition = animController.GetCurrentAnimatedSpawnPosition();
+                    Debug.Log($"🎯 TRAJECTORY: Using current animated spawn position: {startPosition}");
+                }
+                else
+                {
+                    startPosition = ballToBowl.transform.position;
+                    Debug.LogWarning("🎯 TRAJECTORY: No PlayerAnimationController found, using ball position as fallback");
+                }
+            }
             
             // 🎯 VERIFICATION: Log spawn and start positions
             Debug.Log($"═══════════════════════════════════════════════════════");
             Debug.Log($"🎯 DYNAMIC SPAWN VERIFICATION:");
-            Debug.Log($"   Spawn Point Transform Position: {spawnPoint.position}");
-            Debug.Log($"   Ball Start Position: {startPosition}");
+            Debug.Log($"   Spawn Point Transform Position: {correctSpawnPoint.position}");
+            Debug.Log($"   Ball Current Position: {ballToBowl.transform.position}");
+            Debug.Log($"   Trajectory Start Position: {startPosition}");
             Debug.Log($"   Target Position: {targetPosition}");
-            Debug.Log($"   Positions Match: {Vector3.Distance(spawnPoint.position, startPosition) < 0.01f}");
+            Debug.Log($"   Ball vs Trajectory Match: {Vector3.Distance(ballToBowl.transform.position, startPosition) < 0.01f}");
             
             // Calculate horizontal distance to target
             Vector3 horizontalStart = new Vector3(startPosition.x, 0, startPosition.z);
@@ -1776,14 +2147,26 @@ namespace CricketGame
         IEnumerator WaitForLanding()
         {
             Debug.Log("?? Waiting for ball to finish bouncing and settle...");
+            Debug.Log($"?? Initial state: isBouncing={isBouncing}, currentBounces={currentBounces}");
             
             // Wait for initial landing
             yield return new WaitForSeconds(0.3f);
+            Debug.Log($"?? After 0.3s wait: isBouncing={isBouncing}, currentBounces={currentBounces}");
             
             // Wait for bounces to complete
+            int waitCount = 0;
             while (isBouncing && currentBounces < 3) // Default max bounces
             {
                 yield return new WaitForSeconds(0.1f);
+                waitCount++;
+                Debug.Log($"?? Waiting for bounce completion: isBouncing={isBouncing}, currentBounces={currentBounces}, waitCount={waitCount}");
+                
+                // Safety break to prevent infinite loop
+                if (waitCount > 50) // 5 seconds max
+                {
+                    Debug.Log("?? ⚠️ WAIT FOR LANDING TIMEOUT - forcing completion");
+                    break;
+                }
             }
             
             // Additional wait to ensure ball has settled
@@ -2266,6 +2649,348 @@ namespace CricketGame
                 }
             }
         }
+        
+        /// <summary>
+        /// Get current ball instance (for animation-driven bowling)
+        /// </summary>
+        public GameObject GetCurrentBallInstance()
+        {
+            return currentBallInstance;
+        }
+        
+        /// <summary>
+        /// Debug method to check spawn point logic
+        /// </summary>
+        [ContextMenu("Debug Spawn Point Logic")]
+        public void DebugSpawnPointLogic()
+        {
+            Debug.Log("🎯 === SPAWN POINT DEBUG ===");
+            Debug.Log($"🎯 enableManualKeyInput: {enableManualKeyInput}");
+            PlayerAnimationController animController = GetPlayerAnimationController();
+            Debug.Log($"🎯 playerAnimationController: {(animController != null ? animController.name : "NULL")}");
+            Debug.Log($"🎯 spawnPoint: {(spawnPoint != null ? spawnPoint.name : "NULL")}");
+            
+            if (animController != null)
+            {
+                Transform animSpawn = animController.GetAnimationSpawnPoint();
+                Debug.Log($"🎯 animationSpawnPoint: {(animSpawn != null ? animSpawn.name : "NULL")}");
+                if (animSpawn != null)
+                {
+                    Debug.Log($"🎯 animationSpawnPoint position: {animSpawn.position}");
+                }
+            }
+            
+            // Simulate the logic
+            if (enableManualKeyInput)
+            {
+                Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (Manual mode)");
+            }
+            else
+            {
+                if (animController != null)
+                {
+                    Transform animSpawn = animController.GetAnimationSpawnPoint();
+                    if (animSpawn != null)
+                    {
+                        Debug.Log("🎯 LOGIC RESULT: Would use PlayerAnimationController spawn point (Animation mode)");
+                    }
+                    else
+                    {
+                        Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (Animation spawn point not assigned)");
+                    }
+                }
+                else
+                {
+                    Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (PlayerAnimationController not found)");
+                }
+            }
+            Debug.Log("🎯 =========================");
+        }
+        
+        /// <summary>
+        /// Test spawn point position during animation
+        /// </summary>
+        [ContextMenu("Test Spawn Point During Animation")]
+        public void TestSpawnPointDuringAnimation()
+        {
+            Debug.Log("🎯 === TESTING SPAWN POINT DURING ANIMATION ===");
+            
+            PlayerAnimationController animController = GetPlayerAnimationController();
+            if (animController != null)
+            {
+                Transform animSpawnPoint = animController.GetAnimationSpawnPoint();
+                if (animSpawnPoint != null)
+                {
+                    Debug.Log($"🎯 Initial RightHand position: {animSpawnPoint.position}");
+                    Debug.Log($"🎯 Initial RightHand local position: {animSpawnPoint.localPosition}");
+                    Debug.Log($"🎯 RightHand parent: {(animSpawnPoint.parent != null ? animSpawnPoint.parent.name : "NULL")}");
+                    
+                    // Start coroutine to check position changes
+                    StartCoroutine(MonitorSpawnPointPosition(animSpawnPoint));
+                }
+                else
+                {
+                    Debug.LogError("🎯 ❌ No animation spawn point assigned!");
+                }
+            }
+            else
+            {
+                Debug.LogError("🎯 ❌ No PlayerAnimationController found!");
+            }
+            
+            Debug.Log("🎯 ===========================================");
+        }
+        
+        private System.Collections.IEnumerator MonitorSpawnPointPosition(Transform spawnPoint)
+        {
+            Vector3 lastPosition = spawnPoint.position;
+            int frameCount = 0;
+            
+            while (frameCount < 300) // Monitor for 5 seconds at 60fps
+            {
+                yield return null;
+                frameCount++;
+                
+                Vector3 currentPosition = spawnPoint.position;
+                if (Vector3.Distance(currentPosition, lastPosition) > 0.01f)
+                {
+                    Debug.Log($"🎯 FRAME {frameCount}: RightHand moved from {lastPosition} to {currentPosition}");
+                    lastPosition = currentPosition;
+                }
+                
+                if (frameCount % 60 == 0) // Log every second
+                {
+                    Debug.Log($"🎯 FRAME {frameCount}: RightHand position: {currentPosition}");
+                }
+            }
+            
+            Debug.Log("🎯 Spawn point monitoring completed");
+        }
+        
+        /// <summary>
+        /// Debug method to check PlayerAnimationController status
+        /// </summary>
+        [ContextMenu("Check PlayerAnimationController Status")]
+        public void CheckPlayerAnimationControllerStatus()
+        {
+            Debug.Log("🎯 === PLAYER ANIMATION CONTROLLER STATUS ===");
+            Debug.Log($"🎯 enableManualKeyInput: {enableManualKeyInput}");
+            PlayerAnimationController animController = GetPlayerAnimationController();
+            Debug.Log($"🎯 playerAnimationController: {(animController != null ? animController.name : "NULL - Will auto-find at runtime")}");
+            
+            if (animController != null)
+            {
+                Transform animSpawn = animController.GetAnimationSpawnPoint();
+                Debug.Log($"🎯 animationSpawnPoint: {(animSpawn != null ? animSpawn.name : "NULL")}");
+                if (animSpawn != null)
+                {
+                    Debug.Log($"🎯 animationSpawnPoint position: {animSpawn.position}");
+                }
+            }
+            
+            // Show current selected bowler info
+            Debug.Log($"🎯 Selected Bowler Type: {selectedBowlerType}");
+            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
+            Debug.Log($"🎯 Selected Bowler Prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
+            
+            Debug.Log("🎯 ==========================================");
+        }
+        
+        /// <summary>
+        /// Select bowler by type (for main menu)
+        /// </summary>
+        public void SelectBowlerByType(BowlerType bowlerType)
+        {
+            selectedBowlerType = bowlerType;
+            UpdatePlayerAnimationController();
+            Debug.Log($"🎯 Selected bowler: {bowlerType}");
+        }
+        
+        /// <summary>
+        /// Select bowler by type index (for main menu)
+        /// </summary>
+        public void SelectBowlerByTypeIndex(int typeIndex)
+        {
+            if (System.Enum.IsDefined(typeof(BowlerType), typeIndex))
+            {
+                BowlerType bowlerType = (BowlerType)typeIndex;
+                SelectBowlerByType(bowlerType);
+            }
+            else
+            {
+                Debug.LogWarning($"🎯 Invalid bowler type index: {typeIndex}");
+            }
+        }
+        
+        /// <summary>
+        /// Get all available bowler types (for main menu)
+        /// </summary>
+        public BowlerType[] GetAvailableBowlerTypes()
+        {
+            return (BowlerType[])System.Enum.GetValues(typeof(BowlerType));
+        }
+        
+        /// <summary>
+        /// Get all available bowler type names (for main menu UI)
+        /// </summary>
+        public string[] GetAvailableBowlerTypeNames()
+        {
+            BowlerType[] types = GetAvailableBowlerTypes();
+            string[] names = new string[types.Length];
+            for (int i = 0; i < types.Length; i++)
+            {
+                names[i] = types[i].ToString();
+            }
+            return names;
+        }
+        
+        /// <summary>
+        /// Check current bowler setup
+        /// </summary>
+        [ContextMenu("Check Current Bowler")]
+        public void CheckCurrentBowler()
+        {
+            Debug.Log("🎯 === CURRENT BOWLER STATUS ===");
+            Debug.Log($"🎯 Selected Bowler Type: {selectedBowlerType}");
+            
+            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
+            if (selectedBowlerPrefab != null)
+            {
+                Debug.Log($"🎯 Selected Bowler Prefab: {selectedBowlerPrefab.name}");
+                
+                PlayerAnimationController controller = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
+                if (controller != null)
+                {
+                    Debug.Log($"🎯 ✅ PlayerAnimationController found in {selectedBowlerPrefab.name}");
+                    
+                    Transform spawnPoint = controller.GetAnimationSpawnPoint();
+                    if (spawnPoint != null)
+                    {
+                        Debug.Log($"🎯 ✅ Animation Spawn Point: {spawnPoint.name} at {spawnPoint.position}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"🎯 ❌ No Animation Spawn Point found in {selectedBowlerPrefab.name}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"🎯 ❌ No PlayerAnimationController found in {selectedBowlerPrefab.name}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"🎯 ❌ No bowler prefab found for type: {selectedBowlerType}");
+            }
+            
+            PlayerAnimationController animController = GetPlayerAnimationController();
+            Debug.Log($"🎯 PlayerAnimationController Reference: {(animController != null ? animController.name : "NULL")}");
+            Debug.Log("🎯 ==============================");
+        }
+
+        [ContextMenu("Switch to Off Spinner")]
+        public void SwitchToOffSpinner()
+        {
+            SelectBowlerByType(BowlerType.OffSpinner);
+        }
+
+        [ContextMenu("Switch to Leg Spinner")]
+        public void SwitchToLegSpinner()
+        {
+            SelectBowlerByType(BowlerType.LegSpinner);
+        }
+
+        [ContextMenu("Switch to Swing Bowler")]
+        public void SwitchToSwingBowler()
+        {
+            SelectBowlerByType(BowlerType.SwingBowler);
+        }
+
+        [ContextMenu("Switch to Seam Bowler")]
+        public void SwitchToSeamBowler()
+        {
+            SelectBowlerByType(BowlerType.SeamBowler);
+        }
+
+        [ContextMenu("Switch to Medium Pace Bowler")]
+        public void SwitchToMediumPaceBowler()
+        {
+            SelectBowlerByType(BowlerType.MediumPaceBowler);
+        }
+        
+        /// <summary>
+        /// Manually instantiate the selected bowler (for testing)
+        /// </summary>
+        [ContextMenu("Instantiate Selected Bowler")]
+        public void InstantiateSelectedBowlerContext()
+        {
+            Debug.Log("🎯 === MANUALLY INSTANTIATING SELECTED BOWLER ===");
+            InstantiateSelectedBowler();
+            Debug.Log("🎯 ============================================");
+        }
+        
+        /// <summary>
+        /// Destroy the current bowler instance (for testing)
+        /// </summary>
+        [ContextMenu("Destroy Current Bowler Instance")]
+        public void DestroyCurrentBowlerInstance()
+        {
+            Debug.Log("🎯 === DESTROYING CURRENT BOWLER INSTANCE ===");
+            if (currentBowlerInstance != null)
+            {
+                Debug.Log($"🎯 Destroying: {currentBowlerInstance.name}");
+                DestroyImmediate(currentBowlerInstance);
+                currentBowlerInstance = null;
+                playerAnimationController = null;
+                Debug.Log("🎯 ✅ Bowler instance destroyed and references cleared");
+            }
+            else
+            {
+                Debug.Log("🎯 No bowler instance to destroy");
+            }
+            Debug.Log("🎯 =========================================");
+        }
+        
+        /// <summary>
+        /// Toggle auto-instantiation on/off
+        /// </summary>
+        [ContextMenu("Toggle Auto-Instantiation")]
+        public void ToggleAutoInstantiation()
+        {
+            autoInstantiateBowler = !autoInstantiateBowler;
+            Debug.Log($"🎯 Auto-instantiation: {(autoInstantiateBowler ? "ENABLED" : "DISABLED")}");
+        }
+        
+        /// <summary>
+        /// Manually destroy current ball (for testing)
+        /// </summary>
+        [ContextMenu("Manually Destroy Current Ball")]
+        public void ManuallyDestroyCurrentBall()
+        {
+            Debug.Log("🏏 === MANUAL BALL DESTRUCTION ===");
+            Debug.Log($"🏏 Current ball instance: {(currentBallInstance != null ? currentBallInstance.name : "NULL")}");
+            Debug.Log($"🏏 BallSettingsSO: {(ballSettingsSO != null ? "FOUND" : "NULL")}");
+            if (ballSettingsSO != null)
+            {
+                Debug.Log($"🏏 EnableAutoDestroy: {ballSettingsSO.EnableAutoDestroy}");
+                Debug.Log($"🏏 DestroyDelay: {ballSettingsSO.DestroyDelay}");
+            }
+            
+            if (currentBallInstance != null)
+            {
+                Debug.Log($"🏏 🗑️ MANUALLY DESTROYING ball: {currentBallInstance.name}");
+                Destroy(currentBallInstance);
+                currentBallInstance = null;
+                ballIsBowled = false;
+                hasLanded = false;
+                Debug.Log("🏏 ✅ Ball manually destroyed and state reset");
+            }
+            else
+            {
+                Debug.Log("🏏 ❌ No ball to destroy");
+            }
+            Debug.Log("🏏 ================================");
+        }
     }
     
     /// <summary>
@@ -2278,5 +3003,42 @@ namespace CricketGame
         GoodLength,  // Standard length
         ShortLength, // Short of good length
         Bouncer      // Very short
+    }
+    
+    /// <summary>
+    /// Available bowler types
+    /// </summary>
+    public enum BowlerType
+    {
+        OffSpinner = 0,      // Off Spin Bowler
+        LegSpinner = 1,      // Leg Spin Bowler
+        SwingBowler = 2,     // Swing Bowler (In-swing/Out-swing)
+        SeamBowler = 3,      // Seam Bowler (Seam In/Out)
+        MediumPaceBowler = 4 // Medium Pace Bowler
+    }
+    
+    /// <summary>
+    /// Mapping between bowler type and prefab
+    /// </summary>
+    [System.Serializable]
+    public class BowlerPrefabMapping
+    {
+        [Header("Bowler Type")]
+        public BowlerType bowlerType;
+        
+        [Header("Bowler Prefab")]
+        [Tooltip("Drag and drop the bowler prefab here")]
+        public GameObject bowlerPrefab;
+        
+        [Header("Display Info")]
+        [Tooltip("Display name for UI (optional)")]
+        public string displayName;
+        
+        public BowlerPrefabMapping(BowlerType type, GameObject prefab, string name = "")
+        {
+            bowlerType = type;
+            bowlerPrefab = prefab;
+            displayName = string.IsNullOrEmpty(name) ? type.ToString() : name;
+        }
     }
 }

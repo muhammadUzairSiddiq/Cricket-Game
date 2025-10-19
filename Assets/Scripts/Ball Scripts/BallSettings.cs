@@ -107,10 +107,18 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Start the auto-destroy timer
+        /// Start the auto-destroy timer (only if auto-destroy is enabled)
         /// </summary>
         public void StartDestroyTimer()
         {
+            // Check if auto-destroy is enabled from BallSettingsSO
+            BallSettingsSO ballSettingsSO = FindObjectOfType<BallSettingsSO>();
+            if (ballSettingsSO != null && !ballSettingsSO.EnableAutoDestroy)
+            {
+                Debug.Log("🏏 Auto-destroy disabled - ball will not be destroyed automatically");
+                return;
+            }
+            
             Invoke(nameof(DestroyBall), destroyDelay);
         }
         

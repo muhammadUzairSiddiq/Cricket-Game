@@ -54,7 +54,8 @@ namespace CricketGame
             {
                 Debug.LogError("🎯 PATHFOLLOWER: Invalid path!");
                 onComplete?.Invoke();
-                Destroy(this);
+                // Only destroy PathFollower if auto-destroy is enabled
+            if (ShouldDestroyPathFollower()) Destroy(this);
                 return;
             }
             
@@ -92,7 +93,12 @@ namespace CricketGame
                 totalLen += Vector3.Distance(path[i - 1], path[i]);
                 cum[i] = totalLen;
             }
-            if (totalLen < 0.0001f) { onComplete?.Invoke(); Destroy(this); yield break; }
+            if (totalLen < 0.0001f) { 
+                onComplete?.Invoke(); 
+                // Only destroy PathFollower if auto-destroy is enabled
+                if (ShouldDestroyPathFollower()) Destroy(this); 
+                yield break; 
+            }
 
             Debug.Log($"🎯 PATHFOLLOWER: Total path length: {totalLen:F2}m");
 
@@ -188,7 +194,8 @@ namespace CricketGame
                                 }
                                 // Stop following the scripted path; physics now takes over
                                 onComplete = null; // prevent delivery callback that repositions to target
-                                Destroy(this);
+                                // Only destroy PathFollower if auto-destroy is enabled
+                                if (ShouldDestroyPathFollower()) Destroy(this);
                                 yield break;
                             }
                         }
@@ -204,7 +211,8 @@ namespace CricketGame
             }
 
             onComplete?.Invoke();
-            Destroy(this);
+            // Only destroy PathFollower if auto-destroy is enabled
+            if (ShouldDestroyPathFollower()) Destroy(this);
         }
         
         /// <summary>
@@ -227,6 +235,22 @@ namespace CricketGame
             
             // Optional: Add visual/audio effects here
             // Example: Particle effects, sound effects, etc.
+        }
+        
+        /// <summary>
+        /// Check if path follower should destroy itself based on auto-destroy setting
+        /// </summary>
+        private bool ShouldDestroyPathFollower()
+        {
+            // Find BallSettingsSO to check auto-destroy setting
+            BallSettingsSO ballSettingsSO = FindObjectOfType<BallSettingsSO>();
+            if (ballSettingsSO != null && !ballSettingsSO.EnableAutoDestroy)
+            {
+                Debug.Log("🏏 PathFollower: Auto-destroy disabled - PathFollower will not be destroyed");
+                return false;
+            }
+            
+            return true; // Default behavior - destroy PathFollower
         }
     }
 }
