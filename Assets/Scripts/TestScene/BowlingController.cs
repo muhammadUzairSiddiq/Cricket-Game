@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using CricketBowlingAnimations;
 
 namespace CricketGame
 {
@@ -59,17 +60,21 @@ namespace CricketGame
         [SerializeField] private bool enableManualKeyInput = false;
         [SerializeField] private KeyCode stopKey = KeyCode.Escape;
         
-        [Header("Bowler Types")]
-        [Tooltip("All available bowler prefabs. Drag and drop your bowler prefabs here.")]
-        public BowlerPrefabMapping[] bowlerPrefabs;
+        [Header("Bowler Prefab Selection")]
+        [Tooltip("Select which bowler prefab to instantiate")]
+        public GameObject selectedBowlerPrefab;
         
-        [Header("Current Selection")]
-        [Tooltip("The currently selected bowler type. Updated when user chooses from main menu.")]
-        public BowlerType selectedBowlerType = BowlerType.OffSpinner;
+        [Header("Available Bowler Prefabs")]
+        [Tooltip("All available bowler prefabs. Drag and drop your bowler prefabs here.")]
+        public GameObject[] availableBowlerPrefabs;
         
         [Header("Auto-Instantiation Settings")]
         [Tooltip("Automatically instantiate the selected bowler when the scene starts")]
         public bool autoInstantiateBowler = true;
+
+        [Header("Spawn Point Mapping")]
+        [Tooltip("Map each bowler prefab to its two spawn positions in the scene")]
+        public BowlerSpawnMapping[] bowlerSpawnMappings = new BowlerSpawnMapping[7];
         
         [Tooltip("Position where the bowler will be instantiated")]
         public Vector3 bowlerSpawnPosition = new Vector3(3.56f, 0.619f, 32.86f);
@@ -106,34 +111,25 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Update PlayerAnimationController based on selected bowler
+        /// Update PlayerAnimationController based on selected bowler prefab
         /// </summary>
         public void UpdatePlayerAnimationController()
         {
-            if (bowlerPrefabs != null && bowlerPrefabs.Length > 0)
+            if (selectedBowlerPrefab != null)
             {
-                // Find the bowler prefab for the selected type
-                GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
-                if (selectedBowlerPrefab != null)
+                playerAnimationController = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
+                if (playerAnimationController != null)
                 {
-                    playerAnimationController = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
-                    if (playerAnimationController != null)
-                    {
-                        Debug.Log($"🎯 Found PlayerAnimationController in selected bowler: {selectedBowlerPrefab.name} (Type: {selectedBowlerType})");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"🎯 No PlayerAnimationController found in selected bowler: {selectedBowlerPrefab.name}");
-                    }
+                    Debug.Log($"🎯 Found PlayerAnimationController in selected bowler: {selectedBowlerPrefab.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"🎯 No bowler prefab found for type: {selectedBowlerType}");
+                    Debug.LogWarning($"🎯 No PlayerAnimationController found in selected bowler: {selectedBowlerPrefab.name}");
                 }
             }
             else
             {
-                Debug.LogWarning("🎯 No bowler prefabs assigned");
+                Debug.LogWarning("🎯 No bowler prefab selected");
             }
         }
         
@@ -143,8 +139,7 @@ namespace CricketGame
         public void InstantiateSelectedBowler()
         {
             Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER START ===");
-            Debug.Log($"🎯 Selected bowler type: {selectedBowlerType}");
-            Debug.Log($"🎯 Bowler prefabs array: {(bowlerPrefabs != null ? bowlerPrefabs.Length.ToString() : "NULL")}");
+            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
             // Destroy existing bowler instance if any
             if (currentBowlerInstance != null)
@@ -154,17 +149,38 @@ namespace CricketGame
                 currentBowlerInstance = null;
             }
             
-            // Get the selected bowler prefab
-            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
-            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
-            
             if (selectedBowlerPrefab != null)
             {
+                // Get the spawn mapping for this bowler
+                BowlerSpawnMapping mapping = GetSpawnMappingForPrefab(selectedBowlerPrefab);
+                Vector3 spawnPos = bowlerSpawnPosition;
+                Quaternion spawnRot = Quaternion.Euler(bowlerSpawnRotation);
+                
+                if (mapping != null)
+                {
+                    // Use the current spawn position from the mapping
+                    Transform currentSpawn = mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+                    if (currentSpawn != null)
+                    {
+                        spawnPos = currentSpawn.position;
+                        spawnRot = currentSpawn.rotation;
+                        Debug.Log($"🎯 Using spawn mapping: {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {currentSpawn.name} - {spawnPos}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"🎯 Spawn mapping found but spawn position is null, using default: {bowlerSpawnPosition}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"🎯 No spawn mapping found for {selectedBowlerPrefab.name}, using default spawn position");
+                }
+                
                 // Instantiate the bowler
-                currentBowlerInstance = Instantiate(selectedBowlerPrefab, bowlerSpawnPosition, Quaternion.Euler(bowlerSpawnRotation));
+                currentBowlerInstance = Instantiate(selectedBowlerPrefab, spawnPos, spawnRot);
                 currentBowlerInstance.name = $"{selectedBowlerPrefab.name}(Clone)";
                 
-                Debug.Log($"🎯 ✅ Instantiated bowler: {currentBowlerInstance.name} at position {bowlerSpawnPosition}");
+                Debug.Log($"🎯 ✅ Instantiated bowler: {currentBowlerInstance.name} at position {spawnPos}");
                 
                 // Get the PlayerAnimationController from the instantiated bowler
                 PlayerAnimationController instantiatedController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
@@ -172,6 +188,15 @@ namespace CricketGame
                 {
                     playerAnimationController = instantiatedController;
                     Debug.Log($"🎯 ✅ Updated PlayerAnimationController reference to instantiated bowler: {currentBowlerInstance.name}");
+                    
+                    // Set delivery system to match bowler prefab's default delivery
+                    BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
+                    if (profile != null && deliverySystem != null)
+                    {
+                        DeliveryType defaultDelivery = profile.GetDefaultDeliveryType();
+                        deliverySystem.SetDeliveryType(defaultDelivery);
+                        Debug.Log($"🎯 DELIVERY: Set to bowler prefab default: {defaultDelivery}");
+                    }
                     
                     // Notify GameplayInputHandler that bowler is ready
                     NotifyBowlerReady();
@@ -183,7 +208,7 @@ namespace CricketGame
             }
             else
             {
-                Debug.LogError($"🎯 ❌ Cannot instantiate bowler - no prefab found for type: {selectedBowlerType}");
+                Debug.LogError($"🎯 ❌ Cannot instantiate bowler - no prefab selected");
             }
             
             Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER END ===");
@@ -204,21 +229,25 @@ namespace CricketGame
         }
         
         /// <summary>
-        /// Get bowler prefab by type
+        /// Select a bowler prefab from the available list
         /// </summary>
-        public GameObject GetBowlerPrefab(BowlerType bowlerType)
+        public void SelectBowlerPrefab(int index)
         {
-            if (bowlerPrefabs != null)
+            if (availableBowlerPrefabs != null && index >= 0 && index < availableBowlerPrefabs.Length)
             {
-                foreach (BowlerPrefabMapping mapping in bowlerPrefabs)
+                selectedBowlerPrefab = availableBowlerPrefabs[index];
+                Debug.Log($"🎯 Selected bowler prefab: {selectedBowlerPrefab.name}");
+                
+                // Auto-instantiate if enabled
+                if (autoInstantiateBowler)
                 {
-                    if (mapping.bowlerType == bowlerType && mapping.bowlerPrefab != null)
-                    {
-                        return mapping.bowlerPrefab;
-                    }
+                    InstantiateSelectedBowler();
                 }
             }
-            return null;
+            else
+            {
+                Debug.LogWarning($"🎯 Invalid bowler prefab index: {index}");
+            }
         }
         
         /// <summary>
@@ -233,19 +262,19 @@ namespace CricketGame
         {
             Debug.Log("🎯 === BOWLING CONTROLLER START ===");
             Debug.Log($"🎯 Auto-instantiate bowler: {autoInstantiateBowler}");
-            Debug.Log($"🎯 Selected bowler type: {selectedBowlerType}");
+            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
             SetupTest();
             
             // Auto-instantiate bowler if enabled
-            if (autoInstantiateBowler)
+            if (autoInstantiateBowler && selectedBowlerPrefab != null)
             {
                 Debug.Log("🎯 Auto-instantiation ENABLED - calling InstantiateSelectedBowler()");
                 InstantiateSelectedBowler();
             }
             else
             {
-                Debug.Log("🎯 Auto-instantiation DISABLED - skipping bowler instantiation");
+                Debug.Log("🎯 Auto-instantiation DISABLED or no prefab selected - skipping bowler instantiation");
             }
             
             // Using existing bowling zones (manually created under Pitching Area)
@@ -1824,6 +1853,191 @@ namespace CricketGame
         }
 
         /// <summary>
+        /// Public setter to change delivery type externally (e.g., from BowlerProfile hotkeys)
+        /// </summary>
+        public void SetDeliveryType(DeliveryType type)
+        {
+            if (deliverySystem != null)
+            {
+                deliverySystem.SetDeliveryType(type);
+                Debug.Log($"🎯 DELIVERY: Set via external request to {type}");
+            }
+        }
+
+        /// <summary>
+        /// Switch the current bowler's spawn position (TAB key)
+        /// </summary>
+        public void SwitchCurrentBowlerSpawnPosition()
+        {
+            if (currentBowlerInstance == null)
+            {
+                Debug.LogWarning("🎯 No current bowler instance to switch spawn position");
+                return;
+            }
+
+            // Find the mapping for the current bowler
+            BowlerSpawnMapping mapping = GetSpawnMappingForBowler(currentBowlerInstance);
+            if (mapping == null)
+            {
+                Debug.LogWarning($"🎯 No spawn mapping found for current bowler: {currentBowlerInstance.name}");
+                return;
+            }
+
+            // Switch the spawn position
+            mapping.useSpawn01 = !mapping.useSpawn01;
+            Transform newSpawnPoint = mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+
+            if (newSpawnPoint != null)
+            {
+                // Disable any movement systems that might interfere
+                Rigidbody rb = currentBowlerInstance.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.isKinematic = true; // Temporarily disable physics
+                }
+
+                // Stop any ongoing movement that might interfere
+                PlayerAnimationController playerController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
+                if (playerController != null)
+                {
+                    playerController.StopAllMovement();
+                }
+
+                // Disable root motion temporarily to prevent animation interference
+                Animator animator = currentBowlerInstance.GetComponent<Animator>();
+                bool wasRootMotionEnabled = false;
+                if (animator != null)
+                {
+                    wasRootMotionEnabled = animator.applyRootMotion;
+                    animator.applyRootMotion = false; // Disable root motion
+                }
+
+                // Temporarily disable the GameObject to prevent any interference
+                currentBowlerInstance.SetActive(false);
+
+                // Update the bowler's position INSTANTLY
+                currentBowlerInstance.transform.position = newSpawnPoint.position;
+                currentBowlerInstance.transform.rotation = newSpawnPoint.rotation;
+
+                // Force immediate position update
+                currentBowlerInstance.transform.SetPositionAndRotation(newSpawnPoint.position, newSpawnPoint.rotation);
+
+                // Re-enable the GameObject immediately
+                currentBowlerInstance.SetActive(true);
+
+                // Re-enable systems after position change (with small delay)
+                StartCoroutine(ReEnableSystemsAfterDelay(rb, animator, wasRootMotionEnabled));
+
+                // Update the spawn point references
+                spawnPoint = newSpawnPoint;
+                ballSpawnPoint = newSpawnPoint;
+
+                // Set delivery system to bowler's default delivery when switching spawn positions
+                BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
+                if (profile != null && deliverySystem != null)
+                {
+                    DeliveryType defaultDelivery = profile.GetDefaultDeliveryType();
+                    deliverySystem.SetDeliveryType(defaultDelivery);
+                    Debug.Log($"🎯 DELIVERY: Reset to bowler default: {defaultDelivery} when switching spawn position");
+                }
+
+                // Update AnimationTester's original position to match new spawn position
+                AnimationTester animationTester = currentBowlerInstance.GetComponent<AnimationTester>();
+                if (animationTester != null)
+                {
+                    animationTester.UpdateOriginalPosition();
+                    Debug.Log($"🎬 AnimationTester: Updated original position to new spawn position");
+                }
+
+                Debug.Log($"🏏 Switched {currentBowlerInstance.name} to {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {newSpawnPoint.name}");
+            }
+            else
+            {
+                Debug.LogError($"🎯 Spawn position {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} is null for {currentBowlerInstance.name}");
+            }
+        }
+
+        /// <summary>
+        /// Get the spawn mapping for a specific bowler instance
+        /// </summary>
+        private BowlerSpawnMapping GetSpawnMappingForBowler(GameObject bowlerInstance)
+        {
+            if (bowlerInstance == null) return null;
+
+            // Find the original prefab name (remove "(Clone)" suffix)
+            string prefabName = bowlerInstance.name.Replace("(Clone)", "");
+            
+            // Find the mapping that matches this prefab
+            foreach (var mapping in bowlerSpawnMappings)
+            {
+                if (mapping != null && mapping.bowlerPrefab != null && 
+                    mapping.bowlerPrefab.name == prefabName)
+                {
+                    return mapping;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get the spawn mapping for a specific bowler prefab
+        /// </summary>
+        private BowlerSpawnMapping GetSpawnMappingForPrefab(GameObject bowlerPrefab)
+        {
+            if (bowlerPrefab == null) return null;
+            
+            // Find the mapping that matches this prefab
+            foreach (var mapping in bowlerSpawnMappings)
+            {
+                if (mapping != null && mapping.bowlerPrefab == bowlerPrefab)
+                {
+                    return mapping;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get the current spawn position for the current bowler
+        /// </summary>
+        public Transform GetCurrentBowlerSpawnPosition()
+        {
+            if (currentBowlerInstance == null) return null;
+
+            BowlerSpawnMapping mapping = GetSpawnMappingForBowler(currentBowlerInstance);
+            if (mapping == null) return null;
+
+            return mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+        }
+
+        /// <summary>
+        /// Re-enable systems after position change to ensure instant teleportation
+        /// </summary>
+        private System.Collections.IEnumerator ReEnableSystemsAfterDelay(Rigidbody rb, Animator animator, bool wasRootMotionEnabled)
+        {
+            // Wait for one frame to ensure position change is processed
+            yield return null;
+
+            // Re-enable physics
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+            }
+
+            // Re-enable root motion
+            if (animator != null)
+            {
+                animator.applyRootMotion = wasRootMotionEnabled;
+            }
+
+            Debug.Log($"🏏 Systems re-enabled after instant position change");
+        }
+
+        /// <summary>
         /// Test method to switch to LegSpin delivery
         /// </summary>
         [ContextMenu("Test LegSpin Delivery")]
@@ -2789,57 +3003,22 @@ namespace CricketGame
             }
             
             // Show current selected bowler info
-            Debug.Log($"🎯 Selected Bowler Type: {selectedBowlerType}");
-            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
             Debug.Log($"🎯 Selected Bowler Prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
             Debug.Log("🎯 ==========================================");
         }
         
         /// <summary>
-        /// Select bowler by type (for main menu)
+        /// Get all available bowler prefab names (for UI)
         /// </summary>
-        public void SelectBowlerByType(BowlerType bowlerType)
+        public string[] GetAvailableBowlerNames()
         {
-            selectedBowlerType = bowlerType;
-            UpdatePlayerAnimationController();
-            Debug.Log($"🎯 Selected bowler: {bowlerType}");
-        }
-        
-        /// <summary>
-        /// Select bowler by type index (for main menu)
-        /// </summary>
-        public void SelectBowlerByTypeIndex(int typeIndex)
-        {
-            if (System.Enum.IsDefined(typeof(BowlerType), typeIndex))
+            if (availableBowlerPrefabs == null) return new string[0];
+            
+            string[] names = new string[availableBowlerPrefabs.Length];
+            for (int i = 0; i < availableBowlerPrefabs.Length; i++)
             {
-                BowlerType bowlerType = (BowlerType)typeIndex;
-                SelectBowlerByType(bowlerType);
-            }
-            else
-            {
-                Debug.LogWarning($"🎯 Invalid bowler type index: {typeIndex}");
-            }
-        }
-        
-        /// <summary>
-        /// Get all available bowler types (for main menu)
-        /// </summary>
-        public BowlerType[] GetAvailableBowlerTypes()
-        {
-            return (BowlerType[])System.Enum.GetValues(typeof(BowlerType));
-        }
-        
-        /// <summary>
-        /// Get all available bowler type names (for main menu UI)
-        /// </summary>
-        public string[] GetAvailableBowlerTypeNames()
-        {
-            BowlerType[] types = GetAvailableBowlerTypes();
-            string[] names = new string[types.Length];
-            for (int i = 0; i < types.Length; i++)
-            {
-                names[i] = types[i].ToString();
+                names[i] = availableBowlerPrefabs[i] != null ? availableBowlerPrefabs[i].name : "NULL";
             }
             return names;
         }
@@ -2851,13 +3030,10 @@ namespace CricketGame
         public void CheckCurrentBowler()
         {
             Debug.Log("🎯 === CURRENT BOWLER STATUS ===");
-            Debug.Log($"🎯 Selected Bowler Type: {selectedBowlerType}");
+            Debug.Log($"🎯 Selected Bowler Prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
-            GameObject selectedBowlerPrefab = GetBowlerPrefab(selectedBowlerType);
             if (selectedBowlerPrefab != null)
             {
-                Debug.Log($"🎯 Selected Bowler Prefab: {selectedBowlerPrefab.name}");
-                
                 PlayerAnimationController controller = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
                 if (controller != null)
                 {
@@ -2872,6 +3048,18 @@ namespace CricketGame
                     {
                         Debug.LogWarning($"🎯 ❌ No Animation Spawn Point found in {selectedBowlerPrefab.name}");
                     }
+                    
+                    BowlerProfile profile = selectedBowlerPrefab.GetComponent<BowlerProfile>();
+                    if (profile != null)
+                    {
+                        Debug.Log($"🎯 ✅ BowlerProfile found in {selectedBowlerPrefab.name}");
+                        Debug.Log($"🎯 Default Delivery: {profile.GetDefaultDeliveryType()}");
+                        Debug.Log($"🎯 Allowed Deliveries: {string.Join(", ", profile.GetAllowedDeliveryTypes())}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"🎯 ❌ No BowlerProfile found in {selectedBowlerPrefab.name}");
+                    }
                 }
                 else
                 {
@@ -2880,7 +3068,7 @@ namespace CricketGame
             }
             else
             {
-                Debug.LogWarning($"🎯 ❌ No bowler prefab found for type: {selectedBowlerType}");
+                Debug.LogWarning($"🎯 ❌ No bowler prefab selected");
             }
             
             PlayerAnimationController animController = GetPlayerAnimationController();
@@ -2888,34 +3076,34 @@ namespace CricketGame
             Debug.Log("🎯 ==============================");
         }
 
-        [ContextMenu("Switch to Off Spinner")]
-        public void SwitchToOffSpinner()
+        [ContextMenu("Select Bowler 0")]
+        public void SelectBowler0()
         {
-            SelectBowlerByType(BowlerType.OffSpinner);
+            SelectBowlerPrefab(0);
         }
 
-        [ContextMenu("Switch to Leg Spinner")]
-        public void SwitchToLegSpinner()
+        [ContextMenu("Select Bowler 1")]
+        public void SelectBowler1()
         {
-            SelectBowlerByType(BowlerType.LegSpinner);
+            SelectBowlerPrefab(1);
         }
 
-        [ContextMenu("Switch to Swing Bowler")]
-        public void SwitchToSwingBowler()
+        [ContextMenu("Select Bowler 2")]
+        public void SelectBowler2()
         {
-            SelectBowlerByType(BowlerType.SwingBowler);
+            SelectBowlerPrefab(2);
         }
 
-        [ContextMenu("Switch to Seam Bowler")]
-        public void SwitchToSeamBowler()
+        [ContextMenu("Select Bowler 3")]
+        public void SelectBowler3()
         {
-            SelectBowlerByType(BowlerType.SeamBowler);
+            SelectBowlerPrefab(3);
         }
 
-        [ContextMenu("Switch to Medium Pace Bowler")]
-        public void SwitchToMediumPaceBowler()
+        [ContextMenu("Select Bowler 4")]
+        public void SelectBowler4()
         {
-            SelectBowlerByType(BowlerType.MediumPaceBowler);
+            SelectBowlerPrefab(4);
         }
         
         /// <summary>
@@ -3006,39 +3194,20 @@ namespace CricketGame
     }
     
     /// <summary>
-    /// Available bowler types
-    /// </summary>
-    public enum BowlerType
-    {
-        OffSpinner = 0,      // Off Spin Bowler
-        LegSpinner = 1,      // Leg Spin Bowler
-        SwingBowler = 2,     // Swing Bowler (In-swing/Out-swing)
-        SeamBowler = 3,      // Seam Bowler (Seam In/Out)
-        MediumPaceBowler = 4 // Medium Pace Bowler
-    }
-    
-    /// <summary>
-    /// Mapping between bowler type and prefab
+    /// Maps a bowler prefab to its two spawn positions in the scene
     /// </summary>
     [System.Serializable]
-    public class BowlerPrefabMapping
+    public class BowlerSpawnMapping
     {
-        [Header("Bowler Type")]
-        public BowlerType bowlerType;
-        
         [Header("Bowler Prefab")]
-        [Tooltip("Drag and drop the bowler prefab here")]
         public GameObject bowlerPrefab;
         
-        [Header("Display Info")]
-        [Tooltip("Display name for UI (optional)")]
-        public string displayName;
+        [Header("Spawn Positions")]
+        public Transform spawn01;
+        public Transform spawn02;
         
-        public BowlerPrefabMapping(BowlerType type, GameObject prefab, string name = "")
-        {
-            bowlerType = type;
-            bowlerPrefab = prefab;
-            displayName = string.IsNullOrEmpty(name) ? type.ToString() : name;
-        }
+        [Header("Current State")]
+        public bool useSpawn01 = true; // Which spawn position is currently active
     }
+    
 }

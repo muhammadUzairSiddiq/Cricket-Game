@@ -318,12 +318,49 @@ public class PlayerAnimationController : MonoBehaviour
     
     /// <summary>
     /// Get the animation-driven spawn point
+    /// Now uses BowlingController's spawn mapping for the current bowler
     /// </summary>
     public Transform GetAnimationSpawnPoint()
     {
+        // First try to get the current spawn position from BowlingController
+        if (bowlingController != null)
+        {
+            Transform currentSpawn = bowlingController.GetCurrentBowlerSpawnPosition();
+            if (currentSpawn != null)
+            {
+                return currentSpawn;
+            }
+        }
+        
+        // Fallback to the original animationSpawnPoint
         return animationSpawnPoint;
     }
     
+    /// <summary>
+    /// Stop any ongoing root motion movement (called during spawn position switching)
+    /// </summary>
+    public void StopRootMotion()
+    {
+        if (isMovingRoot)
+        {
+            StopCoroutine(MoveRootForward());
+            isMovingRoot = false;
+            if (enableDebugLogs)
+                Debug.Log($"🎬 Root motion stopped for spawn position switch");
+        }
+    }
+
+    /// <summary>
+    /// Stop all movement coroutines (called during spawn position switching)
+    /// </summary>
+    public void StopAllMovement()
+    {
+        StopAllCoroutines();
+        isMovingRoot = false;
+        if (enableDebugLogs)
+            Debug.Log($"🎬 All movement coroutines stopped for spawn position switch");
+    }
+
     /// <summary>
     /// Get the current animated position of the spawn point
     /// </summary>

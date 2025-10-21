@@ -49,6 +49,12 @@ namespace CricketBowlingAnimations
             originalPosition = transform.position;
         }
 
+        // Start - Update original position after spawn position changes
+        private void Start()
+        {
+            UpdateOriginalPosition();
+        }
+
         // Update is called once per frame
         void Update()
         {
@@ -71,6 +77,24 @@ namespace CricketBowlingAnimations
                     animator.SetTrigger(animatorBowlingTriggerName);
                 }
             }
+        }
+
+        /// <summary>
+        /// Update the original position to current position
+        /// Called when spawn position changes (TAB key)
+        /// </summary>
+        public void UpdateOriginalPosition()
+        {
+            originalPosition = transform.position;
+            Debug.Log($"🎬 AnimationTester: Updated original position to {originalPosition}");
+        }
+
+        /// <summary>
+        /// Get the current original position
+        /// </summary>
+        public Vector3 GetOriginalPosition()
+        {
+            return originalPosition;
         }
     }
 }
