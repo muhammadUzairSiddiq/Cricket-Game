@@ -2440,11 +2440,11 @@ namespace CricketGame
                     // Gentle scaling for other lengths; avoid exceeding base by much
                     enhancedBounceForce = ballSettingsSO.BounceForce;
                     if (currentBounces == 1)
-                        enhancedBounceForce *= 1.05f; // very slight first-bounce lift
+                        enhancedBounceForce *= 0.9f; // reduced first-bounce lift
                     else if (currentBounces == 2)
-                        enhancedBounceForce *= 0.9f;
+                        enhancedBounceForce *= 0.8f;
                     else
-                        enhancedBounceForce *= 0.75f;
+                        enhancedBounceForce *= 0.7f;
 
                     // Length-based scaling with max 1.0 to avoid extra boost
                     float lengthBounceScale = Mathf.Lerp(1.0f, 0.65f, currentLength01);
@@ -2452,7 +2452,7 @@ namespace CricketGame
                 enhancedBounceForce *= lengthBounceScale;
                 }
                 
-                // Apply enhanced bounce force to Y velocity
+                // Apply enhanced bounce force to Y velocity (bounce upward)
                 newVelocity.y = Mathf.Abs(bounceVelocity.y) * enhancedBounceForce;
                 
                 // ?? ADDITIONAL: Preserve some horizontal momentum for realistic cricket bounce

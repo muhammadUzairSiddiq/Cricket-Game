@@ -22,6 +22,6 @@ MonoBehaviour:
   useRealisticPhysics: 1
   destroyDelay: 2
   enableAutoDestroy: 1
-  bounceForce: 0.9
+  bounceForce: 0.6
   bounceFriction: 0.9
-  maxBounces: 6
+  maxBounces: 3

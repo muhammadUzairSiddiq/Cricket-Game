@@ -59,7 +59,7 @@ namespace CricketGame
             if (hasBounced) return;
             
             // 🎯 SIMPLE: Check if ball is moving downward with sufficient velocity
-            if (ballRigidbody.linearVelocity.y < -minBounceVelocity || ballRigidbody.isKinematic == false && ballRigidbody.linearVelocity.magnitude > 0.1f)
+            if (ballRigidbody.linearVelocity.y < -minBounceVelocity)
             {
                 // 🎯 SIMPLE: Check if ball is near the target
                 if (IsNearTarget())
