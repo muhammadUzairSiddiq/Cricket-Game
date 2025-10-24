@@ -141,13 +141,55 @@ namespace CricketGame
             Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER START ===");
             Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
-            // Destroy existing bowler instance if any
-            if (currentBowlerInstance != null)
+            // CRITICAL FIX: Destroy ALL existing bowlers in the scene (both runtime and editor-created)
+            Debug.Log("🎯 🔍 SEARCHING FOR EXISTING BOWLERS TO DESTROY...");
+            
+            // Find all PlayerAnimationController components in the scene
+            PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
+            Debug.Log($"🎯 Found {allBowlers.Length} existing bowlers in scene");
+            
+            foreach (PlayerAnimationController bowler in allBowlers)
             {
-                Debug.Log($"🎯 Destroying existing bowler instance: {currentBowlerInstance.name}");
-                DestroyImmediate(currentBowlerInstance);
-                currentBowlerInstance = null;
+                if (bowler != null && bowler.gameObject != null)
+                {
+                    Debug.Log($"🎯 🗑️ DESTROYING existing bowler: {bowler.gameObject.name}");
+                    
+                    // Check if this is a scene object (editor-created) or runtime object
+                    bool isSceneObject = bowler.gameObject.scene.IsValid();
+                    Debug.Log($"🎯   Scene object: {isSceneObject}, Scene: {bowler.gameObject.scene.name}");
+                    
+                    // CRITICAL FIX: Handle editor-created objects differently at runtime
+                    if (Application.isPlaying)
+                    {
+                        if (isSceneObject)
+                        {
+                            // Editor-created objects: Set inactive instead of destroying
+                            Debug.Log($"🎯   Setting editor-created bowler inactive: {bowler.gameObject.name}");
+                            bowler.gameObject.SetActive(false);
+                            
+                            // Also disable the PlayerAnimationController to prevent interference
+                            bowler.enabled = false;
+                        }
+                        else
+                        {
+                            // Runtime-created objects: Can be destroyed normally
+                            Debug.Log($"🎯   Destroying runtime-created bowler: {bowler.gameObject.name}");
+                            Destroy(bowler.gameObject);
+                        }
+                    }
+                    else
+                    {
+                        // In editor mode: Use DestroyImmediate
+                        DestroyImmediate(bowler.gameObject);
+                    }
+                }
             }
+            
+            // Clear the current bowler instance reference
+            currentBowlerInstance = null;
+            playerAnimationController = null;
+            
+            Debug.Log("🎯 ✅ ALL EXISTING BOWLERS DESTROYED");
             
             if (selectedBowlerPrefab != null)
             {
@@ -188,6 +230,10 @@ namespace CricketGame
                 {
                     playerAnimationController = instantiatedController;
                     Debug.Log($"🎯 ✅ Updated PlayerAnimationController reference to instantiated bowler: {currentBowlerInstance.name}");
+                    
+                    // CRITICAL FIX: Force refresh spawn point reference to use scene instance, not prefab
+                    Debug.Log("🎯 🔄 FORCING SPAWN POINT REFRESH for instantiated bowler...");
+                    instantiatedController.ForceRefreshSpawnPointReference();
                     
                     // Set delivery system to match bowler prefab's default delivery
                     BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
@@ -255,7 +301,26 @@ namespace CricketGame
         /// </summary>
         public PlayerAnimationController GetPlayerAnimationController()
         {
-            return playerAnimationController;
+            // CRITICAL FIX: Only return active bowlers to avoid interference from inactive editor-created bowlers
+            if (playerAnimationController != null && playerAnimationController.gameObject.activeInHierarchy && playerAnimationController.enabled)
+            {
+                return playerAnimationController;
+            }
+            
+            // If the stored reference is inactive or null, try to find an active one
+            PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
+            foreach (PlayerAnimationController bowler in allBowlers)
+            {
+                if (bowler != null && bowler.gameObject.activeInHierarchy && bowler.enabled)
+                {
+                    Debug.Log($"🎯 Found active bowler: {bowler.gameObject.name}");
+                    playerAnimationController = bowler;
+                    return bowler;
+                }
+            }
+            
+            Debug.LogWarning("🎯 No active PlayerAnimationController found!");
+            return null;
         }
         
         void Start()
@@ -2774,6 +2839,108 @@ namespace CricketGame
         void ResetBallContext()
         {
             ResetBall();
+        }
+        
+        [ContextMenu("Clean Up All Bowlers")]
+        void CleanUpAllBowlersContext()
+        {
+            CleanUpAllBowlers();
+        }
+        
+        [ContextMenu("Deactivate Editor Bowlers")]
+        void DeactivateEditorBowlersContext()
+        {
+            DeactivateEditorBowlers();
+        }
+        
+        /// <summary>
+        /// Clean up all existing bowlers in the scene (useful for debugging)
+        /// </summary>
+        public void CleanUpAllBowlers()
+        {
+            Debug.Log("🎯 === CLEANING UP ALL BOWLERS ===");
+            
+            // Find all PlayerAnimationController components in the scene
+            PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
+            Debug.Log($"🎯 Found {allBowlers.Length} existing bowlers to clean up");
+            
+            foreach (PlayerAnimationController bowler in allBowlers)
+            {
+                if (bowler != null && bowler.gameObject != null)
+                {
+                    Debug.Log($"🎯 🗑️ CLEANING UP bowler: {bowler.gameObject.name}");
+                    
+                    // Check if this is a scene object (editor-created) or runtime object
+                    bool isSceneObject = bowler.gameObject.scene.IsValid();
+                    Debug.Log($"🎯   Scene object: {isSceneObject}, Scene: {bowler.gameObject.scene.name}");
+                    
+                    // CRITICAL FIX: Handle editor-created objects differently at runtime
+                    if (Application.isPlaying)
+                    {
+                        if (isSceneObject)
+                        {
+                            // Editor-created objects: Set inactive instead of destroying
+                            Debug.Log($"🎯   Setting editor-created bowler inactive: {bowler.gameObject.name}");
+                            bowler.gameObject.SetActive(false);
+                            
+                            // Also disable the PlayerAnimationController to prevent interference
+                            bowler.enabled = false;
+                        }
+                        else
+                        {
+                            // Runtime-created objects: Can be destroyed normally
+                            Debug.Log($"🎯   Destroying runtime-created bowler: {bowler.gameObject.name}");
+                            Destroy(bowler.gameObject);
+                        }
+                    }
+                    else
+                    {
+                        // In editor mode: Use DestroyImmediate
+                        DestroyImmediate(bowler.gameObject);
+                    }
+                }
+            }
+            
+            // Clear references
+            currentBowlerInstance = null;
+            playerAnimationController = null;
+            
+            Debug.Log("🎯 ✅ ALL BOWLERS CLEANED UP");
+        }
+        
+        /// <summary>
+        /// Deactivate only editor-created bowlers (leave runtime bowlers active)
+        /// </summary>
+        public void DeactivateEditorBowlers()
+        {
+            Debug.Log("🎯 === DEACTIVATING EDITOR BOWLERS ===");
+            
+            // Find all PlayerAnimationController components in the scene
+            PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
+            Debug.Log($"🎯 Found {allBowlers.Length} bowlers in scene");
+            
+            foreach (PlayerAnimationController bowler in allBowlers)
+            {
+                if (bowler != null && bowler.gameObject != null)
+                {
+                    // Check if this is a scene object (editor-created)
+                    bool isSceneObject = bowler.gameObject.scene.IsValid();
+                    Debug.Log($"🎯 Bowler: {bowler.gameObject.name}, Scene object: {isSceneObject}");
+                    
+                    if (isSceneObject)
+                    {
+                        Debug.Log($"🎯 🚫 DEACTIVATING editor-created bowler: {bowler.gameObject.name}");
+                        bowler.gameObject.SetActive(false);
+                        bowler.enabled = false;
+                    }
+                    else
+                    {
+                        Debug.Log($"🎯 ✅ KEEPING runtime bowler active: {bowler.gameObject.name}");
+                    }
+                }
+            }
+            
+            Debug.Log("🎯 ✅ EDITOR BOWLERS DEACTIVATED");
         }
         
         [ContextMenu("Show Status")]
