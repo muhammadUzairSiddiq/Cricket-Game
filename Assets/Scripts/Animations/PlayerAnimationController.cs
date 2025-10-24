@@ -12,6 +12,10 @@ public class PlayerAnimationController : MonoBehaviour
     [Header("Spawn Point Settings")]
     [SerializeField] private Transform animationSpawnPoint;
     
+    // CRITICAL FIX: Store the last animated position to ensure consistency
+    private Vector3 lastAnimatedSpawnPosition;
+    private bool hasValidAnimatedPosition = false;
+    
     void Awake()
     {
         InitializeReferences();
@@ -95,26 +99,65 @@ public class PlayerAnimationController : MonoBehaviour
     /// This function handles both ball creation and bowling in one call
     /// For looping animations, this will create a new ball each time
     /// </summary>
+    /// <summary>
+    /// Animation event called when ball is released from bowler's hand
+    /// OPTIMIZED: Frame-distributed execution to prevent lag
+    /// </summary>
     public void OnBallReleased()
     {
-        if (enableDebugLogs)
-            Debug.Log($"🎬 OnBallReleased() called from animation event on {gameObject.name}");
-        
         if (bowlingController == null)
         {
-            Debug.LogError($"🎬 PlayerAnimationController on {gameObject.name}: BowlingController not found! Cannot release ball.");
             return;
         }
         
-        // Always create a new ball for looping animations
-        // This ensures each animation loop gets a fresh ball
-        if (enableDebugLogs)
-            Debug.Log($"🎬 Creating new ball for animation loop on {gameObject.name}");
-        bowlingController.InstantiateNewBall();
+        // CRITICAL: Store position immediately (light operation)
+        Vector3 currentHandPosition = GetCurrentAnimatedSpawnPosition();
+        lastAnimatedSpawnPosition = currentHandPosition;
+        hasValidAnimatedPosition = true;
         
-        // Bowl the current ball
-        if (enableDebugLogs)
-            Debug.Log($"🎬 Bowling the ball from {gameObject.name}");
+        // OPTIMIZED: Start frame-distributed sequence to prevent lag
+        StartCoroutine(OptimizedBallReleaseSequence());
+    }
+    
+    /// <summary>
+    /// Frame-distributed ball release sequence to prevent performance spikes
+    /// </summary>
+    private System.Collections.IEnumerator OptimizedBallReleaseSequence()
+    {
+        // Frame 1: Light preparation
+        yield return null;
+        PrepareBallRelease();
+        
+        // Frame 2: Create ball (medium operation)
+        yield return null;
+        CreateBallOptimized();
+        
+        // Frame 3: Start bowling (heavy operation)
+        yield return null;
+        StartBowlingOptimized();
+    }
+    
+    /// <summary>
+    /// Light preparation work (Frame 1)
+    /// </summary>
+    private void PrepareBallRelease()
+    {
+        // Minimal preparation work
+    }
+    
+    /// <summary>
+    /// Create ball with optimized performance (Frame 2)
+    /// </summary>
+    private void CreateBallOptimized()
+    {
+        bowlingController.InstantiateNewBall();
+    }
+    
+    /// <summary>
+    /// Start bowling with optimized performance (Frame 3)
+    /// </summary>
+    private void StartBowlingOptimized()
+    {
         bowlingController.BowlCurrentBall();
     }
     

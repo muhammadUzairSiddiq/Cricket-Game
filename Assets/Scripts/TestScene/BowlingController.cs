@@ -138,126 +138,72 @@ namespace CricketGame
         /// </summary>
         public void InstantiateSelectedBowler()
         {
-            Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER START ===");
-            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
-            
             // CRITICAL FIX: Destroy ALL existing bowlers in the scene (both runtime and editor-created)
-            Debug.Log("🎯 🔍 SEARCHING FOR EXISTING BOWLERS TO DESTROY...");
-            
-            // Find all PlayerAnimationController components in the scene
             PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
-            Debug.Log($"🎯 Found {allBowlers.Length} existing bowlers in scene");
             
             foreach (PlayerAnimationController bowler in allBowlers)
             {
                 if (bowler != null && bowler.gameObject != null)
                 {
-                    Debug.Log($"🎯 🗑️ DESTROYING existing bowler: {bowler.gameObject.name}");
-                    
-                    // Check if this is a scene object (editor-created) or runtime object
                     bool isSceneObject = bowler.gameObject.scene.IsValid();
-                    Debug.Log($"🎯   Scene object: {isSceneObject}, Scene: {bowler.gameObject.scene.name}");
                     
-                    // CRITICAL FIX: Handle editor-created objects differently at runtime
                     if (Application.isPlaying)
                     {
                         if (isSceneObject)
                         {
-                            // Editor-created objects: Set inactive instead of destroying
-                            Debug.Log($"🎯   Setting editor-created bowler inactive: {bowler.gameObject.name}");
                             bowler.gameObject.SetActive(false);
-                            
-                            // Also disable the PlayerAnimationController to prevent interference
                             bowler.enabled = false;
                         }
                         else
                         {
-                            // Runtime-created objects: Can be destroyed normally
-                            Debug.Log($"🎯   Destroying runtime-created bowler: {bowler.gameObject.name}");
                             Destroy(bowler.gameObject);
                         }
                     }
                     else
                     {
-                        // In editor mode: Use DestroyImmediate
                         DestroyImmediate(bowler.gameObject);
                     }
                 }
             }
             
-            // Clear the current bowler instance reference
             currentBowlerInstance = null;
             playerAnimationController = null;
             
-            Debug.Log("🎯 ✅ ALL EXISTING BOWLERS DESTROYED");
-            
             if (selectedBowlerPrefab != null)
             {
-                // Get the spawn mapping for this bowler
                 BowlerSpawnMapping mapping = GetSpawnMappingForPrefab(selectedBowlerPrefab);
                 Vector3 spawnPos = bowlerSpawnPosition;
                 Quaternion spawnRot = Quaternion.Euler(bowlerSpawnRotation);
                 
                 if (mapping != null)
                 {
-                    // Use the current spawn position from the mapping
                     Transform currentSpawn = mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
                     if (currentSpawn != null)
                     {
                         spawnPos = currentSpawn.position;
                         spawnRot = currentSpawn.rotation;
-                        Debug.Log($"🎯 Using spawn mapping: {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {currentSpawn.name} - {spawnPos}");
                     }
-                    else
-                    {
-                        Debug.LogWarning($"🎯 Spawn mapping found but spawn position is null, using default: {bowlerSpawnPosition}");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"🎯 No spawn mapping found for {selectedBowlerPrefab.name}, using default spawn position");
                 }
                 
-                // Instantiate the bowler
                 currentBowlerInstance = Instantiate(selectedBowlerPrefab, spawnPos, spawnRot);
                 currentBowlerInstance.name = $"{selectedBowlerPrefab.name}(Clone)";
                 
-                Debug.Log($"🎯 ✅ Instantiated bowler: {currentBowlerInstance.name} at position {spawnPos}");
-                
-                // Get the PlayerAnimationController from the instantiated bowler
                 PlayerAnimationController instantiatedController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
                 if (instantiatedController != null)
                 {
                     playerAnimationController = instantiatedController;
-                    Debug.Log($"🎯 ✅ Updated PlayerAnimationController reference to instantiated bowler: {currentBowlerInstance.name}");
-                    
-                    // CRITICAL FIX: Force refresh spawn point reference to use scene instance, not prefab
-                    Debug.Log("🎯 🔄 FORCING SPAWN POINT REFRESH for instantiated bowler...");
                     instantiatedController.ForceRefreshSpawnPointReference();
                     
-                    // Set delivery system to match bowler prefab's default delivery
                     BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
                     if (profile != null && deliverySystem != null)
                     {
                         DeliveryType defaultDelivery = profile.GetDefaultDeliveryType();
                         deliverySystem.SetDeliveryType(defaultDelivery);
-                        Debug.Log($"🎯 DELIVERY: Set to bowler prefab default: {defaultDelivery}");
                     }
                     
-                    // Notify GameplayInputHandler that bowler is ready
                     NotifyBowlerReady();
                 }
-                else
-                {
-                    Debug.LogError($"🎯 ❌ No PlayerAnimationController found on instantiated bowler: {currentBowlerInstance.name}");
-                }
             }
-            else
-            {
-                Debug.LogError($"🎯 ❌ Cannot instantiate bowler - no prefab selected");
-            }
-            
-            Debug.Log("🎯 === INSTANTIATE SELECTED BOWLER END ===");
         }
         
         /// <summary>
@@ -301,26 +247,32 @@ namespace CricketGame
         /// </summary>
         public PlayerAnimationController GetPlayerAnimationController()
         {
-            // CRITICAL FIX: Only return active bowlers to avoid interference from inactive editor-created bowlers
+            // OPTIMIZED: Use cached reference to avoid expensive FindObjectOfType calls
             if (playerAnimationController != null && playerAnimationController.gameObject.activeInHierarchy && playerAnimationController.enabled)
             {
                 return playerAnimationController;
             }
             
-            // If the stored reference is inactive or null, try to find an active one
+            // Only refresh cache when necessary (performance optimization)
+            RefreshPlayerAnimationControllerCache();
+            return playerAnimationController;
+        }
+        
+        /// <summary>
+        /// OPTIMIZED: Refresh PlayerAnimationController cache only when needed
+        /// </summary>
+        private void RefreshPlayerAnimationControllerCache()
+        {
             PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
             foreach (PlayerAnimationController bowler in allBowlers)
             {
                 if (bowler != null && bowler.gameObject.activeInHierarchy && bowler.enabled)
                 {
-                    Debug.Log($"🎯 Found active bowler: {bowler.gameObject.name}");
                     playerAnimationController = bowler;
-                    return bowler;
+                    return;
                 }
             }
-            
-            Debug.LogWarning("🎯 No active PlayerAnimationController found!");
-            return null;
+            playerAnimationController = null;
         }
         
         void Start()
