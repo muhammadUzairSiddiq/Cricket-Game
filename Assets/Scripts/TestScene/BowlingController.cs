@@ -758,12 +758,12 @@ namespace CricketGame
                 trail = ball.AddComponent<TrailRenderer>();
             }
             
-            // ?? FORCE: Always update trail settings to ensure white color
-            trail.time = 0.5f; // Short trail duration
-            trail.startWidth = 0.08f; // Thick start width
-            trail.endWidth = 0.02f; // Thick end width
-            trail.minVertexDistance = 0.1f; // Minimum distance between trail points
-            trail.emitting = true; // Ensure trail is emitting
+            // OPTIMIZED: Only set trail settings if they haven't been configured in Inspector
+            if (trail.time <= 0f) trail.time = 0.5f; // Only set default if not configured
+            if (trail.startWidth <= 0f) trail.startWidth = 0.08f; // Only set default if not configured
+            if (trail.endWidth <= 0f) trail.endWidth = 0.02f; // Only set default if not configured
+            if (trail.minVertexDistance <= 0f) trail.minVertexDistance = 0.1f; // Only set default if not configured
+            trail.emitting = true; // Always ensure trail is emitting
             
             // ?? FORCE: Create and apply light white visible material
             Material trailMaterial = new Material(Shader.Find("Sprites/Default"));
@@ -841,12 +841,12 @@ namespace CricketGame
                 trail = ballInstance.AddComponent<TrailRenderer>();
             }
             
-            // ?? FORCE: Always update trail settings to ensure white color
-            trail.time = 0.5f; // Short trail duration
-            trail.startWidth = 0.08f; // Thick start width
-            trail.endWidth = 0.02f; // Thick end width
-            trail.minVertexDistance = 0.1f; // Minimum distance between trail points
-            trail.emitting = true; // Ensure trail is emitting
+            // OPTIMIZED: Only set trail settings if they haven't been configured in Inspector
+            if (trail.time <= 0f) trail.time = 0.5f; // Only set default if not configured
+            if (trail.startWidth <= 0f) trail.startWidth = 0.08f; // Only set default if not configured
+            if (trail.endWidth <= 0f) trail.endWidth = 0.02f; // Only set default if not configured
+            if (trail.minVertexDistance <= 0f) trail.minVertexDistance = 0.1f; // Only set default if not configured
+            trail.emitting = true; // Always ensure trail is emitting
             
             // ?? FORCE: Create and apply light white visible material
             Material trailMaterial = new Material(Shader.Find("Sprites/Default"));
@@ -1063,21 +1063,23 @@ namespace CricketGame
         /// </summary>
         public void BowlCurrentBall()
         {
-            Debug.Log($"🎯 BowlCurrentBall called - currentBallInstance: {currentBallInstance != null}, ballIsBowled: {ballIsBowled}");
-            
             if (currentBallInstance == null)
             {
-                Debug.LogWarning("🎯 No ball to bowl! Press S to create a new ball first.");
                 return;
             }
             
             if (ballIsBowled)
             {
-                Debug.LogWarning("🎯 Ball already bowled! Wait for it to be destroyed or press S for new ball.");
                 return;
             }
             
-            Debug.Log("🎯 Bowling current ball...");
+            // CRITICAL: Re-enable physics when bowling starts
+            Rigidbody ballRigidbody = currentBallInstance.GetComponent<Rigidbody>();
+            if (ballRigidbody != null)
+            {
+                ballRigidbody.isKinematic = false; // Re-enable physics for bowling
+            }
+            
             ballIsBowled = true;
             
             // Start bowling process

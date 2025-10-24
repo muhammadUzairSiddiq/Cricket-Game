@@ -124,37 +124,36 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     private System.Collections.IEnumerator OptimizedBallReleaseSequence()
     {
-        // Frame 1: Light preparation
+        // Frame 1: Create ball and hold it in hand
         yield return null;
-        PrepareBallRelease();
+        CreateBallAndHoldInHand();
         
-        // Frame 2: Create ball (medium operation)
-        yield return null;
-        CreateBallOptimized();
-        
-        // Frame 3: Start bowling (heavy operation)
+        // Frame 2: Start bowling (heavy operation)
         yield return null;
         StartBowlingOptimized();
     }
     
     /// <summary>
-    /// Light preparation work (Frame 1)
+    /// Create ball and ensure it stays in bowler's hand (Frame 1)
     /// </summary>
-    private void PrepareBallRelease()
-    {
-        // Minimal preparation work
-    }
-    
-    /// <summary>
-    /// Create ball with optimized performance (Frame 2)
-    /// </summary>
-    private void CreateBallOptimized()
+    private void CreateBallAndHoldInHand()
     {
         bowlingController.InstantiateNewBall();
+        
+        // CRITICAL: Ensure ball stays in hand by disabling physics temporarily
+        GameObject ballInstance = bowlingController.GetCurrentBallInstance();
+        if (ballInstance != null)
+        {
+            Rigidbody ballRigidbody = ballInstance.GetComponent<Rigidbody>();
+            if (ballRigidbody != null)
+            {
+                ballRigidbody.isKinematic = true; // Disable physics to keep ball in hand
+            }
+        }
     }
     
     /// <summary>
-    /// Start bowling with optimized performance (Frame 3)
+    /// Start bowling with optimized performance (Frame 2)
     /// </summary>
     private void StartBowlingOptimized()
     {
