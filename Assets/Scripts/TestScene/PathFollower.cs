@@ -171,6 +171,9 @@ namespace CricketGame
                             {
                                 Debug.Log($"🎯 PATHFOLLOWER OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during curved path movement");
                                 
+                                // Check if obstacle is a wicket and trigger breaking
+                                CheckForWicketHit(hit);
+                                
                                 // Apply physics response to the obstacle
                                 ApplyObstaclePhysicsResponse(hit, movementDirection, speed);
                                 
@@ -213,6 +216,49 @@ namespace CricketGame
             onComplete?.Invoke();
             // Only destroy PathFollower if auto-destroy is enabled
             if (ShouldDestroyPathFollower()) Destroy(this);
+        }
+        
+        /// <summary>
+        /// Check if the obstacle is a wicket and trigger breaking
+        /// </summary>
+        private void CheckForWicketHit(RaycastHit hit)
+        {
+            // Check if this is a wicket component
+            string objName = hit.collider.name.ToLower();
+            if (objName.Contains("stump") || objName.Contains("bail") || objName.Contains("wicket"))
+            {
+                Debug.Log($"🎳 PATHFOLLOWER WICKET HIT: {hit.collider.name}");
+                
+                // Find WicketBreakingSystem
+                WicketBreakingSystem wicketSystem = hit.collider.GetComponentInParent<WicketBreakingSystem>();
+                if (wicketSystem == null)
+                {
+                    Transform current = hit.collider.transform;
+                    while (current != null && wicketSystem == null)
+                    {
+                        wicketSystem = current.GetComponent<WicketBreakingSystem>();
+                        current = current.parent;
+                    }
+                }
+                
+                if (wicketSystem != null && !wicketSystem.IsBroken())
+                {
+                    // Calculate ball velocity from PathFollower's current movement
+                    Vector3 ballVelocity = speed * (hit.collider.transform.position - transform.position).normalized;
+                    Vector3 hitPoint = hit.point;
+                    
+                    Debug.Log($"🎳 PATHFOLLOWER BREAKING WICKET: Speed={speed:F1}, Velocity={ballVelocity}, Hit={hitPoint}");
+                    wicketSystem.BreakWicket(ballVelocity, hitPoint);
+                }
+                else if (wicketSystem == null)
+                {
+                    Debug.LogWarning($"🎳 PATHFOLLOWER: No WicketBreakingSystem found on {hit.collider.name}");
+                }
+                else
+                {
+                    Debug.Log($"🎳 PATHFOLLOWER: Wicket already broken");
+                }
+            }
         }
         
         /// <summary>

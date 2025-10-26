@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 5986885649269739266}
   - component: {fileID: 5278319595849064019}
   - component: {fileID: 7435138428196163601}
+  - component: {fileID: 8121268050026038505}
   m_Layer: 0
   m_Name: BALL
   m_TagString: Ball
@@ -348,3 +349,23 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &8121268050026038505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8718896542698064258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bb62cbe7d687b34bb48e03f5d95cdbd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wicketLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minHitVelocity: 2
+  collisionRadius: 0.3
+  checkAnyCollision: 1
+  forceBreakOnLowSpeed: 1
+  showDebugGizmos: 1

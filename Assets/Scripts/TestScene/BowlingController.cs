@@ -1007,7 +1007,7 @@ namespace CricketGame
                     currentBallInstance = Instantiate(ball, currentSpawnPosition, currentSpawnRotation);
                     Debug.Log($"🎯 DYNAMIC SPAWN: Ball instantiated at {spawnPointType} position: {currentSpawnPosition}");
                     Debug.Log($"🎯 DYNAMIC SPAWN: Spawn rotation: {currentSpawnRotation.eulerAngles}");
-                Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
+                    Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
                 }
                 else
                 {
