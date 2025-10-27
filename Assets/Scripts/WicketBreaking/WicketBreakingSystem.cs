@@ -153,9 +153,10 @@ namespace CricketGame
         /// </summary>
         public void BreakWicket(Vector3 ballVelocity, Vector3 hitPoint)
         {
+            // Only break if not already broken (prevents multiple breaks on same wicket state)
             if (isBroken)
             {
-                Debug.Log("🎳 Wicket already broken, skipping...");
+                Debug.Log("🎳 Wicket already broken, waiting for reset...");
                 return;
             }
             
@@ -175,7 +176,7 @@ namespace CricketGame
                 Destroy(effect, 2f); // Destroy effect after 2 seconds
             }
             
-            // Check if ball speed is high enough to break all stumps
+            // Get ball speed
             float ballSpeed = ballVelocity.magnitude;
             bool breakAllStumps = ballSpeed > speedForAllStumpsBreak;
             
@@ -184,15 +185,18 @@ namespace CricketGame
             // ALWAYS break bails first (they should fly off)
             BreakBails(ballVelocity, hitPoint);
             
-            // SIMPLE SYSTEM: High speed = all stumps break, Low speed = only hit stump breaks
+            // SIMPLE AND RELIABLE SYSTEM:
+            // - If speed > threshold: Break ALL stumps (hard hit = total destruction)
+            // - If speed <= threshold: Break ONLY the hit stump (precise hit)
+            // This works for ANY length (yorker, full, etc.) because it's speed-based, not length-based
             if (breakAllStumps)
             {
-                Debug.Log("🎳 HIGH SPEED: Breaking ALL 3 stumps!");
+                Debug.Log($"🎳 BREAKING ALL STUMPS (Speed: {ballSpeed:F2} > {speedForAllStumpsBreak})");
                 BreakAllStumpsWithForce(ballVelocity, hitPoint, true);
             }
             else
             {
-                Debug.Log("🎳 LOW SPEED: Breaking ONLY the hit stump!");
+                Debug.Log($"🎳 BREAKING HIT STUMP ONLY (Speed: {ballSpeed:F2} <= {speedForAllStumpsBreak})");
                 BreakOnlyHitStump(ballVelocity, hitPoint);
             }
         }
@@ -213,12 +217,6 @@ namespace CricketGame
             if (bailRb == null)
             {
                 bailRb = bail.gameObject.AddComponent<Rigidbody>();
-            }
-            
-            // Add collision detector to stop physics when hitting ground
-            if (bail.GetComponent<BrokenStumpPhysics>() == null)
-            {
-                bail.gameObject.AddComponent<BrokenStumpPhysics>();
             }
             
             // CRITICAL: Disable kinematic to allow physics when breaking
@@ -334,12 +332,6 @@ namespace CricketGame
                 Debug.Log($"🎳 Added Rigidbody to {stump.name}");
             }
             
-            // Add collision detector to stop physics when hitting ground
-            if (stump.GetComponent<BrokenStumpPhysics>() == null)
-            {
-                stump.gameObject.AddComponent<BrokenStumpPhysics>();
-            }
-            
             // CRITICAL: Disable kinematic to allow physics when breaking
             stumpRb.isKinematic = false;
             Debug.Log($"🎳 Disabled kinematic for {stump.name}");
@@ -381,39 +373,19 @@ namespace CricketGame
                 int index = System.Array.IndexOf(wicketBails, bail);
                 if (index >= 0 && originalBailPositions != null && index < originalBailPositions.Length)
                 {
-                    // Disable physics
-                    Rigidbody bailRb = bail.GetComponent<Rigidbody>();
-                    if (bailRb != null)
-                    {
-                        // Set velocities BEFORE making kinematic (if not already kinematic)
-                        if (!bailRb.isKinematic)
-                        {
-                            bailRb.linearVelocity = Vector3.zero;
-                            bailRb.angularVelocity = Vector3.zero;
-                        }
-                        bailRb.useGravity = false;
-                        bailRb.isKinematic = true;
-                    }
-                    
-                    // Wait one frame to ensure physics is stopped
-                    yield return null;
-                    
-                    // CRITICAL: Reset position and rotation
+                    // Simply reset position - colliders handle ground collision
                     bail.position = originalBailPositions[index];
                     bail.rotation = originalBailRotations[index];
                     
-                    Debug.Log($"🎳 Reset bail {index} to position: {originalBailPositions[index]}");
-                    
-                    // Wait a bit more to ensure physics is settled
-                    yield return new WaitForSeconds(0.2f);
-                    
-                    // CRITICAL: Keep kinematic enabled to prevent sinking through ground
+                    // Remove Rigidbody to return to original state
+                    Rigidbody bailRb = bail.GetComponent<Rigidbody>();
                     if (bailRb != null)
                     {
-                        // DON'T re-enable physics - keep as kinematic to prevent sinking
-                        // Only enable physics when we actually break it
-                        Debug.Log($"🎳 Bail {index} reset to kinematic (prevent sinking)");
+                        Destroy(bailRb);
+                        Debug.Log($"🎳 Removed Rigidbody from bail {index}");
                     }
+                    
+                    Debug.Log($"🎳 Reset bail {index} to position: {originalBailPositions[index]}");
                 }
             }
         }
@@ -431,42 +403,22 @@ namespace CricketGame
                 int index = System.Array.IndexOf(wicketStumps, stump);
                 if (index >= 0 && originalStumpPositions != null && index < originalStumpPositions.Length)
                 {
-                    // Disable physics
-                    Rigidbody stumpRb = stump.GetComponent<Rigidbody>();
-                    if (stumpRb != null)
-                    {
-                        // Set velocities BEFORE making kinematic (if not already kinematic)
-                        if (!stumpRb.isKinematic)
-                        {
-                            stumpRb.linearVelocity = Vector3.zero;
-                            stumpRb.angularVelocity = Vector3.zero;
-                        }
-                        stumpRb.useGravity = false;
-                        stumpRb.isKinematic = true;
-                    }
-                    
-                    // Wait one frame to ensure physics is stopped
-                    yield return null;
-                    
-                    // CRITICAL: Reset position and rotation
+                    // Simply reset position - colliders handle ground collision
                     stump.position = originalStumpPositions[index];
                     stump.rotation = originalStumpRotations[index];
                     
-                    Debug.Log($"🎳 Reset stump {index} to position: {originalStumpPositions[index]}, Original: {stump.position}");
+                    // Remove Rigidbody to return to original state
+                    Rigidbody stumpRb = stump.GetComponent<Rigidbody>();
+                    if (stumpRb != null)
+                    {
+                        Destroy(stumpRb);
+                        Debug.Log($"🎳 Removed Rigidbody from stump {index}");
+                    }
+                    
+                    Debug.Log($"🎳 Reset stump {index} to position: {originalStumpPositions[index]}");
                     
                     // Reset wicket state to allow breaking again
                     isBroken = false;
-                    
-                    // Wait a bit more to ensure physics is settled
-                    yield return new WaitForSeconds(0.2f);
-                    
-                    // CRITICAL: Keep kinematic enabled to prevent sinking through ground
-                    if (stumpRb != null)
-                    {
-                        // DON'T re-enable physics - keep as kinematic to prevent sinking
-                        // Only enable physics when we actually break it
-                        Debug.Log($"🎳 Stump {index} reset to kinematic (prevent sinking)");
-                    }
                 }
             }
         }

@@ -192,7 +192,9 @@ namespace CricketGame
                 if (instantiatedController != null)
                 {
                     playerAnimationController = instantiatedController;
-                    instantiatedController.ForceRefreshSpawnPointReference();
+                    
+                    // CRITICAL: Wait a frame before refreshing spawn point to ensure Animator is initialized
+                    StartCoroutine(RefreshBowlerAfterInstantiation(instantiatedController));
                     
                     BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
                     if (profile != null && deliverySystem != null)
@@ -204,6 +206,21 @@ namespace CricketGame
                     NotifyBowlerReady();
                 }
             }
+        }
+        
+        /// <summary>
+        /// Refresh bowler spawn point reference after instantiation to fix runtime spawn issues
+        /// </summary>
+        private System.Collections.IEnumerator RefreshBowlerAfterInstantiation(PlayerAnimationController controller)
+        {
+            // Wait a few frames for Animator to initialize and bones to update
+            yield return null;
+            yield return null;
+            
+            // Now refresh the spawn point reference
+            controller.ForceRefreshSpawnPointReference();
+            
+            Debug.Log("🎯 Spawn point refreshed after bowler instantiation");
         }
         
         /// <summary>
@@ -826,12 +843,23 @@ namespace CricketGame
             {
                 bounceComponent = ballInstance.AddComponent<CricketBallBounce>();
                 bounceComponent.Initialize(this);
-                Debug.Log("?? Bounce component added to ball instance");
+                Debug.Log("🎳 Bounce component added to ball instance");
             }
             else
             {
                 bounceComponent.Initialize(this);
-                Debug.Log("?? Bounce component initialized for ball instance");
+                Debug.Log("🎳 Bounce component initialized for ball instance");
+            }
+            
+            // 🎯 CRITICAL: Add BallWicketCollision component for wicket breaking
+            if (ballInstance.GetComponent<BallWicketCollision>() == null)
+            {
+                ballInstance.AddComponent<BallWicketCollision>();
+                Debug.Log("🎳 BallWicketCollision component added to ball instance");
+            }
+            else
+            {
+                Debug.Log("🎳 BallWicketCollision already exists on ball");
             }
             
             // Add trail renderer for visual effect
@@ -942,6 +970,9 @@ namespace CricketGame
                     PlayerAnimationController animController = GetPlayerAnimationController();
                     if (animController != null)
                     {
+                        // CRITICAL: Force refresh spawn point to ensure we use scene instance, not prefab
+                        animController.ForceRefreshSpawnPointReference();
+                        
                         spawnPointToUse = animController.GetAnimationSpawnPoint();
                         if (spawnPointToUse != null)
                         {
@@ -953,7 +984,7 @@ namespace CricketGame
                             
                             // Get the current animated position
                             Vector3 animatedPosition = animController.GetCurrentAnimatedSpawnPosition();
-                            Debug.Log($"🎯 ANIMATED POSITION: Current RightHand position: {animatedPosition}");
+                            Debug.Log($"🎯 ANIMATED POSITION: Current {spawnPointToUse.name} position: {animatedPosition}");
                         }
                         else
                         {
@@ -975,33 +1006,35 @@ namespace CricketGame
                 if (spawnPointToUse != null)
                 {
                     // Get the current world position of the spawn point (important for animated bowlers)
-                    Vector3 currentSpawnPosition = spawnPointToUse.position;
-                    Quaternion currentSpawnRotation = spawnPointToUse.rotation;
+                    Vector3 currentSpawnPosition = Vector3.zero;
+                    Quaternion currentSpawnRotation = Quaternion.identity;
                     
-                    // For animated spawn points, ensure we get the current world position
+                    // For animated spawn points, ensure we get the current animated world position
                     if (spawnPointType.Contains("Animation"))
                     {
-                        // Get the current world position of the animated bone
+                        // CRITICAL: Use the animated position that was already calculated
+                        PlayerAnimationController animController = GetPlayerAnimationController();
+                        if (animController != null)
+                        {
+                            currentSpawnPosition = animController.GetCurrentAnimatedSpawnPosition();
+                            Debug.Log($"🎯 ANIMATED SPAWN: Using ANIMATED world position: {currentSpawnPosition}");
+                        }
+                        else
+                        {
+                            currentSpawnPosition = spawnPointToUse.position;
+                            Debug.Log($"🎯 ANIMATED SPAWN: Fallback to transform position: {currentSpawnPosition}");
+                        }
+                        
+                        currentSpawnRotation = spawnPointToUse.rotation;
+                        
+                        Debug.Log($"🎯 ANIMATED SPAWN: Bone {spawnPointToUse.name}, Position: {currentSpawnPosition}");
+                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point parent: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
+                    }
+                    else
+                    {
+                        // Manual spawn points
                         currentSpawnPosition = spawnPointToUse.position;
                         currentSpawnRotation = spawnPointToUse.rotation;
-                        Debug.Log($"🎯 ANIMATED SPAWN: Using current world position of {spawnPointToUse.name}: {currentSpawnPosition}");
-                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point parent: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
-                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point local position: {spawnPointToUse.localPosition}");
-                        
-                        // CRITICAL DEBUG: Check if the bone is actually moving
-                        Debug.Log($"🎯 BONE MOVEMENT CHECK: {spawnPointToUse.name} world position: {spawnPointToUse.position}");
-                        Debug.Log($"🎯 BONE MOVEMENT CHECK: {spawnPointToUse.name} local position: {spawnPointToUse.localPosition}");
-                        Debug.Log($"🎯 BONE MOVEMENT CHECK: Parent transform: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
-                        
-                        // Check if this is a bone in the avatar
-                        if (spawnPointToUse.parent != null)
-                        {
-                            Debug.Log($"🎯 BONE HIERARCHY: {spawnPointToUse.parent.name} -> {spawnPointToUse.name}");
-                            if (spawnPointToUse.parent.parent != null)
-                            {
-                                Debug.Log($"🎯 BONE HIERARCHY: {spawnPointToUse.parent.parent.name} -> {spawnPointToUse.parent.name} -> {spawnPointToUse.name}");
-                            }
-                        }
                     }
                     
                     currentBallInstance = Instantiate(ball, currentSpawnPosition, currentSpawnRotation);

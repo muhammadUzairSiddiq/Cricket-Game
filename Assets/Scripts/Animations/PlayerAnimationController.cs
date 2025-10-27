@@ -466,6 +466,8 @@ public class PlayerAnimationController : MonoBehaviour
             // ALWAYS refresh to ensure we're using the scene instance, not the prefab
             // This is critical because prefab references don't update when the scene instance moves
             
+            string boneName = animationSpawnPoint.name;
+            
             if (enableDebugLogs)
             {
                 Debug.Log($"🎬 Refreshing spawn point reference from: {animationSpawnPoint.name}");
@@ -473,29 +475,35 @@ public class PlayerAnimationController : MonoBehaviour
                 Debug.Log($"🎬 Current GameObject scene: {gameObject.scene.name}");
             }
             
-            // Find the bone in the current scene instance by name
-            Transform sceneInstanceBone = FindChildRecursive(transform, animationSpawnPoint.name);
+            // CRITICAL FIX: Always find the scene instance bone, even if animationSpawnPoint is pointing to prefab
+            Transform sceneInstanceBone = FindChildRecursive(transform, boneName);
             
-            if (sceneInstanceBone != null && sceneInstanceBone != animationSpawnPoint)
+            if (sceneInstanceBone != null)
             {
-                animationSpawnPoint = sceneInstanceBone;
-                if (enableDebugLogs)
+                // Check if the current reference is from a different scene (prefab vs instance)
+                bool isFromPrefab = animationSpawnPoint.gameObject.scene.name != gameObject.scene.name;
+                
+                if (isFromPrefab || sceneInstanceBone != animationSpawnPoint)
                 {
-                    Debug.Log($"🎬 ✅ Refreshed spawn point to scene instance: {animationSpawnPoint.name}");
-                    Debug.Log($"🎬 New position: {animationSpawnPoint.position}");
-                    Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");
+                    animationSpawnPoint = sceneInstanceBone;
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"🎬 ✅ Refreshed spawn point to scene instance: {animationSpawnPoint.name}");
+                        Debug.Log($"🎬 New position: {animationSpawnPoint.position}");
+                        Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");
+                    }
                 }
-            }
-            else if (sceneInstanceBone == null)
-            {
-                Debug.LogError($"🎬 ❌ Could not find scene instance of bone: {animationSpawnPoint.name}");
+                else
+                {
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"🎬 ✅ Spawn point already points to scene instance: {animationSpawnPoint.name}");
+                    }
+                }
             }
             else
             {
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"🎬 ✅ Spawn point already points to scene instance: {animationSpawnPoint.name}");
-                }
+                Debug.LogError($"🎬 ❌ Could not find scene instance of bone: {boneName}");
             }
         }
     }

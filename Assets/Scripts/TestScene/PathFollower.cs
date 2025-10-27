@@ -12,7 +12,7 @@ namespace CricketGame
         [SerializeField] private float speed = 12f; // m/s along the path
         [SerializeField] private float arcHeight = 0.2f; // subtle cricket arc added on top of path
         [SerializeField] private bool faceVelocity = true;
-        [SerializeField] private float obstacleCheckRadius = 0.1f; // Ball radius for obstacle detection
+        [SerializeField] private float obstacleCheckRadius = 0.15f; // Ball radius for obstacle detection (increased for better wicket detection)
         [SerializeField] private bool enableObstacleDetection = true;
         [SerializeField] private LayerMask obstacleMask = ~0; // Which layers to detect during path following
         
@@ -241,7 +241,7 @@ namespace CricketGame
                     }
                 }
                 
-                if (wicketSystem != null && !wicketSystem.IsBroken())
+                if (wicketSystem != null)
                 {
                     // Calculate ball velocity from PathFollower's current movement
                     Vector3 ballVelocity = speed * (hit.collider.transform.position - transform.position).normalized;
@@ -250,13 +250,9 @@ namespace CricketGame
                     Debug.Log($"🎳 PATHFOLLOWER BREAKING WICKET: Speed={speed:F1}, Velocity={ballVelocity}, Hit={hitPoint}");
                     wicketSystem.BreakWicket(ballVelocity, hitPoint);
                 }
-                else if (wicketSystem == null)
-                {
-                    Debug.LogWarning($"🎳 PATHFOLLOWER: No WicketBreakingSystem found on {hit.collider.name}");
-                }
                 else
                 {
-                    Debug.Log($"🎳 PATHFOLLOWER: Wicket already broken");
+                    Debug.LogWarning($"🎳 PATHFOLLOWER: No WicketBreakingSystem found on {hit.collider.name}");
                 }
             }
         }
