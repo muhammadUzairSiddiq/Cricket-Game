@@ -9,6 +9,10 @@ TagManager:
   - Wicket
   - Ball
   - PitchingArea
+  - Fast Bowler
+  - Spin Bowler
+  - Medium Pace Bowler
+  - Target
   layers:
   - Default
   - TransparentFX

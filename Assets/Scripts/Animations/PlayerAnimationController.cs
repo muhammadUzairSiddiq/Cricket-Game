@@ -12,19 +12,51 @@ public class PlayerAnimationController : MonoBehaviour
     [Header("Spawn Point Settings")]
     [SerializeField] private Transform animationSpawnPoint;
     
+    [Header("Trigger Detection")]
+    [SerializeField, Tooltip("Tag name for trigger box (leave empty to detect any trigger)")] private string triggerBoxTag = "";
+    [SerializeField, Tooltip("Stop camera when entering trigger box")] private bool enableTriggerStopCamera = true;
+    
+    [Header("Target Hide Settings")]
+    [SerializeField, Tooltip("Tag for Target GameObject")] private string targetTag = "Target";
+    [SerializeField, Tooltip("Child name to hide (Sides)")] private string sidesChildName = "Sides";
+    [SerializeField, Tooltip("Duration to shrink/hide target")] private float hideDuration = 0.3f;
+    [SerializeField, Tooltip("Duration to show/restore target")] private float showDuration = 0.3f;
+    
     // CRITICAL FIX: Store the last animated position to ensure consistency
     private Vector3 lastAnimatedSpawnPosition;
     private bool hasValidAnimatedPosition = false;
     
+    // Target hide state
+    private Transform targetSidesTransform;
+    private Vector3 originalSidesScale;
+    private bool originalScaleStored = false;
+    private Coroutine currentScaleCoroutine;
+    
     void Awake()
     {
         InitializeReferences();
+        EnsureTriggerDetectionSetup();
         
         // CRITICAL FIX: Always refresh spawn point reference to ensure we're using scene instance, not prefab
         if (animationSpawnPoint != null)
         {
             Debug.Log("🎬 🔄 AWAKE: Forcing spawn point reference refresh...");
             ForceRefreshSpawnPointReference();
+        }
+    }
+    /// <summary>
+    /// Ensure trigger detection will work at runtime:
+    /// - The bowler should have a NON-trigger collider.
+    /// - The Trigger Box should carry a kinematic Rigidbody (recommended) to raise trigger messages.
+    /// We DO NOT add a Rigidbody to the bowler to avoid interfering with core movement.
+    /// </summary>
+    private void EnsureTriggerDetectionSetup()
+    {
+        // Ensure this object has a non-trigger collider (the trigger box is the trigger)
+        Collider selfCollider = GetComponent<Collider>();
+        if (selfCollider != null && selfCollider.isTrigger)
+        {
+            selfCollider.isTrigger = false;
         }
     }
     
@@ -35,6 +67,23 @@ public class PlayerAnimationController : MonoBehaviour
         {
             InitializeReferences();
         }
+        
+        // Subscribe to next ball event
+        CricketGame.BowlerEvents.OnNextBallReady += HandleNextBallReady;
+    }
+    
+    void OnDisable()
+    {
+        // Unsubscribe from events
+        CricketGame.BowlerEvents.OnNextBallReady -= HandleNextBallReady;
+    }
+    
+    /// <summary>
+    /// Handle next ball ready event - restore target visibility
+    /// </summary>
+    private void HandleNextBallReady()
+    {
+        ShowTargetSides();
     }
     
     void InitializeReferences()
@@ -807,5 +856,151 @@ public class PlayerAnimationController : MonoBehaviour
             names[i] = parent.GetChild(i).name;
         }
         return names;
+    }
+
+    /// <summary>
+    /// Detects when bowler enters trigger box and stops camera follow + hides target
+    /// </summary>
+    void OnTriggerEnter(Collider other)
+    {
+        if (!enableTriggerStopCamera) return;
+
+        // Check if it matches trigger box tag (if specified) or accept any trigger
+        bool matchesTrigger = string.IsNullOrEmpty(triggerBoxTag) || other.CompareTag(triggerBoxTag);
+
+        if (matchesTrigger)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"🎬 PlayerAnimationController: Bowler entered trigger box: {other.name} - Stopping camera follow");
+            
+            // Stop camera follow
+            BowlerEvents.NotifyStopFollowing();
+            
+            // Hide target smoothly
+            HideTargetSides();
+        }
+    }
+    
+    /// <summary>
+    /// Find Target by tag and store reference to Sides child for efficient access
+    /// </summary>
+    private bool FindTargetSides()
+    {
+        // Use cached reference if already found and still valid
+        if (targetSidesTransform != null && targetSidesTransform.gameObject.activeInHierarchy)
+        {
+            return true;
+        }
+        
+        // Find Target by tag (handles late instantiation)
+        GameObject targetGO = null;
+        try
+        {
+            targetGO = GameObject.FindGameObjectWithTag(targetTag);
+        }
+        catch (UnityException)
+        {
+            // Tag not defined
+            return false;
+        }
+        
+        if (targetGO == null)
+        {
+            return false;
+        }
+        
+        // Find Sides child (use existing recursive search method)
+        Transform sidesTransform = targetGO.transform.Find(sidesChildName);
+        if (sidesTransform == null)
+        {
+            // Try searching recursively using existing method
+            sidesTransform = FindChildRecursive(targetGO.transform, sidesChildName);
+        }
+        
+        if (sidesTransform == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning($"🎬 PlayerAnimationController: Could not find '{sidesChildName}' child in Target GameObject");
+            return false;
+        }
+        
+        targetSidesTransform = sidesTransform;
+        
+        // Store original scale (only once)
+        if (!originalScaleStored)
+        {
+            originalSidesScale = targetSidesTransform.localScale;
+            originalScaleStored = true;
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Smoothly hide target Sides by shrinking scale
+    /// </summary>
+    private void HideTargetSides()
+    {
+        if (!FindTargetSides())
+        {
+            return; // Target not found - no error, just skip
+        }
+        
+        // Stop any ongoing animation
+        if (currentScaleCoroutine != null)
+        {
+            StopCoroutine(currentScaleCoroutine);
+        }
+        
+        currentScaleCoroutine = StartCoroutine(AnimateTargetScale(Vector3.zero, hideDuration));
+    }
+    
+    /// <summary>
+    /// Smoothly show target Sides by restoring scale
+    /// </summary>
+    public void ShowTargetSides()
+    {
+        if (!FindTargetSides() || !originalScaleStored)
+        {
+            return; // Target not found or scale not stored
+        }
+        
+        // Stop any ongoing animation
+        if (currentScaleCoroutine != null)
+        {
+            StopCoroutine(currentScaleCoroutine);
+        }
+        
+        currentScaleCoroutine = StartCoroutine(AnimateTargetScale(originalSidesScale, showDuration));
+    }
+    
+    /// <summary>
+    /// Smoothly animate target scale to target value
+    /// </summary>
+    private System.Collections.IEnumerator AnimateTargetScale(Vector3 targetScale, float duration)
+    {
+        if (targetSidesTransform == null)
+        {
+            yield break;
+        }
+        
+        Vector3 startScale = targetSidesTransform.localScale;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            
+            // Smooth easing curve for professional feel
+            t = Mathf.SmoothStep(0f, 1f, t);
+            
+            targetSidesTransform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            yield return null;
+        }
+        
+        // Ensure final value
+        targetSidesTransform.localScale = targetScale;
+        currentScaleCoroutine = null;
     }
 }
