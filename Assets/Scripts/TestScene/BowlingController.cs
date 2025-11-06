@@ -2067,6 +2067,78 @@ namespace CricketGame
         }
 
         /// <summary>
+        /// Get the current bowler instance
+        /// </summary>
+        public GameObject GetCurrentBowlerInstance()
+        {
+            return currentBowlerInstance;
+        }
+
+        /// <summary>
+        /// Reset bowler to spawn position without destroying/recreating
+        /// </summary>
+        public void ResetBowlerToSpawn()
+        {
+            if (currentBowlerInstance == null)
+            {
+                Debug.LogWarning("🎯 No current bowler instance to reset");
+                return;
+            }
+
+            Transform spawnPos = GetCurrentBowlerSpawnPosition();
+            if (spawnPos == null)
+            {
+                Debug.LogWarning("🎯 No spawn position found for current bowler");
+                return;
+            }
+
+            // Disable physics temporarily
+            Rigidbody rb = currentBowlerInstance.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = true;
+            }
+
+            // Stop any movement
+            PlayerAnimationController playerController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
+            if (playerController != null)
+            {
+                playerController.StopAllMovement();
+            }
+
+            // Disable root motion temporarily
+            Animator animator = currentBowlerInstance.GetComponent<Animator>();
+            bool wasRootMotionEnabled = false;
+            if (animator != null)
+            {
+                wasRootMotionEnabled = animator.applyRootMotion;
+                animator.applyRootMotion = false;
+            }
+
+            // Temporarily disable GameObject
+            currentBowlerInstance.SetActive(false);
+
+            // Reset position and rotation
+            currentBowlerInstance.transform.SetPositionAndRotation(spawnPos.position, spawnPos.rotation);
+
+            // Set Y rotation to 0 (or use PlayerAnimationController's method)
+            if (playerController != null)
+            {
+                playerController.SetTargetYRotation(0f);
+            }
+
+            // Re-enable GameObject
+            currentBowlerInstance.SetActive(true);
+
+            // Re-enable systems
+            StartCoroutine(ReEnableSystemsAfterDelay(rb, animator, wasRootMotionEnabled));
+
+            Debug.Log($"🏏 Reset {currentBowlerInstance.name} to spawn position");
+        }
+
+        /// <summary>
         /// Re-enable systems after position change to ensure instant teleportation
         /// </summary>
         private System.Collections.IEnumerator ReEnableSystemsAfterDelay(Rigidbody rb, Animator animator, bool wasRootMotionEnabled)

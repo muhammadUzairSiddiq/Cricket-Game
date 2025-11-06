@@ -281,5 +281,33 @@ namespace CricketGame
 				Debug.LogWarning("BowlerFollowCamera: No bowler with required tags found (Fast Bowler / Spin Bowler / Medium Pace Bowler). Camera will wait for event.");
 			}
 		}
+
+		// Home position storage for reset functionality
+		private Vector3 homePosition;
+		private Quaternion homeRotation;
+		private bool hasHomePosition = false;
+
+		/// <summary>
+		/// Capture current camera pose as home position for reset
+		/// </summary>
+		public void CaptureCurrentAsHome()
+		{
+			homePosition = cachedTransform.position;
+			homeRotation = cachedTransform.rotation;
+			hasHomePosition = true;
+		}
+
+		/// <summary>
+		/// Reset camera to home position
+		/// </summary>
+		public void ResetToHome()
+		{
+			if (hasHomePosition)
+			{
+				cachedTransform.position = homePosition;
+				cachedTransform.rotation = homeRotation;
+				velocityRef = Vector3.zero; // Reset damping
+			}
+		}
 	}
 }

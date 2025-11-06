@@ -18,9 +18,19 @@ public class PlayerAnimationController : MonoBehaviour
     
     [Header("Target Hide Settings")]
     [SerializeField, Tooltip("Tag for Target GameObject")] private string targetTag = "Target";
-    [SerializeField, Tooltip("Child name to hide (Sides)")] private string sidesChildName = "Sides";
+    [SerializeField, Tooltip("Child name to hide (e.g., 'Sides' or 'Slides')")] private string sidesChildName = "Slides";
     [SerializeField, Tooltip("Duration to shrink/hide target")] private float hideDuration = 0.3f;
     [SerializeField, Tooltip("Duration to show/restore target")] private float showDuration = 0.3f;
+    
+    [Header("Y Rotation Control")]
+    [SerializeField, Tooltip("Enable to allow random Y rotation variation between min and max degrees. Disable to keep Y rotation at 0.")]
+    private bool enableYawJitter = false;
+    [SerializeField, Tooltip("Minimum Y rotation in degrees (for bowling state random range)")]
+    [Range(-5f, 0f)] private float minYRotation = -0.4f;
+    [SerializeField, Tooltip("Maximum Y rotation in degrees (for bowling state random range)")]
+    [Range(0f, 5f)] private float maxYRotation = 0.4f;
+    [SerializeField, Tooltip("Target Y rotation value (set automatically if jitter enabled, or 0 if disabled)")]
+    private float targetYRotation = 0f;
     
     // CRITICAL FIX: Store the last animated position to ensure consistency
     private Vector3 lastAnimatedSpawnPosition;
@@ -32,10 +42,16 @@ public class PlayerAnimationController : MonoBehaviour
     private bool originalScaleStored = false;
     private Coroutine currentScaleCoroutine;
     
+    private Transform cachedTransform;
+    
     void Awake()
     {
         InitializeReferences();
         EnsureTriggerDetectionSetup();
+        
+        // Initialize target Y rotation to 0
+        targetYRotation = 0f;
+        cachedTransform = transform;
         
         // CRITICAL FIX: Always refresh spawn point reference to ensure we're using scene instance, not prefab
         if (animationSpawnPoint != null)
@@ -1002,5 +1018,101 @@ public class PlayerAnimationController : MonoBehaviour
         // Ensure final value
         targetSidesTransform.localScale = targetScale;
         currentScaleCoroutine = null;
+    }
+    
+    /// <summary>
+    /// Pick a new random Y rotation for bowling state - called when entering bowling state
+    /// </summary>
+    public void PickRandomYRotationForBowling()
+    {
+        if (enableYawJitter)
+        {
+            // Pick random value between min and max
+            targetYRotation = Random.Range(minYRotation, maxYRotation);
+            
+            // Immediately apply using cached transform
+            Vector3 e = cachedTransform.rotation.eulerAngles;
+            e.y = targetYRotation;
+            cachedTransform.rotation = Quaternion.Euler(e);
+            
+            if (enableDebugLogs)
+            {
+                Debug.Log($"🎬 Picked new random Y rotation for bowling: {targetYRotation:F3}° (range: {minYRotation} to {maxYRotation})");
+            }
+        }
+        else
+        {
+            // If disabled, ensure it's 0
+            targetYRotation = 0f;
+            Vector3 e = cachedTransform.rotation.eulerAngles;
+            e.y = 0f;
+            cachedTransform.rotation = Quaternion.Euler(e);
+        }
+    }
+    
+    /// <summary>
+    /// Get the original scale of the target Sides (for restoration)
+    /// </summary>
+    public Vector3 GetOriginalSidesScale()
+    {
+        if (originalScaleStored)
+        {
+            return originalSidesScale;
+        }
+        // If not stored yet, try to find and store it
+        if (FindTargetSides() && targetSidesTransform != null)
+        {
+            originalSidesScale = targetSidesTransform.localScale;
+            originalScaleStored = true;
+            return originalSidesScale;
+        }
+        return Vector3.one; // Fallback
+    }
+    
+    /// <summary>
+    /// Set target Y rotation - called when bowler is reset to spawn
+    /// </summary>
+    public void SetTargetYRotation(float baseYRotation)
+    {
+        if (enableYawJitter)
+        {
+            // Random jitter between min and max
+            float jitter = Random.Range(minYRotation, maxYRotation);
+            targetYRotation = baseYRotation + jitter;
+            // Clamp to ensure it stays within min to max range
+            targetYRotation = Mathf.Clamp(targetYRotation, minYRotation, maxYRotation);
+        }
+        else
+        {
+            // No jitter - keep at 0
+            targetYRotation = 0f;
+        }
+        
+        // Immediately apply target Y rotation so Inspector reflects decimal value right away
+        Vector3 e = cachedTransform.rotation.eulerAngles;
+        e.y = targetYRotation;
+        cachedTransform.rotation = Quaternion.Euler(e);
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"🎬 Set target Y rotation: {targetYRotation}° (jitter enabled: {enableYawJitter}, base: {baseYRotation}°, range: {minYRotation} to {maxYRotation})");
+        }
+    }
+    
+    /// <summary>
+    /// Enforce Y rotation in LateUpdate to prevent drift
+    /// </summary>
+    void LateUpdate()
+    {
+        // Enforce Y rotation with a tiny epsilon to avoid unnecessary writes
+        Vector3 euler = cachedTransform.rotation.eulerAngles;
+        float currentY = euler.y;
+        // Normalize to [-180, 180] for stable comparison
+        if (currentY > 180f) currentY -= 360f;
+        if (Mathf.Abs(currentY - targetYRotation) > 0.0005f)
+        {
+            euler.y = targetYRotation;
+            cachedTransform.rotation = Quaternion.Euler(euler);
+        }
     }
 }

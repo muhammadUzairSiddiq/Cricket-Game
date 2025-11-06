@@ -643,4 +643,15 @@ public class TargetDragger : MonoBehaviour
             }
         }
     }
+    
+    /// <summary>
+    /// Set the input camera for raycasting (used by state machine)
+    /// </summary>
+    public void SetInputCamera(Camera cam)
+    {
+        if (cam != null)
+        {
+            mainCamera = cam;
+        }
+    }
 }

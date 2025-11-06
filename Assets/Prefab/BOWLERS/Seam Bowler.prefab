@@ -2448,6 +2448,7 @@ GameObject:
   - component: {fileID: 3301124431721589078}
   - component: {fileID: 1481290299030629163}
   - component: {fileID: 1222488535955802057}
+  - component: {fileID: -6725760060170309654}
   m_Layer: 0
   m_Name: Seam Bowler
   m_TagString: Medium Pace Bowler
@@ -2532,6 +2533,16 @@ MonoBehaviour:
   bowlingController: {fileID: 0}
   enableDebugLogs: 1
   animationSpawnPoint: {fileID: 461422413159589506}
+  triggerBoxTag: 
+  enableTriggerStopCamera: 1
+  targetTag: Target
+  sidesChildName: Slides
+  hideDuration: 0.3
+  showDuration: 0.3
+  enableYawJitter: 0
+  minYRotation: -0.5
+  maxYRotation: 0.5
+  targetYRotation: 0
   enableManualRootMotion: 0
   rootMotionDistance: 2
   rootMotionDuration: 1
@@ -2553,6 +2564,27 @@ MonoBehaviour:
   hotkey2: 1
   hotkey3: 2
   bowlingController: {fileID: 0}
+--- !u!65 &-6725760060170309654
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3458529832109618367}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.29351038, y: 1.5170244, z: 0.16472924}
+  m_Center: {x: -0.024316113, y: 1.1643573, z: -0.022784336}
 --- !u!1 &3549100108987915205
 GameObject:
   m_ObjectHideFlags: 0

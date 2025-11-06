@@ -1,0 +1,132 @@
+warning: in the working copy of 'Assets/Scripts/Animations/PlayerAnimationController.cs', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/Assets/Scripts/Animations/PlayerAnimationController.cs b/Assets/Scripts/Animations/PlayerAnimationController.cs[m
+[1mindex 4c302cf..8aeb8aa 100644[m
+[1m--- a/Assets/Scripts/Animations/PlayerAnimationController.cs[m
+[1m+++ b/Assets/Scripts/Animations/PlayerAnimationController.cs[m
+[36m@@ -18,10 +18,20 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+     [m
+     [Header("Target Hide Settings")][m
+     [SerializeField, Tooltip("Tag for Target GameObject")] private string targetTag = "Target";[m
+[31m-    [SerializeField, Tooltip("Child name to hide (Sides)")] private string sidesChildName = "Sides";[m
+[32m+[m[32m    [SerializeField, Tooltip("Child name to hide (e.g., 'Sides' or 'Slides')")] private string sidesChildName = "Slides";[m
+     [SerializeField, Tooltip("Duration to shrink/hide target")] private float hideDuration = 0.3f;[m
+     [SerializeField, Tooltip("Duration to show/restore target")] private float showDuration = 0.3f;[m
+     [m
+[32m+[m[32m    [Header("Y Rotation Control")][m
+[32m+[m[32m    [SerializeField, Tooltip("Enable to allow random Y rotation variation between min and max degrees. Disable to keep Y rotation at 0.")][m
+[32m+[m[32m    private bool enableYawJitter = false;[m
+[32m+[m[32m    [SerializeField, Tooltip("Minimum Y rotation in degrees (for bowling state random range)")][m
+[32m+[m[32m    [Range(-5f, 0f)] private float minYRotation = -0.5f;[m
+[32m+[m[32m    [SerializeField, Tooltip("Maximum Y rotation in degrees (for bowling state random range)")][m
+[32m+[m[32m    [Range(0f, 5f)] private float maxYRotation = 0.5f;[m
+[32m+[m[32m    [SerializeField, Tooltip("Target Y rotation value (set automatically if jitter enabled, or 0 if disabled)")][m
+[32m+[m[32m    private float targetYRotation = 0f;[m
+[32m+[m[41m    [m
+     // CRITICAL FIX: Store the last animated position to ensure consistency[m
+     private Vector3 lastAnimatedSpawnPosition;[m
+     private bool hasValidAnimatedPosition = false;[m
+[36m@@ -32,11 +42,17 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+     private bool originalScaleStored = false;[m
+     private Coroutine currentScaleCoroutine;[m
+     [m
+[32m+[m[32m    private Transform cachedTransform;[m
+[32m+[m[41m    [m
+     void Awake()[m
+     {[m
+         InitializeReferences();[m
+         EnsureTriggerDetectionSetup();[m
+         [m
+[32m+[m[32m        // Initialize target Y rotation to 0[m
+[32m+[m[32m        targetYRotation = 0f;[m
+[32m+[m[32m        cachedTransform = transform;[m
+[32m+[m[41m        [m
+         // CRITICAL FIX: Always refresh spawn point reference to ensure we're using scene instance, not prefab[m
+         if (animationSpawnPoint != null)[m
+         {[m
+[36m@@ -533,21 +549,21 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+                 bool isFromPrefab = animationSpawnPoint.gameObject.scene.name != gameObject.scene.name;[m
+                 [m
+                 if (isFromPrefab || sceneInstanceBone != animationSpawnPoint)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                animationSpawnPoint = sceneInstanceBone;[m
+[32m+[m[32m                if (enableDebugLogs)[m
+                 {[m
+[31m-                    animationSpawnPoint = sceneInstanceBone;[m
+[31m-                    if (enableDebugLogs)[m
+[31m-                    {[m
+[31m-                        Debug.Log($"🎬 ✅ Refreshed spawn point to scene instance: {animationSpawnPoint.name}");[m
+[31m-                        Debug.Log($"🎬 New position: {animationSpawnPoint.position}");[m
+[31m-                        Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");[m
+[31m-                    }[m
+[32m+[m[32m                    Debug.Log($"🎬 ✅ Refreshed spawn point to scene instance: {animationSpawnPoint.name}");[m
+[32m+[m[32m                    Debug.Log($"🎬 New position: {animationSpawnPoint.position}");[m
+[32m+[m[32m                    Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");[m
+                 }[m
+[31m-                else[m
+[32m+[m[32m            }[m
+[32m+[m[32m            else[m
+[32m+[m[32m            {[m
+[32m+[m[32m                if (enableDebugLogs)[m
+                 {[m
+[31m-                    if (enableDebugLogs)[m
+[31m-                    {[m
+[31m-                        Debug.Log($"🎬 ✅ Spawn point already points to scene instance: {animationSpawnPoint.name}");[m
+[31m-                    }[m
+[32m+[m[32m                    Debug.Log($"🎬 ✅ Spawn point already points to scene instance: {animationSpawnPoint.name}");[m
+[32m+[m[32m                }[m
+                 }[m
+             }[m
+             else[m
+[36m@@ -603,11 +619,11 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+                 Debug.Log($"🎬 Scene instance bone scene: {sceneInstanceBone.gameObject.scene.name}");[m
+                 [m
+                 if (sceneInstanceBone != animationSpawnPoint)[m
+[31m-                {[m
+[31m-                    animationSpawnPoint = sceneInstanceBone;[m
+[31m-                    Debug.Log($"🎬 ✅ FORCE REFRESHED to scene instance: {animationSpawnPoint.name}");[m
+[31m-                    Debug.Log($"🎬 New position: {animationSpawnPoint.position}");[m
+[31m-                    Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");[m
+[32m+[m[32m            {[m
+[32m+[m[32m                animationSpawnPoint = sceneInstanceBone;[m
+[32m+[m[32m                Debug.Log($"🎬 ✅ FORCE REFRESHED to scene instance: {animationSpawnPoint.name}");[m
+[32m+[m[32m                Debug.Log($"🎬 New position: {animationSpawnPoint.position}");[m
+[32m+[m[32m                Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");[m
+                 }[m
+                 else[m
+                 {[m
+[36m@@ -909,18 +925,23 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+             return false;[m
+         }[m
+         [m
+[31m-        // Find Sides child (use existing recursive search method)[m
+[31m-        Transform sidesTransform = targetGO.transform.Find(sidesChildName);[m
+[31m-        if (sidesTransform == null)[m
+[32m+[m[32m        // Find Sides child (support both naming variants)[m
+[32m+[m[32m        Transform sidesTransform = null;[m
+[32m+[m[32m        string[] candidates = new string[] { sidesChildName, "Slides", "Sides" };[m
+[32m+[m[32m        for (int i = 0; i < candidates.Length && sidesTransform == null; i++)[m
+         {[m
+[31m-            // Try searching recursively using existing method[m
+[31m-            sidesTransform = FindChildRecursive(targetGO.transform, sidesChildName);[m
+[32m+[m[32m            if (string.IsNullOrEmpty(candidates[i])) continue;[m
+[32m+[m[32m            sidesTransform = targetGO.transform.Find(candidates[i]);[m
+[32m+[m[32m            if (sidesTransform == null)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                sidesTransform = FindChildRecursive(targetGO.transform, candidates[i]);[m
+[32m+[m[32m            }[m
+         }[m
+         [m
+         if (sidesTransform == null)[m
+         {[m
+             if (enableDebugLogs)[m
+[31m-                Debug.LogWarning($"🎬 PlayerAnimationController: Could not find '{sidesChildName}' child in Target GameObject");[m
+[32m+[m[32m                Debug.LogWarning($"🎬 PlayerAnimationController: Could not find target sides child ('{sidesChildName}' / 'Slides' / 'Sides') in Target GameObject");[m
+             return false;[m
+         }[m
+         [m
+[36m@@ -952,6 +973,15 @@[m [mpublic class PlayerAnimationController : MonoBehaviour[m
+             StopCoroutine(currentScaleCoroutine);[m
+         }[m
+         [m
+[32m+[m[32m        // Stop particle systems when hiding[m
+[32m+[m[32m        Part

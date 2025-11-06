@@ -4894,6 +4894,7 @@ GameObject:
   - component: {fileID: 1051001468376091887}
   - component: {fileID: 8242413465700336285}
   - component: {fileID: 6593571461091713572}
+  - component: {fileID: -8801944067266895771}
   m_Layer: 0
   m_Name: Leg Spinner
   m_TagString: Spin Bowler
@@ -4978,6 +4979,16 @@ MonoBehaviour:
   bowlingController: {fileID: 0}
   enableDebugLogs: 1
   animationSpawnPoint: {fileID: 4188823729007688838}
+  triggerBoxTag: 
+  enableTriggerStopCamera: 1
+  targetTag: Target
+  sidesChildName: Slides
+  hideDuration: 0.3
+  showDuration: 0.3
+  enableYawJitter: 0
+  minYRotation: -0.5
+  maxYRotation: 0.5
+  targetYRotation: 0
   enableManualRootMotion: 0
   rootMotionDistance: 2
   rootMotionDuration: 1
@@ -4999,6 +5010,27 @@ MonoBehaviour:
   hotkey2: 5
   hotkey3: 5
   bowlingController: {fileID: 0}
+--- !u!65 &-8801944067266895771
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8640443783477727062}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.29351038, y: 1.5170244, z: 0.16472924}
+  m_Center: {x: -0.024316113, y: 1.1643573, z: -0.022784336}
 --- !u!1 &8652229528344689462
 GameObject:
   m_ObjectHideFlags: 0

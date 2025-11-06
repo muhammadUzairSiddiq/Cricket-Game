@@ -29,10 +29,13 @@ namespace CricketGame
         [SerializeField] private float speedMultiplier = 10f; // 9 m/s = 90 km/h
         
         [Header("Auto Movement Settings")]
-        [SerializeField] private bool enableAutoMovement = true;
+        [SerializeField] private bool enableAutoMovementDefault = true; // Default state (can be overridden)
         [SerializeField] private float autoMovementSpeed = 2f; // How fast the slider moves (cycles per second)
         private float autoTime = 0f; // internal time for ping-pong
         [SerializeField] private bool stopOnAnyTap = true; // Stop auto on any screen tap/click
+        
+        // Runtime auto movement state (can be disabled by user interaction)
+        private bool enableAutoMovement = true;
         
         private bool isUserInteracting = false;
         private bool isMovingUp = true;
@@ -41,6 +44,9 @@ namespace CricketGame
         
         void Start()
         {
+            // Initialize auto movement from default
+            enableAutoMovement = enableAutoMovementDefault;
+            
             // Initialize slider with integer steps
             if (speedSlider != null)
             {
@@ -104,14 +110,20 @@ namespace CricketGame
             // Global tap/click anywhere to stop auto movement immediately
             if (stopOnAnyTap)
             {
-                // Mouse click anywhere
+                // Mouse click anywhere - check if it's on the slider
                 if (Input.GetMouseButtonDown(0))
                 {
-                    isUserInteracting = true;
-                    inputDetected = true;
-                    return; // Stop here; resume will be handled on release
+                    // Check if click is on slider or speed UI
+                    if (IsPointOverSlider(Input.mousePosition) || IsPointOverSpeedUI(Input.mousePosition))
+                    {
+                        isUserInteracting = true;
+                        speedConfirmed = true; // User has selected a speed
+                        enableAutoMovement = false; // Stop auto movement permanently
+                        inputDetected = true;
+                        return; // Stop here; resume will be handled on release
+                    }
                 }
-                // Touch anywhere
+                // Touch anywhere - check if it's on the slider
                 if (Input.touchCount > 0)
                 {
                     for (int i = 0; i < Input.touchCount; i++)
@@ -119,9 +131,15 @@ namespace CricketGame
                         Touch t = Input.GetTouch(i);
                         if (t.phase == TouchPhase.Began)
                         {
-                            isUserInteracting = true;
-                            inputDetected = true;
-                            return; // Stop here; resume will be handled on touch end
+                            // Check if touch is on slider or speed UI
+                            if (IsPointOverSlider(t.position) || IsPointOverSpeedUI(t.position))
+                            {
+                                isUserInteracting = true;
+                                speedConfirmed = true; // User has selected a speed
+                                enableAutoMovement = false; // Stop auto movement permanently
+                                inputDetected = true;
+                                return; // Stop here; resume will be handled on touch end
+                            }
                         }
                     }
                 }
@@ -213,6 +231,42 @@ namespace CricketGame
         }
         
         /// <summary>
+        /// Check if a screen point is over the speed UI (slider or panel)
+        /// </summary>
+        private bool IsPointOverSpeedUI(Vector2 screenPoint)
+        {
+            // Check if point is over the speed panel root
+            if (speedPanelRoot != null)
+            {
+                RectTransform panelRect = speedPanelRoot.GetComponent<RectTransform>();
+                if (panelRect != null)
+                {
+                    Canvas canvas = speedPanelRoot.GetComponentInParent<Canvas>();
+                    if (canvas != null)
+                    {
+                        Camera cam = null;
+                        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+                        {
+                            cam = canvas.worldCamera;
+                            if (cam == null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                            {
+                                cam = Camera.main;
+                            }
+                        }
+                        
+                        if (RectTransformUtility.RectangleContainsScreenPoint(panelRect, screenPoint, cam))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // Fallback: check slider
+            return IsPointOverSlider(screenPoint);
+        }
+        
+        /// <summary>
         /// Setup event triggers to detect user interaction with slider
         /// </summary>
         private void SetupSliderEvents()
@@ -269,6 +323,8 @@ namespace CricketGame
         public void OnPointerDown(PointerEventData eventData)
         {
             isUserInteracting = true;
+            speedConfirmed = true; // User has selected a speed
+            enableAutoMovement = false; // Stop auto movement permanently
             // Cancel any pending resume
             if (resumeCoroutine != null)
             {
@@ -314,6 +370,8 @@ namespace CricketGame
         public void OnDrag(PointerEventData eventData)
         {
             isUserInteracting = true;
+            speedConfirmed = true; // User has selected a speed
+            enableAutoMovement = false; // Stop auto movement permanently
         }
         
         /// <summary>
@@ -324,9 +382,11 @@ namespace CricketGame
             currentSpeed = Mathf.RoundToInt(newSpeed); // Convert to integer
             
             // If value changed and we're not setting it programmatically, user is interacting
-            if (!isProgrammaticallyChangingValue && enableAutoMovement)
+            if (!isProgrammaticallyChangingValue)
             {
                 isUserInteracting = true;
+                speedConfirmed = true; // User has selected a speed
+                enableAutoMovement = false; // Stop auto movement permanently
                 // Cancel any pending resume
                 if (resumeCoroutine != null)
                 {
@@ -418,6 +478,98 @@ namespace CricketGame
             {
                 UpdateSpeedDisplay();
                 UpdateBallSpeed();
+            }
+        }
+
+        [Header("UI Activation")]
+        [SerializeField] private GameObject speedPanelRoot; // Root GameObject containing speed UI
+
+        private bool speedConfirmed = false; // Track if user has confirmed/selected a speed
+
+        /// <summary>
+        /// Activate or deactivate the speed UI
+        /// </summary>
+        public void ActivateUI(bool activate)
+        {
+            if (speedPanelRoot != null)
+            {
+                speedPanelRoot.SetActive(activate);
+            }
+            else
+            {
+                // Fallback: try to find parent panel
+                Transform parent = transform.parent;
+                if (parent != null)
+                {
+                    parent.gameObject.SetActive(activate);
+                }
+                else
+                {
+                    gameObject.SetActive(activate);
+                }
+            }
+            
+            // Reset speed confirmation when UI is activated
+            if (activate)
+            {
+                speedConfirmed = false;
+            }
+        }
+
+        /// <summary>
+        /// Check if speed has been selected by user
+        /// </summary>
+        public bool IsSpeedSelected
+        {
+            get
+            {
+                // Speed is considered selected if user has interacted and confirmed it
+                return speedConfirmed;
+            }
+        }
+        
+        /// <summary>
+        /// Reset speed selection state (called when entering PitchCam state)
+        /// </summary>
+        public void ResetSpeedSelection()
+        {
+            // CRITICAL: Reset all flags FIRST to prevent immediate state transition
+            speedConfirmed = false;
+            isUserInteracting = false;
+            enableAutoMovement = enableAutoMovementDefault; // Re-enable auto movement from default setting
+            autoTime = 0f; // Reset auto time to start fresh
+            
+            // Cancel any pending resume coroutine
+            if (resumeCoroutine != null)
+            {
+                StopCoroutine(resumeCoroutine);
+                resumeCoroutine = null;
+            }
+            
+            // Reset slider interaction state
+            if (speedSlider != null)
+            {
+                // Recalculate starting direction based on current position
+                float startNormalized = (currentSpeed - minSpeed) / (maxSpeed - minSpeed);
+                isMovingUp = startNormalized < 0.5f;
+            }
+            
+            // CRITICAL: Force a frame delay to ensure state machine processes the reset
+            // This prevents the state from immediately transitioning if speedConfirmed was true
+            StartCoroutine(DelayedResetConfirmation());
+        }
+        
+        /// <summary>
+        /// Delayed reset to ensure state machine has time to process the reset
+        /// </summary>
+        private System.Collections.IEnumerator DelayedResetConfirmation()
+        {
+            yield return null; // Wait one frame
+            // Double-check that speedConfirmed is still false after frame delay
+            if (speedConfirmed)
+            {
+                Debug.LogWarning("🎯 SpeedController: speedConfirmed was re-set during reset, forcing to false");
+                speedConfirmed = false;
             }
         }
     }
