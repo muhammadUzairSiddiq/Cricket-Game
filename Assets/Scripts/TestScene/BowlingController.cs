@@ -1235,8 +1235,29 @@ namespace CricketGame
             
             // ?? SAFETY: Ensure ball is at correct starting position
             // 🎯 DYNAMIC: Use the same spawn point that was used for instantiation
-            Transform correctSpawnPoint = enableManualKeyInput ? spawnPoint : 
-                (GetPlayerAnimationController() != null ? GetPlayerAnimationController().GetAnimationSpawnPoint() : spawnPoint);
+            // CRITICAL: Always get the CURRENT spawn point, not a cached reference
+            Transform correctSpawnPoint;
+            if (enableManualKeyInput)
+            {
+                correctSpawnPoint = spawnPoint;
+            }
+            else
+            {
+                // Always get the current spawn point from the bowler
+                Transform currentSpawn = GetCurrentBowlerSpawnPosition();
+                if (currentSpawn != null)
+                {
+                    correctSpawnPoint = currentSpawn;
+                    // Update internal references to match
+                    spawnPoint = currentSpawn;
+                    ballSpawnPoint = currentSpawn;
+                }
+                else
+                {
+                    PlayerAnimationController animCtrl = GetPlayerAnimationController();
+                    correctSpawnPoint = animCtrl != null ? animCtrl.GetAnimationSpawnPoint() : spawnPoint;
+                }
+            }
             
             // Get the current animated position for comparison (important for animated bowlers)
             Vector3 expectedPosition;
@@ -1419,17 +1440,21 @@ namespace CricketGame
                 initialVelocity = new Vector3(velXZ.x, yVel, velXZ.z);
             }
             
+            // 🎯 CRITICAL: Use the correct spawn point for trajectory calculation
+            // Ensure we're using the current spawn point, not a stale reference
+            Transform trajectorySpawnPoint = correctSpawnPoint != null ? correctSpawnPoint : spawnPoint;
+            
             // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
             Vector3 horizontalDirection;
-            if (spawnPoint != null)
+            if (trajectorySpawnPoint != null)
             {
                 // Use spawn point's forward direction which already includes both X and Y rotation
-                horizontalDirection = spawnPoint.forward;
+                horizontalDirection = trajectorySpawnPoint.forward;
                 // Remove Y component to keep it horizontal
                 horizontalDirection.y = 0f;
                 horizontalDirection = horizontalDirection.normalized;
                 
-                Debug.Log($"🎯 ROTATION APPLIED: Spawn rotation {spawnPoint.rotation.eulerAngles}, Forward direction {spawnPoint.forward}, Horizontal direction {horizontalDirection}");
+                Debug.Log($"🎯 ROTATION APPLIED: Spawn rotation {trajectorySpawnPoint.rotation.eulerAngles}, Forward direction {trajectorySpawnPoint.forward}, Horizontal direction {horizontalDirection}");
             }
             else
             {
@@ -1439,12 +1464,18 @@ namespace CricketGame
             
             // 🎯 SIMPLIFIED X ROTATION: Apply smaller, more controlled rotation effect (post ballistic)
             float preAdjustY = initialVelocity.y;
-            float rotationXRadians = spawnPoint != null ? spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
+            float rotationXRadians = trajectorySpawnPoint != null ? trajectorySpawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
             float rotationEffect = Mathf.Sin(rotationXRadians); // This gives us the downward component
             
             // 🎯 REDUCED ROTATION EFFECT: Much smaller impact on trajectory
             float rotationMultiplier = 0.1f; // Reduced from 0.5f to 0.1f
             float adjustedYVelocity = initialVelocity.y + (rotationEffect * ballSpeed * rotationMultiplier);
+
+            // Debug log using correct spawn point
+            if (trajectorySpawnPoint != null && Mathf.Abs(trajectorySpawnPoint.rotation.eulerAngles.x) > 1f)
+            {
+                Debug.Log($"🎯 X ROTATION: {trajectorySpawnPoint.rotation.eulerAngles.x:F1}°, Effect: {rotationEffect:F3}, Y Velocity: {preAdjustY:F2} → {adjustedYVelocity:F2}");
+            }
 
             // 🎯 HIGH-SPEED DOWNWARD ASSIST: ensure >14 m/s lands on target by adding extra downward component
             if (ballSpeed >= 14f)
@@ -2132,10 +2163,23 @@ namespace CricketGame
             // Re-enable GameObject
             currentBowlerInstance.SetActive(true);
 
+            // CRITICAL: Update spawn point references to match the reset position
+            // This ensures ball trajectory is calculated from the correct spawn point
+            spawnPoint = spawnPos;
+            ballSpawnPoint = spawnPos;
+            
+            // CRITICAL: Update PlayerAnimationController's spawn point reference if it exists
+            if (playerController != null)
+            {
+                // Refresh the spawn point reference in PlayerAnimationController
+                playerController.RefreshSpawnPointPosition();
+            }
+
             // Re-enable systems
             StartCoroutine(ReEnableSystemsAfterDelay(rb, animator, wasRootMotionEnabled));
 
-            Debug.Log($"🏏 Reset {currentBowlerInstance.name} to spawn position");
+            Debug.Log($"🏏 Reset {currentBowlerInstance.name} to spawn position: {spawnPos.name} at {spawnPos.position}");
+            Debug.Log($"🏏 Updated spawnPoint and ballSpawnPoint references to: {spawnPoint.name}");
         }
 
         /// <summary>
@@ -2293,17 +2337,25 @@ namespace CricketGame
             float arcTimeFactor = 1f + (realisticArcHeight * 0.1f);
             duration = baseDuration * arcTimeFactor;
             
+            // 🎯 CRITICAL: Get current spawn point for trajectory direction
+            // Always use the current spawn point, not a stale reference
+            Transform currentSpawnForTrajectory = GetCurrentBowlerSpawnPosition();
+            if (currentSpawnForTrajectory == null)
+            {
+                currentSpawnForTrajectory = spawnPoint; // Fallback to cached reference
+            }
+            
             // 🎯 SIMPLIFIED: Use spawn point's forward direction directly (includes both X and Y rotation)
             Vector3 trajectoryDirection;
-            if (spawnPoint != null)
+            if (currentSpawnForTrajectory != null)
             {
                 // Use spawn point's forward direction which already includes both X and Y rotation
-                trajectoryDirection = spawnPoint.forward;
+                trajectoryDirection = currentSpawnForTrajectory.forward;
                 // Remove Y component to keep it horizontal
                 trajectoryDirection.y = 0f;
                 trajectoryDirection = trajectoryDirection.normalized;
                 
-                Debug.Log($"🎯 KINEMATIC ROTATION: Applied spawn rotation {spawnPoint.rotation.eulerAngles} to trajectory direction {trajectoryDirection}");
+                Debug.Log($"🎯 KINEMATIC ROTATION: Applied spawn rotation {currentSpawnForTrajectory.rotation.eulerAngles} to trajectory direction {trajectoryDirection}");
             }
             else
             {
@@ -2312,7 +2364,7 @@ namespace CricketGame
             }
             
             // 🎯 CRITICAL FIX: Apply X rotation effect to arc height for kinematic movement
-            float rotationXRadians = spawnPoint != null ? spawnPoint.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
+            float rotationXRadians = currentSpawnForTrajectory != null ? currentSpawnForTrajectory.rotation.eulerAngles.x * Mathf.Deg2Rad : 0f;
             float rotationEffect = Mathf.Sin(rotationXRadians);
             float adjustedArcHeight = realisticArcHeight + (rotationEffect * 2f); // Adjust arc based on rotation
             
