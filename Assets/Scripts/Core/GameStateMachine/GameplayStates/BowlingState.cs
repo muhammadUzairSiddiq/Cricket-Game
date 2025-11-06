@@ -65,12 +65,23 @@ namespace CricketGame.GameplayStates
 
 		public void OnExit()
 		{
+			// CRITICAL: Unsubscribe from events
 			CricketGame.BowlerEvents.OnBowlerStopFollow -= HandleBowlerStopFollow;
+			
+			// CRITICAL: Stop all coroutines to prevent stuck state
 			if (_postStopCoroutine != null)
 			{
 				StopCoroutine(_postStopCoroutine);
 				_postStopCoroutine = null;
 			}
+			StopAllCoroutines();
+			
+			// CRITICAL: Force reset state machine if stuck
+			if (stateMachine != null && stateMachine.IsTransitioning())
+			{
+				stateMachine.ForceResetTransition();
+			}
+			
 			// Keep camera state unchanged; next state will manage cameras
 		}
 

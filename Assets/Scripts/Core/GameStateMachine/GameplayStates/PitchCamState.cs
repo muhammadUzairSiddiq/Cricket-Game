@@ -28,6 +28,7 @@ namespace CricketGame.GameplayStates
 		// Store original scale of Slides for restoration
 		private Vector3 originalSlidesScale = Vector3.one;
 		private bool originalScaleStored = false;
+		private bool _hasTransitionedFromSpeed = false; // Prevent multiple transitions
 
 		public string StateName => "PitchCam";
 
@@ -37,6 +38,7 @@ namespace CricketGame.GameplayStates
 			elapsedTime = 0f;
 			isSpeedSelected = false;
 			isTargetDragged = false;
+			_hasTransitionedFromSpeed = false; // Reset transition flag
 			
 			// CRITICAL: Force reset transition flag if stuck (safety mechanism)
 			if (stateMachine != null && stateMachine.IsTransitioning())
@@ -44,6 +46,9 @@ namespace CricketGame.GameplayStates
 				Debug.LogWarning("🎯 PitchCamState: Entering with stuck transition flag, forcing reset");
 				stateMachine.ForceResetTransition();
 			}
+			
+			// CRITICAL: Stop all coroutines to prevent stuck state
+			StopAllCoroutines();
 			
 			// CRITICAL: Reset speed selection FIRST before activating UI to prevent immediate transition
 			if (speedController != null)
@@ -176,21 +181,39 @@ namespace CricketGame.GameplayStates
 			// Check success conditions
 			if (isSpeedSelected)
 			{
-				// Hide speed UI immediately before leaving
-				if (speedController != null)
+				// CRITICAL: Only transition once per speed selection
+				if (!_hasTransitionedFromSpeed)
 				{
-					speedController.ActivateUI(false);
-				}
-				// Speed selected - transition to camera follow
-				if (stateMachine != null && !stateMachine.IsTransitioning())
-				{
-					stateMachine.TransitionToState("CameraFollow");
+					_hasTransitionedFromSpeed = true;
+					
+					// Hide speed UI immediately before leaving
+					if (speedController != null)
+					{
+						speedController.ActivateUI(false);
+					}
+					// Speed selected - transition to camera follow
+					if (stateMachine != null && !stateMachine.IsTransitioning())
+					{
+						stateMachine.TransitionToState("CameraFollow");
+					}
+					else if (stateMachine != null && stateMachine.IsTransitioning())
+					{
+						// Force reset if stuck
+						stateMachine.ForceResetTransition();
+						stateMachine.TransitionToState("CameraFollow");
+					}
 				}
 			}
 		}
 
 		public void OnExit()
 		{
+			// CRITICAL: Stop all coroutines to prevent stuck state
+			StopAllCoroutines();
+			
+			// Reset transition flag
+			_hasTransitionedFromSpeed = false;
+			
 			// Deactivate pitch camera
 			if (pitchCam != null)
 			{

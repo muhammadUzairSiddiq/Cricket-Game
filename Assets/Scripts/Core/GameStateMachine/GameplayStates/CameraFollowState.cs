@@ -19,29 +19,38 @@ namespace CricketGame.GameplayStates
 
 		public void OnEnter()
 		{
-		stateMachine = GetComponent<GameStateMachine>();
-
-		// Ensure only follow camera is active; disable others
-		if (introCam != null) introCam.gameObject.SetActive(false);
-		if (pitchCam != null) pitchCam.gameObject.SetActive(false);
-
-		// Ensure camera is following (BowlerFollowCamera handles its own camera activation)
-		if (bowlerFollowCamera != null)
-		{
-			bowlerFollowCamera.enabled = true;
-			// Activate camera GameObject if it's disabled
-			if (bowlerFollowCamera.gameObject != null)
+			stateMachine = GetComponent<GameStateMachine>();
+			
+			// CRITICAL: Force reset transition flag if stuck (safety mechanism)
+			if (stateMachine != null && stateMachine.IsTransitioning())
 			{
-				bowlerFollowCamera.gameObject.SetActive(true);
+				Debug.LogWarning("📹 CameraFollowState: Entering with stuck transition flag, forcing reset");
+				stateMachine.ForceResetTransition();
 			}
+			
+			// CRITICAL: Stop all coroutines to prevent stuck state
+			StopAllCoroutines();
 
-			// Ensure camera resumes following (in case it was paused)
-			bowlerFollowCamera.ResumeFollowing();
+			// Ensure only follow camera is active; disable others
+			if (introCam != null) introCam.gameObject.SetActive(false);
+			if (pitchCam != null) pitchCam.gameObject.SetActive(false);
 
-			// Capture current pose as home for later reset
-			bowlerFollowCamera.CaptureCurrentAsHome();
-		}
+			// Ensure camera is following (BowlerFollowCamera handles its own camera activation)
+			if (bowlerFollowCamera != null)
+			{
+				bowlerFollowCamera.enabled = true;
+				// Activate camera GameObject if it's disabled
+				if (bowlerFollowCamera.gameObject != null)
+				{
+					bowlerFollowCamera.gameObject.SetActive(true);
+				}
 
+				// Ensure camera resumes following (in case it was paused)
+				bowlerFollowCamera.ResumeFollowing();
+
+				// Capture current pose as home for later reset
+				bowlerFollowCamera.CaptureCurrentAsHome();
+			}
 		}
 
 
@@ -51,12 +60,30 @@ namespace CricketGame.GameplayStates
 			// Wait for P key to start bowling
 			if (Input.GetKeyDown(KeyCode.P))
 			{
-				stateMachine.TransitionToState("Bowling");
+				if (stateMachine != null && !stateMachine.IsTransitioning())
+				{
+					stateMachine.TransitionToState("Bowling");
+				}
+				else if (stateMachine != null && stateMachine.IsTransitioning())
+				{
+					// Force reset if stuck
+					stateMachine.ForceResetTransition();
+					stateMachine.TransitionToState("Bowling");
+				}
 			}
 		}
 
 		public void OnExit()
 		{
+			// CRITICAL: Stop all coroutines to prevent stuck state
+			StopAllCoroutines();
+			
+			// CRITICAL: Force reset state machine if stuck
+			if (stateMachine != null && stateMachine.IsTransitioning())
+			{
+				stateMachine.ForceResetTransition();
+			}
+			
 			// Keep follow camera active when leaving for Bowling state
 			// No camera toggling here to avoid gaps in rendering during the P transition
 		}

@@ -20,6 +20,8 @@ namespace CricketGame.Core
 		private IGameState currentState;
 		private Dictionary<string, IGameState> registeredStates = new Dictionary<string, IGameState>();
 		private bool isTransitioning = false;
+		private float transitionStartTime = 0f;
+		private const float MAX_TRANSITION_TIME = 5f; // Maximum time a transition should take
 
 		/// <summary>
 		/// Register a state with the machine. States must be registered before use.
@@ -48,6 +50,13 @@ namespace CricketGame.Core
 		/// </summary>
 		public void TransitionToState(string stateName)
 		{
+			// CRITICAL: Force reset if stuck for too long
+			if (isTransitioning && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
+			{
+				Debug.LogWarning($"GameStateMachine: Transition stuck for {Time.time - transitionStartTime:F1}s, forcing reset");
+				isTransitioning = false;
+			}
+			
 			if (isTransitioning)
 			{
 				Debug.LogWarning($"GameStateMachine: Already transitioning. Ignoring transition to '{stateName}'");
@@ -68,6 +77,13 @@ namespace CricketGame.Core
 		/// </summary>
 		public void TransitionToStateImmediate(string stateName)
 		{
+			// CRITICAL: Force reset if stuck for too long
+			if (isTransitioning && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
+			{
+				Debug.LogWarning($"GameStateMachine: Transition stuck for {Time.time - transitionStartTime:F1}s, forcing reset before immediate transition");
+				isTransitioning = false;
+			}
+			
 			if (isTransitioning)
 			{
 				Debug.LogWarning($"GameStateMachine: Already transitioning. Ignoring transition to '{stateName}'");
@@ -82,6 +98,7 @@ namespace CricketGame.Core
 
 			// CRITICAL: Reset transition flag before changing state to prevent getting stuck
 			isTransitioning = false;
+			transitionStartTime = 0f;
 			ChangeStateImmediate(stateName);
 		}
 
@@ -110,12 +127,17 @@ namespace CricketGame.Core
 			{
 				Debug.LogWarning("GameStateMachine: Force resetting stuck transition flag");
 				isTransitioning = false;
+				transitionStartTime = 0f;
+				
+				// CRITICAL: Stop all coroutines that might be stuck
+				StopAllCoroutines();
 			}
 		}
 
 		private System.Collections.IEnumerator TransitionCoroutine(string stateName)
 		{
 			isTransitioning = true;
+			transitionStartTime = Time.time;
 
 			try
 			{
@@ -140,6 +162,7 @@ namespace CricketGame.Core
 			{
 				// CRITICAL: Always reset transition flag, even if something goes wrong
 				isTransitioning = false;
+				transitionStartTime = 0f;
 			}
 		}
 
@@ -166,6 +189,14 @@ namespace CricketGame.Core
 
 		private void Update()
 		{
+			// CRITICAL: Watchdog timer - auto-reset stuck transitions
+			if (isTransitioning && transitionStartTime > 0f && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
+			{
+				Debug.LogError($"GameStateMachine: WATCHDOG - Transition stuck for {Time.time - transitionStartTime:F1}s! Force resetting.");
+				isTransitioning = false;
+				transitionStartTime = 0f;
+			}
+			
 			// Only update if not transitioning and state exists
 			if (!isTransitioning && currentState != null)
 			{
