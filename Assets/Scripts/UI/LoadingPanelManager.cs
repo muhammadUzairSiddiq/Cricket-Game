@@ -62,6 +62,20 @@ namespace CricketGame.UI
         
         [Tooltip("Animation curve for the pulse (ease in/out by default)")]
         [SerializeField] private AnimationCurve pulseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        [Header("Simple Animation Settings")]
+        [SerializeField] private float simpleFadeDuration = 0.25f;
+        [SerializeField] private float simpleHoldDuration = 0.2f;
+        [SerializeField] private AnimationCurve simpleCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
+        public enum LoadingAnimationMode
+        {
+            Pulse,
+            Simple
+        }
+
+        [Header("Animation Selection")]
+        [SerializeField] private LoadingAnimationMode defaultAnimationMode = LoadingAnimationMode.Pulse;
         
         [Header("Panel Setup")]
         [Tooltip("Automatically find Loading Panel in scene if not assigned")]
@@ -77,8 +91,11 @@ namespace CricketGame.UI
         
         #region Private Fields
         
-        private Coroutine pulseCoroutine;
-        private bool isPulsing = false;
+        private Coroutine activeAnimationCoroutine;
+        private bool isAnimationRunning = false;
+        private LoadingAnimationMode currentAnimationMode;
+        private bool cachedFillClockwise;
+        private int cachedFillOrigin;
         private Color baseColor; // Store the original color you set in Inspector
         
         #endregion
@@ -150,7 +167,13 @@ namespace CricketGame.UI
             
             // Store the base color you set in Inspector (so we can preserve it during animation)
             baseColor = loadingPanelImage.color;
-            
+
+            cachedFillClockwise = loadingPanelImage.fillClockwise;
+            cachedFillOrigin = loadingPanelImage.fillOrigin;
+
+            currentAnimationMode = defaultAnimationMode;
+            ApplyVisualSetup(defaultAnimationMode, false);
+
             // Ensure full screen coverage
             if (ensureFullScreenCoverage)
             {
@@ -231,21 +254,118 @@ namespace CricketGame.UI
                 return;
             }
             
-            Instance.StartPulseAnimation();
+            Instance.PlayAnimationInternal(LoadingAnimationMode.Pulse);
         }
-        
+
+        /// <summary>
+        /// Start simple fade animation.
+        /// </summary>
+        public static void StartSimple()
+        {
+            if (Instance == null)
+            {
+                Debug.LogError("❌ LoadingPanelManager: Cannot StartSimple - Instance is null!");
+                return;
+            }
+
+            Instance.PlayAnimationInternal(LoadingAnimationMode.Simple);
+        }
+
+        /// <summary>
+        /// Play loading animation using configured default mode.
+        /// </summary>
+        public static void PlayAnimation()
+        {
+            if (Instance == null)
+            {
+                Debug.LogError("❌ LoadingPanelManager: Cannot PlayAnimation - Instance is null!");
+                return;
+            }
+
+            Instance.PlayAnimationInternal(Instance.defaultAnimationMode);
+        }
+
+        /// <summary>
+        /// Play loading animation using override mode.
+        /// </summary>
+        public static void PlayAnimation(LoadingAnimationMode mode)
+        {
+            if (Instance == null)
+            {
+                Debug.LogError("❌ LoadingPanelManager: Cannot PlayAnimation - Instance is null!");
+                return;
+            }
+
+            Instance.PlayAnimationInternal(mode);
+        }
+
+        /// <summary>
+        /// Stop any running animation immediately and reset the panel.
+        /// </summary>
+        public static void StopAnimation()
+        {
+            if (Instance == null)
+            {
+                return;
+            }
+
+            Instance.StopAnimationInternal();
+        }
+
+        /// <summary>
+        /// Change the default animation mode at runtime.
+        /// </summary>
+        public static void SetDefaultAnimationMode(LoadingAnimationMode mode)
+        {
+            if (Instance == null)
+            {
+                return;
+            }
+
+            Instance.defaultAnimationMode = mode;
+        }
+ 
         /// <summary>
         /// Check if pulse animation is currently running
         /// </summary>
-        public static bool IsPulsing()
+        public static bool IsAnimationRunning()
         {
-            return Instance != null && Instance.isPulsing;
+            return Instance != null && Instance.isAnimationRunning;
         }
         
         #endregion
         
         #region Internal Methods
         
+        private void PlayAnimationInternal(LoadingAnimationMode mode)
+        {
+            StopAnimationInternal();
+
+            switch (mode)
+            {
+                case LoadingAnimationMode.Simple:
+                    StartSimpleAnimation();
+                    break;
+                case LoadingAnimationMode.Pulse:
+                default:
+                    StartPulseAnimation();
+                    break;
+            }
+        }
+
+        private void StopAnimationInternal()
+        {
+            if (activeAnimationCoroutine != null)
+            {
+                StopCoroutine(activeAnimationCoroutine);
+                activeAnimationCoroutine = null;
+            }
+
+            isAnimationRunning = false;
+            SetOpacity(minOpacity);
+            ApplyVisualSetup(defaultAnimationMode, false);
+        }
+
         /// <summary>
         /// Start one pulse cycle (light → dark → light) - one cycle then stops
         /// </summary>
@@ -257,18 +377,36 @@ namespace CricketGame.UI
                 return;
             }
             
-            // Stop existing pulse if running (allows restart)
-            if (pulseCoroutine != null)
-            {
-                StopCoroutine(pulseCoroutine);
-            }
-            
+            currentAnimationMode = LoadingAnimationMode.Pulse;
+            ApplyVisualSetup(currentAnimationMode, true);
+
             // Start new pulse (one cycle only)
-            isPulsing = true;
-            pulseCoroutine = StartCoroutine(PulseAnimationCycle());
+            isAnimationRunning = true;
+            activeAnimationCoroutine = StartCoroutine(PulseAnimationCycle());
             
             if (showDebugLogs)
                 Debug.Log("✅ LoadingPanelManager: Pulse animation started");
+        }
+
+        /// <summary>
+        /// Start simple fade in/out animation.
+        /// </summary>
+        private void StartSimpleAnimation()
+        {
+            if (loadingPanelImage == null)
+            {
+                Debug.LogError("❌ LoadingPanelManager: Cannot start simple animation - Loading Panel Image is null!");
+                return;
+            }
+
+            currentAnimationMode = LoadingAnimationMode.Simple;
+            ApplyVisualSetup(currentAnimationMode, true);
+
+            isAnimationRunning = true;
+            activeAnimationCoroutine = StartCoroutine(SimpleAnimationCycle());
+
+            if (showDebugLogs)
+                Debug.Log("✅ LoadingPanelManager: Simple animation started");
         }
         
         /// <summary>
@@ -279,23 +417,48 @@ namespace CricketGame.UI
             if (loadingPanelImage == null) yield break;
             
             // Phase 1: Light to Dark (minOpacity → maxOpacity)
-            yield return StartCoroutine(AnimateOpacity(minOpacity, maxOpacity, pulseDuration / 2f));
+            yield return StartCoroutine(AnimateOpacity(minOpacity, maxOpacity, pulseDuration / 2f, pulseCurve));
             
             // Phase 2: Dark to Light (maxOpacity → minOpacity)
-            yield return StartCoroutine(AnimateOpacity(maxOpacity, minOpacity, pulseDuration / 2f));
+            yield return StartCoroutine(AnimateOpacity(maxOpacity, minOpacity, pulseDuration / 2f, pulseCurve));
             
             // Animation complete - stop automatically
-            isPulsing = false;
-            pulseCoroutine = null;
+            isAnimationRunning = false;
+            activeAnimationCoroutine = null;
             
             if (showDebugLogs)
                 Debug.Log("✅ LoadingPanelManager: Pulse animation completed and stopped");
         }
-        
+
+        private IEnumerator SimpleAnimationCycle()
+        {
+            if (loadingPanelImage == null)
+            {
+                yield break;
+            }
+
+            float fadeDuration = Mathf.Max(0.0001f, simpleFadeDuration);
+
+            yield return StartCoroutine(AnimateOpacity(minOpacity, maxOpacity, fadeDuration, simpleCurve));
+
+            if (simpleHoldDuration > 0f)
+            {
+                yield return new WaitForSeconds(simpleHoldDuration);
+            }
+
+            yield return StartCoroutine(AnimateOpacity(maxOpacity, minOpacity, fadeDuration, simpleCurve));
+
+            isAnimationRunning = false;
+            activeAnimationCoroutine = null;
+
+            if (showDebugLogs)
+                Debug.Log("✅ LoadingPanelManager: Simple animation completed and stopped");
+        }
+ 
         /// <summary>
         /// Animate opacity from start to end using pulse curve
         /// </summary>
-        private IEnumerator AnimateOpacity(float startOpacity, float endOpacity, float duration)
+        private IEnumerator AnimateOpacity(float startOpacity, float endOpacity, float duration, AnimationCurve curve)
         {
             if (loadingPanelImage == null) yield break;
             
@@ -307,7 +470,7 @@ namespace CricketGame.UI
                 float normalizedTime = Mathf.Clamp01(elapsed / duration);
                 
                 // Evaluate curve for smooth animation
-                float curveValue = pulseCurve.Evaluate(normalizedTime);
+                float curveValue = curve != null ? curve.Evaluate(normalizedTime) : normalizedTime;
                 
                 // Interpolate opacity
                 float opacity = Mathf.Lerp(startOpacity, endOpacity, curveValue);
@@ -330,14 +493,49 @@ namespace CricketGame.UI
             
             opacity = Mathf.Clamp01(opacity);
             
-            // For Radial 90 fill, control fillAmount (0 = no fill/transparent, 1 = full fill)
-            loadingPanelImage.fillAmount = opacity;
-            
+            if (currentAnimationMode == LoadingAnimationMode.Pulse)
+            {
+                // For Radial 90 fill, control fillAmount (0 = no fill/transparent, 1 = full fill)
+                loadingPanelImage.fillAmount = opacity;
+            }
+            else
+            {
+                loadingPanelImage.fillAmount = 1f;
+            }
+
             // Use the stored base color and multiply its alpha by opacity for smooth fade
             // This preserves whatever color and base opacity you set in Inspector
             Color currentColor = baseColor;
             currentColor.a = baseColor.a * opacity;
             loadingPanelImage.color = currentColor;
+        }
+
+        private void ApplyVisualSetup(LoadingAnimationMode mode, bool duringAnimation)
+        {
+            if (loadingPanelImage == null)
+            {
+                return;
+            }
+
+            switch (mode)
+            {
+                case LoadingAnimationMode.Simple:
+                    loadingPanelImage.type = Image.Type.Simple;
+                    loadingPanelImage.fillAmount = 1f;
+                    break;
+                case LoadingAnimationMode.Pulse:
+                default:
+                    loadingPanelImage.type = Image.Type.Filled;
+                    loadingPanelImage.fillMethod = Image.FillMethod.Radial90;
+                    loadingPanelImage.fillClockwise = cachedFillClockwise;
+                    loadingPanelImage.fillOrigin = cachedFillOrigin;
+                    break;
+            }
+
+            if (!duringAnimation)
+            {
+                currentAnimationMode = mode;
+            }
         }
         
         #endregion

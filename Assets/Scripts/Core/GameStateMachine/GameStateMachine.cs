@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using CricketGame.UI;
 
 namespace CricketGame.Core
 {
@@ -16,6 +17,7 @@ namespace CricketGame.Core
 		[Header("Transition Settings")]
 		[SerializeField] private bool useLoadingPanelTransitions = true;
 		[SerializeField] private float transitionDuration = 0.4f;
+		[SerializeField] private LoadingPanelManager.LoadingAnimationMode loadingAnimationMode = LoadingPanelManager.LoadingAnimationMode.Pulse;
 
 		private IGameState currentState;
 		private Dictionary<string, IGameState> registeredStates = new Dictionary<string, IGameState>();
@@ -131,6 +133,11 @@ namespace CricketGame.Core
 				
 				// CRITICAL: Stop all coroutines that might be stuck
 				StopAllCoroutines();
+				
+				if (useLoadingPanelTransitions)
+				{
+					LoadingPanelManager.StopAnimation();
+				}
 			}
 		}
 
@@ -144,7 +151,7 @@ namespace CricketGame.Core
 				// Show loading panel if enabled
 				if (useLoadingPanelTransitions)
 				{
-					CricketGame.UI.LoadingPanelManager.StartPulse();
+					LoadingPanelManager.PlayAnimation(loadingAnimationMode);
 					yield return new WaitForSeconds(transitionDuration);
 				}
 
@@ -160,6 +167,10 @@ namespace CricketGame.Core
 			}
 			finally
 			{
+				if (useLoadingPanelTransitions)
+				{
+					LoadingPanelManager.StopAnimation();
+				}
 				// CRITICAL: Always reset transition flag, even if something goes wrong
 				isTransitioning = false;
 				transitionStartTime = 0f;

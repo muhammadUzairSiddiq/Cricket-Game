@@ -251,6 +251,33 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  simpleFadeDuration: 0.25
+  simpleHoldDuration: 0.2
+  simpleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  defaultAnimationMode: 0
   autoFindLoadingPanel: 1
   ensureFullScreenCoverage: 1
   showDebugLogs: 0
@@ -8833,6 +8860,7 @@ MonoBehaviour:
   showDebugLogs: 1
   useLoadingPanelTransitions: 1
   transitionDuration: 0.4
+  loadingAnimationMode: 1
 --- !u!4 &1862993260
 Transform:
   m_ObjectHideFlags: 0
