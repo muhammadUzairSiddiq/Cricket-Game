@@ -6015,7 +6015,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 326256865}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -7872,6 +7872,84 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1823201958}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1500129827
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1500129829}
+  - component: {fileID: 1500129828}
+  m_Layer: 0
+  m_Name: 'Graphics '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1500129828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500129827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64c59d71734bc44459e12eb6eda50ffd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  globalVolume: {fileID: 0}
+  applyPresetOnStart: 1
+  presetFog:
+    enableFog: 0
+    mode: 3
+    color: {r: 0.85, g: 0.9, b: 0.95, a: 1}
+    density: 0.015
+    startDistance: 10
+    endDistance: 120
+  presetPostFX:
+    applyBloom: 0
+    bloomIntensity: 1.2
+    bloomThreshold: 1
+    applyColorAdjustments: 0
+    colorFilter: {r: 1, g: 1, b: 1, a: 1}
+    postExposure: 0
+    saturation: 0
+    contrast: 0
+    applyDepthOfField: 0
+    focusDistance: 12
+    aperture: 5.6
+    focalLength: 50
+    applyVignette: 0
+    vignetteIntensity: 0.3
+    vignetteSmoothness: 0.8
+    vignetteColor: {r: 0, g: 0, b: 0, a: 1}
+  presetLighting:
+    overrideAmbientLight: 0
+    ambientMode: 0
+    ambientLight: {r: 1, g: 1, b: 1, a: 1}
+    ambientIntensity: 1
+    overrideSkyboxMaterial: 0
+    skyboxMaterial: {fileID: 0}
+  presetQualityLevel: -1
+--- !u!4 &1500129829
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500129827}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.8529, y: 1.2497, z: 33.949997}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1516122822
 GameObject:
@@ -9862,3 +9940,4 @@ SceneRoots:
   - {fileID: 271994194}
   - {fileID: 1285660831}
   - {fileID: 1862993260}
+  - {fileID: 1500129829}
