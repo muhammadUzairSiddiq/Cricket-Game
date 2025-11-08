@@ -39,6 +39,13 @@ namespace CricketGame
 		[SerializeField, Tooltip("Seconds to hard-lock to the bowler before blending to smoothing")] private float initialHardLockDuration = 0.25f;
 		[SerializeField, Tooltip("Seconds to blend from hard-lock to full smoothing after the lock period")] private float smoothBlendDuration = 0.3f;
 
+		[Header("Trigger Zoom")]
+		[SerializeField, Tooltip("Enable zoom when the bowler hits the trigger box (camera stop event)")] private bool enableTriggerZoom = true;
+		[SerializeField, Tooltip("Field of view to zoom into during the trigger event")] private float triggerZoomFieldOfView = 16f;
+		[SerializeField, Tooltip("Seconds to zoom from the original FOV into the trigger FOV")] private float triggerZoomInDuration = 0.6f;
+		[SerializeField, Tooltip("Seconds to hold at the trigger FOV before zooming back out")] private float triggerZoomHoldDuration = 2f;
+		[SerializeField, Tooltip("Seconds to zoom back from the trigger FOV to the original FOV")] private float triggerZoomOutDuration = 0.6f;
+
 		[Header("Performance")] 
 		[SerializeField, Tooltip("Skip rotation smoothing to reduce math cost")] private bool simpleLook = false;
 		[SerializeField, Tooltip("Disable updates if target becomes too far (saves CPU). 0 = disabled")] private float maxFollowDistance = 0f;
@@ -49,12 +56,30 @@ namespace CricketGame
 		private float followEnableTime;
 		private float nextRescanTime;
 		private bool followPaused;
+		private Camera cameraComponent;
+		private float originalFieldOfView;
+		private bool hasOriginalFieldOfView;
+		private Coroutine triggerZoomCoroutine;
+
+		private void Awake()
+		{
+			cachedTransform = transform;
+			cameraComponent = GetComponent<Camera>();
+			if (cameraComponent != null)
+			{
+				originalFieldOfView = cameraComponent.fieldOfView;
+				hasOriginalFieldOfView = true;
+			}
+		}
 
 		private void OnEnable()
 		{
 			BowlerEvents.OnBowlerReady += HandleBowlerReady;
 			BowlerEvents.OnBowlerStopFollow += HandleStopFollowing;
-			cachedTransform = transform; // cache for speed
+			if (cachedTransform == null)
+			{
+				cachedTransform = transform; // cache for speed
+			}
 			SceneManager.activeSceneChanged += HandleSceneChanged;
 		}
 
@@ -63,6 +88,12 @@ namespace CricketGame
 			BowlerEvents.OnBowlerReady -= HandleBowlerReady;
 			BowlerEvents.OnBowlerStopFollow -= HandleStopFollowing;
 			SceneManager.activeSceneChanged -= HandleSceneChanged;
+			if (triggerZoomCoroutine != null)
+			{
+				StopCoroutine(triggerZoomCoroutine);
+				triggerZoomCoroutine = null;
+			}
+			RestoreOriginalFieldOfView();
 		}
 
 		private void Start()
@@ -190,6 +221,7 @@ namespace CricketGame
 
 		private void HandleStopFollowing()
 		{
+			StartTriggerZoom();
 			PauseFollowing();
 		}
 
@@ -232,6 +264,12 @@ namespace CricketGame
 		{
 			followPaused = false;
 			followEnableTime = Time.time; // reapply initial lock/blend on resume
+			if (triggerZoomCoroutine != null)
+			{
+				StopCoroutine(triggerZoomCoroutine);
+				triggerZoomCoroutine = null;
+			}
+			RestoreOriginalFieldOfView();
 		}
 
 		/// <summary>
@@ -307,6 +345,79 @@ namespace CricketGame
 				cachedTransform.position = homePosition;
 				cachedTransform.rotation = homeRotation;
 				velocityRef = Vector3.zero; // Reset damping
+			}
+			RestoreOriginalFieldOfView();
+		}
+
+		private void StartTriggerZoom()
+		{
+			if (!enableTriggerZoom || cameraComponent == null || !hasOriginalFieldOfView)
+			{
+				return;
+			}
+
+			if (Mathf.Approximately(triggerZoomFieldOfView, originalFieldOfView))
+			{
+				return;
+			}
+
+			if (triggerZoomCoroutine != null)
+			{
+				StopCoroutine(triggerZoomCoroutine);
+			}
+
+			triggerZoomCoroutine = StartCoroutine(TriggerZoomRoutine());
+		}
+
+		private System.Collections.IEnumerator TriggerZoomRoutine()
+		{
+			float startFov = cameraComponent.fieldOfView;
+			float targetFov = Mathf.Clamp(triggerZoomFieldOfView, 5f, 179f);
+			float elapsed = 0f;
+
+			if (triggerZoomInDuration > 0.0001f)
+			{
+				while (elapsed < triggerZoomInDuration)
+				{
+					elapsed += Time.deltaTime;
+					float t = Mathf.Clamp01(elapsed / triggerZoomInDuration);
+					cameraComponent.fieldOfView = Mathf.Lerp(startFov, targetFov, t);
+					yield return null;
+				}
+			}
+			else
+			{
+				cameraComponent.fieldOfView = targetFov;
+			}
+
+			if (triggerZoomHoldDuration > 0f)
+			{
+				yield return new WaitForSeconds(triggerZoomHoldDuration);
+			}
+
+			elapsed = 0f;
+			float currentFov = cameraComponent.fieldOfView;
+
+			if (triggerZoomOutDuration > 0.0001f)
+			{
+				while (elapsed < triggerZoomOutDuration)
+				{
+					elapsed += Time.deltaTime;
+					float t = Mathf.Clamp01(elapsed / triggerZoomOutDuration);
+					cameraComponent.fieldOfView = Mathf.Lerp(currentFov, originalFieldOfView, t);
+					yield return null;
+				}
+			}
+
+			RestoreOriginalFieldOfView();
+			triggerZoomCoroutine = null;
+		}
+
+		private void RestoreOriginalFieldOfView()
+		{
+			if (cameraComponent != null && hasOriginalFieldOfView)
+			{
+				cameraComponent.fieldOfView = originalFieldOfView;
 			}
 		}
 	}

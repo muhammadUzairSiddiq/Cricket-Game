@@ -29,7 +29,11 @@ namespace CricketGame.Core
             if (!enableTransitionOnNextBall) return;
             if (stateMachine == null) return;
             if (showDebugLogs) Debug.Log("🎯 NextBallStateRouter: Switching to PitchCam state (NextBall)");
-            stateMachine.TransitionToState(pitchCamStateName);
+            if (stateMachine.IsTransitioning())
+            {
+                stateMachine.ForceResetTransition();
+            }
+            stateMachine.TransitionToStateImmediate(pitchCamStateName);
 		}
 	}
 }

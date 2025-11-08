@@ -25,6 +25,12 @@ namespace CricketGame.GameplayStates
 		{
 			stateMachine = GetComponent<GameStateMachine>();
 			elapsedTime = 0f;
+			
+			if (stateMachine != null && stateMachine.IsTransitioning())
+			{
+				stateMachine.ForceResetTransition();
+			}
+			StopAllCoroutines();
 
 			// Disable other cameras first to ensure only Intro cam is active
 			if (pitchCam == null)
@@ -69,12 +75,21 @@ namespace CricketGame.GameplayStates
 			// Transition to PitchCam after duration
 			if (elapsedTime >= introDuration)
 			{
-				stateMachine.TransitionToState("PitchCam");
+				if (stateMachine != null)
+				{
+					stateMachine.TransitionToStateImmediate("PitchCam");
+				}
 			}
 		}
 
 	public void OnExit()
 	{
+		StopAllCoroutines();
+		if (stateMachine != null && stateMachine.IsTransitioning())
+		{
+			stateMachine.ForceResetTransition();
+		}
+
 		// Deactivate intro camera
 		if (introCam != null)
 		{

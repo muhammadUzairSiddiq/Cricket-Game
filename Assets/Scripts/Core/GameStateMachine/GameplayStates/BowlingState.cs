@@ -18,8 +18,12 @@ namespace CricketGame.GameplayStates
 		[SerializeField] private float postBowlReturnDelay = 3f;
 		[Tooltip("Use loading panel pulse while returning bowler to spawn")] 
 		[SerializeField] private bool useLoadingPulseOnReturn = true;
+		[Tooltip("Failsafe: If no stop event is received within this time, force transition to PitchCam.")]
+		[SerializeField] private float fallbackTransitionDelay = 8f;
 
 		private GameStateMachine stateMachine;
+		private float elapsedInState;
+		private bool hasTransitioned;
 
 		public string StateName => "Bowling";
 
@@ -33,6 +37,8 @@ namespace CricketGame.GameplayStates
 				StopCoroutine(_postStopCoroutine);
 				_postStopCoroutine = null;
 			}
+			elapsedInState = 0f;
+			hasTransitioned = false;
 
 			// Camera already active from CameraFollow state; no toggling needed
 			
@@ -58,9 +64,32 @@ namespace CricketGame.GameplayStates
 
 		public void OnUpdate()
 		{
-			// Bowling happens via animation events
-			// State can transition to next state when ball is complete
-			// For now, stay in this state until manual transition
+			elapsedInState += Time.deltaTime;
+			if (!hasTransitioned && elapsedInState >= fallbackTransitionDelay)
+			{
+				Debug.LogWarning("🎯 BowlingState: Fallback transition triggered (no stop event received)");
+
+				if (useLoadingPulseOnReturn)
+				{
+					CricketGame.UI.LoadingPanelManager.StartPulse();
+				}
+
+				if (bowlingController != null)
+				{
+					bowlingController.ResetBowlerToSpawn();
+				}
+				else
+				{
+					Debug.LogWarning("🎯 BowlingState: No BowlingController assigned for fallback reset");
+				}
+
+				if (bowlerFollowCamera != null)
+				{
+					bowlerFollowCamera.ResetToHome();
+				}
+
+				ForceTransitionToPitchCam();
+			}
 		}
 
 		public void OnExit()
@@ -125,10 +154,7 @@ namespace CricketGame.GameplayStates
 			{
 				bowlerFollowCamera.ResetToHome();
 			}
-			if (stateMachine != null && !stateMachine.IsTransitioning())
-			{
-				stateMachine.TransitionToStateImmediate("PitchCam");
-			}
+			ForceTransitionToPitchCam();
 			_postStopCoroutine = null;
 		}
 
@@ -148,8 +174,30 @@ namespace CricketGame.GameplayStates
 				bowlingController.InstantiateSelectedBowler();
 			}
 			// Switch directly to PitchCam (we already pulsed)
+			ForceTransitionToPitchCam();
+		}
+
+		private void ForceTransitionToPitchCam()
+		{
+			if (hasTransitioned)
+			{
+				return;
+			}
+
+			hasTransitioned = true;
+			
+			if (bowlerFollowCamera != null)
+			{
+				bowlerFollowCamera.ResumeFollowing();
+			}
+			CricketGame.BowlerEvents.NotifyNextBallReady();
+			
 			if (stateMachine != null)
 			{
+				if (stateMachine.IsTransitioning())
+				{
+					stateMachine.ForceResetTransition();
+				}
 				stateMachine.TransitionToStateImmediate("PitchCam");
 			}
 		}

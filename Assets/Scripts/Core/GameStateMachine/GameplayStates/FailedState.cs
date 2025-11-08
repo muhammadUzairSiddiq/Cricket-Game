@@ -24,6 +24,12 @@ namespace CricketGame.GameplayStates
 		{
 			stateMachine = GetComponent<GameStateMachine>();
 			elapsedTime = 0f;
+			
+			if (stateMachine != null && stateMachine.IsTransitioning())
+			{
+				stateMachine.ForceResetTransition();
+			}
+			StopAllCoroutines();
 
 			// Show timeout message
 			if (timeoutText != null)
@@ -40,12 +46,21 @@ namespace CricketGame.GameplayStates
 			// Return to PitchCam after displayDuration or when user presses P
 			if (elapsedTime >= displayDuration || Input.GetKeyDown(KeyCode.P))
 			{
-				stateMachine.TransitionToState("PitchCam");
+				if (stateMachine != null)
+				{
+					stateMachine.TransitionToStateImmediate("PitchCam");
+				}
 			}
 		}
 
 		public void OnExit()
 		{
+			StopAllCoroutines();
+			if (stateMachine != null && stateMachine.IsTransitioning())
+			{
+				stateMachine.ForceResetTransition();
+			}
+
 			// Hide timeout message
 			if (timeoutText != null)
 			{

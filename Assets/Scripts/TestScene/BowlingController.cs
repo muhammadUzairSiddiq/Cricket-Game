@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using CricketBowlingAnimations;
+using System;
 
 namespace CricketGame
 {
@@ -104,6 +106,10 @@ namespace CricketGame
         private Vector3 velocityAcceleration;
         private float lastUpdateTime;
         
+        private readonly Dictionary<int, InstanceSpawnSnapshot> bowlerInstanceSnapshots = new Dictionary<int, InstanceSpawnSnapshot>();
+        private readonly Dictionary<string, bool> autoSpawnToggle = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        private Transform spawnPointsRoot;
+        
         void Awake()
         {
             // Get PlayerAnimationController from selected bowler
@@ -188,6 +194,13 @@ namespace CricketGame
                 currentBowlerInstance = Instantiate(selectedBowlerPrefab, spawnPos, spawnRot);
                 currentBowlerInstance.name = $"{selectedBowlerPrefab.name}(Clone)";
                 
+                Transform initialSpawn = GetMappingSpawnTransform(currentBowlerInstance) ?? GetAutoResolvedSpawn(currentBowlerInstance, false);
+                if (initialSpawn == null)
+                {
+                    initialSpawn = CreateRuntimeSnapshotTransform(currentBowlerInstance.name, spawnPos, spawnRot);
+                }
+                CacheInstanceSnapshot(currentBowlerInstance, spawnPos, spawnRot, initialSpawn);
+                
                 PlayerAnimationController instantiatedController = currentBowlerInstance.GetComponent<PlayerAnimationController>();
                 if (instantiatedController != null)
                 {
@@ -219,6 +232,11 @@ namespace CricketGame
             
             // Now refresh the spawn point reference
             controller.ForceRefreshSpawnPointReference();
+            
+            CacheInstanceSnapshot(controller.gameObject,
+                                   controller.transform.position,
+                                   controller.transform.rotation,
+                                   GetMappingSpawnTransform(controller.gameObject) ?? GetAutoResolvedSpawn(controller.gameObject, false));
             
             Debug.Log("🎯 Spawn point refreshed after bowler instantiation");
         }
@@ -1972,6 +1990,7 @@ namespace CricketGame
 
             if (newSpawnPoint != null)
             {
+                Debug.Log($"🎯 Switching spawn point for {currentBowlerInstance.name} to {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {newSpawnPoint.position}");
                 // Disable any movement systems that might interfere
                 Rigidbody rb = currentBowlerInstance.GetComponent<Rigidbody>();
                 if (rb != null)
@@ -2016,6 +2035,7 @@ namespace CricketGame
                 // Update the spawn point references
                 spawnPoint = newSpawnPoint;
                 ballSpawnPoint = newSpawnPoint;
+                CacheInstanceSnapshot(currentBowlerInstance, newSpawnPoint.position, newSpawnPoint.rotation, newSpawnPoint);
 
                 // Set delivery system to bowler's default delivery when switching spawn positions
                 BowlerProfile profile = currentBowlerInstance.GetComponent<BowlerProfile>();
@@ -2092,9 +2112,32 @@ namespace CricketGame
             if (currentBowlerInstance == null) return null;
 
             BowlerSpawnMapping mapping = GetSpawnMappingForBowler(currentBowlerInstance);
-            if (mapping == null) return null;
+            if (mapping != null)
+            {
+                Transform mappingTransform = mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+                if (mappingTransform != null)
+                {
+                    return mappingTransform;
+                }
+            }
 
-            return mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+            Transform snapshotTransform = GetInstanceSpawnTransform(currentBowlerInstance);
+            if (snapshotTransform != null)
+            {
+                return snapshotTransform;
+            }
+
+            if (spawnPoint != null)
+            {
+                return spawnPoint;
+            }
+
+            if (ballSpawnPoint != null)
+            {
+                return ballSpawnPoint;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -3457,6 +3500,233 @@ namespace CricketGame
             }
             Debug.Log("🏏 ================================");
         }
+
+        private Transform GetFallbackSpawnTransform(PlayerAnimationController controller)
+        {
+            if (spawnPoint != null)
+            {
+                return spawnPoint;
+            }
+
+            if (ballSpawnPoint != null)
+            {
+                return ballSpawnPoint;
+            }
+
+            if (controller != null)
+            {
+                Transform animSpawn = controller.GetAnimationSpawnPoint();
+                if (animSpawn != null)
+                {
+                    return animSpawn;
+                }
+            }
+
+            return GetInstanceSpawnTransform(currentBowlerInstance);
+        }
+
+        private Transform GetMappingSpawnTransform(GameObject bowlerInstance)
+        {
+            if (bowlerInstance == null)
+            {
+                return null;
+            }
+
+            BowlerSpawnMapping mapping = GetSpawnMappingForBowler(bowlerInstance);
+            if (mapping == null)
+            {
+                return null;
+            }
+
+            return mapping.useSpawn01 ? mapping.spawn01 : mapping.spawn02;
+        }
+
+        private void CacheInstanceSnapshot(GameObject bowlerInstance, Vector3 position, Quaternion rotation, Transform spawnTransform)
+        {
+            if (bowlerInstance == null)
+            {
+                return;
+            }
+
+            int instanceId = bowlerInstance.GetInstanceID();
+            if (!bowlerInstanceSnapshots.TryGetValue(instanceId, out InstanceSpawnSnapshot snapshot))
+            {
+                snapshot = new InstanceSpawnSnapshot();
+                bowlerInstanceSnapshots[instanceId] = snapshot;
+            }
+
+            snapshot.WorldPosition = position;
+            snapshot.WorldRotation = rotation;
+            snapshot.SpawnTransform = spawnTransform;
+
+            string prefabName = bowlerInstance.name.Replace("(Clone)", string.Empty);
+            if (!autoSpawnToggle.ContainsKey(prefabName))
+            {
+                autoSpawnToggle[prefabName] = false;
+            }
+        }
+
+        private Transform GetInstanceSpawnTransform(GameObject bowlerInstance)
+        {
+            if (bowlerInstance == null)
+            {
+                return null;
+            }
+
+            if (bowlerInstanceSnapshots.TryGetValue(bowlerInstance.GetInstanceID(), out InstanceSpawnSnapshot snapshot))
+            {
+                if (snapshot.SpawnTransform == null)
+                {
+                    snapshot.SpawnTransform = CreateRuntimeSnapshotTransform(bowlerInstance.name, snapshot.WorldPosition, snapshot.WorldRotation);
+                }
+                return snapshot.SpawnTransform;
+            }
+
+            return null;
+        }
+
+        private Transform CreateRuntimeSnapshotTransform(string baseName, Vector3 position, Quaternion rotation)
+        {
+            GameObject temp = new GameObject(string.IsNullOrEmpty(baseName) ? "BowlerSpawn" : $"{baseName}_Spawn");
+            temp.transform.SetParent(transform);
+            temp.transform.position = position;
+            temp.transform.rotation = rotation;
+            return temp.transform;
+        }
+
+        private void RemoveInstanceSnapshot(GameObject bowlerInstance)
+        {
+            if (bowlerInstance == null)
+            {
+                return;
+            }
+
+            bowlerInstanceSnapshots.Remove(bowlerInstance.GetInstanceID());
+        }
+
+        private Transform GetAutoResolvedSpawn(GameObject bowlerInstance, bool useAlternative)
+        {
+            string prefabName = bowlerInstance != null ? bowlerInstance.name.Replace("(Clone)", string.Empty) : string.Empty;
+            if (string.IsNullOrEmpty(prefabName))
+            {
+                return null;
+            }
+
+            if (spawnPointsRoot == null)
+            {
+                GameObject rootGO = GameObject.Find("Spawn Points");
+                spawnPointsRoot = rootGO != null ? rootGO.transform : null;
+            }
+
+            if (spawnPointsRoot == null)
+            {
+                return null;
+            }
+
+            string groupName = ResolveSpawnGroupName(prefabName);
+            if (string.IsNullOrEmpty(groupName))
+            {
+                return null;
+            }
+
+            Transform groupTransform = FindChildByName(spawnPointsRoot, groupName);
+            if (groupTransform == null)
+            {
+                return null;
+            }
+
+            string spawnNode = useAlternative ? "Spawn 02" : "Spawn 01";
+            Transform spawnTransform = FindChildByName(groupTransform, spawnNode);
+            if (spawnTransform == null && useAlternative)
+            {
+                spawnTransform = FindChildByName(groupTransform, "Spawn 01");
+            }
+            return spawnTransform;
+        }
+
+        private bool ToggleAutoSpawn(GameObject bowlerInstance, BowlerSpawnMapping mapping)
+        {
+            if (bowlerInstance == null)
+            {
+                return false;
+            }
+
+            if (mapping != null)
+            {
+                return mapping.useSpawn01;
+            }
+
+            string prefabName = bowlerInstance.name.Replace("(Clone)", string.Empty);
+            if (!autoSpawnToggle.TryGetValue(prefabName, out bool toggle))
+            {
+                toggle = false;
+            }
+
+            toggle = !toggle;
+            autoSpawnToggle[prefabName] = toggle;
+            return toggle;
+        }
+
+        private string ResolveSpawnGroupName(string prefabName)
+        {
+            string lower = prefabName.ToLowerInvariant();
+            if (lower.Contains("fast") || lower.Contains("seam"))
+            {
+                return "FAST BOWLER SPAWN POINTS";
+            }
+            if (lower.Contains("leg") || lower.Contains("ortho"))
+            {
+                return "LEG SPIN & ORTHO BOWLER SPAWN";
+            }
+            if (lower.Contains("off") || lower.Contains("wrist"))
+            {
+                return "OFF SPIN & WRIST BOWLER SPAWN";
+            }
+            return null;
+        }
+
+        private static Transform FindChildByName(Transform parent, string childName)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (string.Equals(child.name, childName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return child;
+                }
+            }
+
+            return null;
+        }
+
+        private void ApplyBowlerTransform(Vector3 position, Quaternion rotation)
+        {
+            currentBowlerInstance.SetActive(false);
+            currentBowlerInstance.transform.position = position;
+            currentBowlerInstance.transform.rotation = rotation;
+            currentBowlerInstance.SetActive(true);
+        }
+
+        private bool GetAutoSpawnState(GameObject bowlerInstance)
+        {
+            if (bowlerInstance == null)
+            {
+                return false;
+            }
+
+            string prefabName = bowlerInstance.name.Replace("(Clone)", string.Empty);
+            if (autoSpawnToggle.TryGetValue(prefabName, out bool state))
+            {
+                return state;
+            }
+
+            return false;
+        }
     }
     
     /// <summary>
@@ -3488,4 +3758,28 @@ namespace CricketGame
         public bool useSpawn01 = true; // Which spawn position is currently active
     }
     
+    struct VolumeFogState
+    {
+        public readonly bool Enabled;
+        public readonly float MeanFreePath;
+        public readonly float BaseHeight;
+        public readonly float MaximumHeight;
+        public readonly Color Albedo;
+
+        public VolumeFogState(bool enabled, float meanFreePath, float baseHeight, float maximumHeight, Color albedo)
+        {
+            Enabled = enabled;
+            MeanFreePath = meanFreePath;
+            BaseHeight = baseHeight;
+            MaximumHeight = maximumHeight;
+            Albedo = albedo;
+        }
+    }
+
+    class InstanceSpawnSnapshot
+    {
+        public Vector3 WorldPosition;
+        public Quaternion WorldRotation;
+        public Transform SpawnTransform;
+    }
 }

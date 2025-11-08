@@ -171,7 +171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
@@ -6015,7 +6015,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 326256865}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -6070,7 +6070,7 @@ Transform:
   m_GameObject: {fileID: 326256865}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0.297}
   m_LocalScale: {x: 4.05226, y: 1.1441567, z: 0.1084}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6823,7 +6823,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b998f7bf62aab0f46aa4841f6951a895, type: 2}
+  - {fileID: 2100000, guid: da8b9fc655697c84fad31d295204a650, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7355,7 +7355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d520999e2b96148baea7c5dd66d0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentDeliveryType: 3
+  currentDeliveryType: 6
   enableDeliverySystem: 1
   flatDelivery: {fileID: 1212878762}
   seamInDelivery: {fileID: 1212878761}
@@ -8284,7 +8284,7 @@ Transform:
   m_GameObject: {fileID: 1592783273}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.11290026, y: -0.64149994, z: 9.230003}
+  m_LocalPosition: {x: -0.11290026, y: -0.64149994, z: 5.697}
   m_LocalScale: {x: 1.1, y: 0.001, z: 1.1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8565,6 +8565,11 @@ MonoBehaviour:
   alignToLookAt: 0
   initialHardLockDuration: 0.25
   smoothBlendDuration: 0.3
+  enableTriggerZoom: 1
+  triggerZoomFieldOfView: 16
+  triggerZoomInDuration: 0.6
+  triggerZoomHoldDuration: 2
+  triggerZoomOutDuration: 0.6
   simpleLook: 0
   maxFollowDistance: 0
 --- !u!1 &1702820265
@@ -8758,8 +8763,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bowlingController: {fileID: 2114426370}
   bowlerFollowCamera: {fileID: 1642092966}
-  postBowlReturnDelay: 3
+  postBowlReturnDelay: 5
   useLoadingPulseOnReturn: 1
+  fallbackTransitionDelay: 8
 --- !u!114 &1862993254
 MonoBehaviour:
   m_ObjectHideFlags: 0
