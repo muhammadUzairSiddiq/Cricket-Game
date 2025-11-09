@@ -28,65 +28,46 @@ namespace CricketGame
         /// <summary>
         /// Connect delivery system to bowling controller
         /// </summary>
-        private void SetupDeliverySystem()
-        {
-            if (bowlingController != null && deliverySystem != null)
-            {
-                // This will be set via inspector, but we can verify the connection
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 SETUP: DeliverySystem connected to BowlingController");
-                    Debug.Log($"🎯 SETUP: Current delivery type: {deliverySystem.GetCurrentDeliveryType()}");
-                }
-            }
-            else
-            {
-                Debug.LogError("🎯 SETUP: Missing references! Please assign BowlingController and DeliverySystem in inspector.");
-            }
-        }
+		private void SetupDeliverySystem()
+		{
+			if (bowlingController == null || deliverySystem == null)
+			{
+				return;
+			}
+		}
         
         /// <summary>
         /// Setup UI buttons to switch delivery types
         /// </summary>
         private void SetupUIButtons()
         {
-            if (bowlingController == null)
-            {
-                Debug.LogError("🎯 SETUP: BowlingController not assigned!");
-                return;
-            }
+			if (bowlingController == null)
+			{
+				return;
+			}
             
             // Setup Flat Delivery Button
-            if (flatDeliveryButton != null)
-            {
-                flatDeliveryButton.onClick.AddListener(() => {
-                    bowlingController.SwitchToFlatDelivery();
-                    if (showDebugLogs) Debug.Log("🎯 SETUP: Flat delivery button clicked");
-                });
-            }
+			if (flatDeliveryButton != null)
+			{
+				flatDeliveryButton.onClick.AddListener(() => {
+					bowlingController.SwitchToFlatDelivery();
+				});
+			}
             
             // Setup Seam In Button
-            if (seamInButton != null)
-            {
-                seamInButton.onClick.AddListener(() => {
-                    bowlingController.SwitchToInSwingDelivery();
-                    if (showDebugLogs) Debug.Log("🎯 SETUP: Seam in button clicked");
-                });
-            }
-            
-            // Setup Seam Out Button
-            if (seamOutButton != null)
-            {
-                seamOutButton.onClick.AddListener(() => {
-                    bowlingController.SwitchToOutSwingDelivery();
-                    if (showDebugLogs) Debug.Log("🎯 SETUP: Seam out button clicked");
-                });
-            }
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 SETUP: UI buttons configured - Flat: {flatDeliveryButton != null}, Seam In: {seamInButton != null}, Seam Out: {seamOutButton != null}");
-            }
+			if (seamInButton != null)
+			{
+				seamInButton.onClick.AddListener(() => {
+					bowlingController.SwitchToInSwingDelivery();
+				});
+			}
+
+			if (seamOutButton != null)
+			{
+				seamOutButton.onClick.AddListener(() => {
+					bowlingController.SwitchToOutSwingDelivery();
+				});
+			}
         }
         
         /// <summary>
@@ -105,15 +86,10 @@ namespace CricketGame
         [ContextMenu("Test Speed Boost")]
         public void TestSpeedBoost()
         {
-            if (deliverySystem != null)
-            {
-                Debug.Log($"🎯 TEST: Current delivery type: {deliverySystem.GetCurrentDeliveryType()}");
-                Debug.Log($"🎯 TEST: Speed boost should work with this delivery type");
-            }
-            else
-            {
-                Debug.LogError("🎯 TEST: DeliverySystem not assigned!");
-            }
+			if (deliverySystem == null)
+			{
+				return;
+			}
         }
     }
 }

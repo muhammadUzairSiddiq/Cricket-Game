@@ -24,7 +24,6 @@ namespace CricketGame.GameplayStates
 			// CRITICAL: Force reset transition flag if stuck (safety mechanism)
 			if (stateMachine != null && stateMachine.IsTransitioning())
 			{
-				Debug.LogWarning("📹 CameraFollowState: Entering with stuck transition flag, forcing reset");
 				stateMachine.ForceResetTransition();
 			}
 			

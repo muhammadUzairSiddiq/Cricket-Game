@@ -1,17 +1,18 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 
 namespace TMPro.Examples
 {
-
+#if UNITY_EDITOR
     public class TMP_TextInfoDebugTool : MonoBehaviour
     {
         // Since this script is used for debugging, we exclude it from builds.
         // TODO: Rework this script to make it into an editor utility.
-        #if UNITY_EDITOR
         public bool ShowCharacters;
         public bool ShowWords;
         public bool ShowLinks;
@@ -301,7 +302,6 @@ namespace TMPro.Examples
                         bottomLeft = new Vector3(currentCharInfo.bottomLeft.x, currentCharInfo.descender, 0);
                         topLeft = new Vector3(currentCharInfo.bottomLeft.x, currentCharInfo.ascender, 0);
 
-                        //Debug.Log("Start Word Region at [" + currentCharInfo.character + "]");
 
                         // If Word is one character
                         if (wInfo.characterCount == 1)
@@ -316,7 +316,6 @@ namespace TMPro.Examples
                             // Draw Region
                             DrawRectangle(bottomLeft, topLeft, topRight, bottomRight, wordColor);
 
-                            //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                         }
                     }
 
@@ -333,7 +332,6 @@ namespace TMPro.Examples
                         // Draw Region
                         DrawRectangle(bottomLeft, topLeft, topRight, bottomRight, wordColor);
 
-                        //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                     }
                     // If Word is split on more than one line.
                     else if (isBeginRegion && currentLine != m_TextInfo.characterInfo[characterIndex + 1].lineNumber)
@@ -347,14 +345,12 @@ namespace TMPro.Examples
 
                         // Draw Region
                         DrawRectangle(bottomLeft, topLeft, topRight, bottomRight, wordColor);
-                        //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                         maxAscender = -Mathf.Infinity;
                         minDescender = Mathf.Infinity;
 
                     }
                 }
 
-                //Debug.Log(wInfo.GetWord(m_TextMeshPro.textInfo.characterInfo));
             }
 
 
@@ -407,7 +403,6 @@ namespace TMPro.Examples
                         bottomLeft = new Vector3(currentCharInfo.bottomLeft.x, currentCharInfo.descender, 0);
                         topLeft = new Vector3(currentCharInfo.bottomLeft.x, currentCharInfo.ascender, 0);
 
-                        //Debug.Log("Start Word Region at [" + currentCharInfo.character + "]");
 
                         // If Link is one character
                         if (linkInfo.linkTextLength == 1)
@@ -422,7 +417,6 @@ namespace TMPro.Examples
                             // Draw Region
                             DrawRectangle(bottomLeft, topLeft, topRight, bottomRight, linkColor);
 
-                            //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                         }
                     }
 
@@ -439,7 +433,6 @@ namespace TMPro.Examples
                         // Draw Region
                         DrawRectangle(bottomLeft, topLeft, topRight, bottomRight, linkColor);
 
-                        //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                     }
                     // If Link is split on more than one line.
                     else if (isBeginRegion && currentLine != textInfo.characterInfo[characterIndex + 1].lineNumber)
@@ -456,11 +449,9 @@ namespace TMPro.Examples
 
                         maxAscender = -Mathf.Infinity;
                         minDescender = Mathf.Infinity;
-                        //Debug.Log("End Word Region at [" + currentCharInfo.character + "]");
                     }
                 }
 
-                //Debug.Log(wInfo.GetWord(m_TextMeshPro.textInfo.characterInfo));
             }
         }
 
@@ -635,18 +626,18 @@ namespace TMPro.Examples
 
 
         // Draw Rectangles
-        void DrawDottedRectangle(Vector3 bl, Vector3 tl, Vector3 tr, Vector3 br, Color color)
-        {
-            var cam = Camera.current;
-            float dotSpacing = (cam.WorldToScreenPoint(br).x - cam.WorldToScreenPoint(bl).x) / 75f;
-            UnityEditor.Handles.color = color;
+		void DrawDottedRectangle(Vector3 bl, Vector3 tl, Vector3 tr, Vector3 br, Color color)
+		{
+			var cam = Camera.current;
+			float dotSpacing = (cam.WorldToScreenPoint(br).x - cam.WorldToScreenPoint(bl).x) / 75f;
+			UnityEditor.Handles.color = color;
 
-            UnityEditor.Handles.DrawDottedLine(bl, tl, dotSpacing);
-            UnityEditor.Handles.DrawDottedLine(tl, tr, dotSpacing);
-            UnityEditor.Handles.DrawDottedLine(tr, br, dotSpacing);
-            UnityEditor.Handles.DrawDottedLine(br, bl, dotSpacing);
-        }
-        #endif
+			UnityEditor.Handles.DrawDottedLine(bl, tl, dotSpacing);
+			UnityEditor.Handles.DrawDottedLine(tl, tr, dotSpacing);
+			UnityEditor.Handles.DrawDottedLine(tr, br, dotSpacing);
+			UnityEditor.Handles.DrawDottedLine(br, bl, dotSpacing);
+		}
     }
+#endif
 }
 

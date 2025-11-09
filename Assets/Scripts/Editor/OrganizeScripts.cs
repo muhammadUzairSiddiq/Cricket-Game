@@ -24,7 +24,6 @@ namespace CricketGame.EditorTools
 			var testSceneGuids = CollectScriptGuidsFromScene(TestScenePath);
 			if (testSceneGuids.Count == 0)
 			{
-				Debug.LogWarning($"No script GUIDs found in scene: {TestScenePath}. Is the scene path correct?");
 				return;
 			}
 
@@ -34,8 +33,6 @@ namespace CricketGame.EditorTools
 				.Where(p => !string.IsNullOrEmpty(p) && p.EndsWith(".cs") && p.StartsWith(ScriptsRoot))
 				.Distinct()
 				.ToList();
-
-			Debug.Log($"Found {testSceneScriptPaths.Count} scripts used by {TestScenePath}");
 
 			// Move those to TestScene folder (preserves .meta GUIDs)
 			foreach (var scriptPath in testSceneScriptPaths)
@@ -63,7 +60,6 @@ namespace CricketGame.EditorTools
 			}
 
 			AssetDatabase.Refresh();
-			Debug.Log("✅ Script organization complete. Test scene scripts moved to 'Scripts/TestScene'. Others organized into 'Core' and 'Other'.");
 		}
 
 		[MenuItem("Tools/Cricket Game/Rename In/Out Swing → Seam In/Out")]
@@ -86,11 +82,7 @@ namespace CricketGame.EditorTools
 				{
 					var newNameNoExt = Path.GetFileNameWithoutExtension(newFileName);
 					var error = AssetDatabase.RenameAsset(path, newNameNoExt);
-					if (!string.IsNullOrEmpty(error))
-					{
-						Debug.LogError($"Failed to rename {fileName} -> {newFileName}: {error}");
-					}
-					else
+					if (string.IsNullOrEmpty(error))
 					{
 						renamed++;
 					}
@@ -99,7 +91,6 @@ namespace CricketGame.EditorTools
 
 			AssetDatabase.SaveAssets();
 			AssetDatabase.Refresh();
-			Debug.Log($"✅ Renamed {renamed} scripts to Seam naming. This preserves GUIDs and existing references.");
 		}
 
 		[MenuItem("Tools/Cricket Game/Rename Bowling Script → BowlingController.cs")]
@@ -113,18 +104,13 @@ namespace CricketGame.EditorTools
 				var path = AssetDatabase.GUIDToAssetPath(guid);
 				if (!path.EndsWith("ContinuousBowlingTest_WithBounce.cs")) continue;
 				var error = AssetDatabase.RenameAsset(path, "BowlingController");
-				if (!string.IsNullOrEmpty(error))
-				{
-					Debug.LogError($"Failed to rename {path} -> BowlingController.cs: {error}");
-				}
-				else
+				if (string.IsNullOrEmpty(error))
 				{
 					count++;
 				}
 			}
 			AssetDatabase.SaveAssets();
 			AssetDatabase.Refresh();
-			Debug.Log($"✅ Renamed {count} file(s) to BowlingController.cs. Class is already BowlingController, so references stay intact.");
 		}
 
 		private static void EnsureFolders()
@@ -153,7 +139,7 @@ namespace CricketGame.EditorTools
 			var result = AssetDatabase.MoveAsset(assetPath, targetPath);
 			if (!string.IsNullOrEmpty(result))
 			{
-				Debug.LogError($"Failed to move {assetPath} -> {targetPath}: {result}");
+				// keep failures silent to avoid spam; return to avoid endless logging
 			}
 		}
 

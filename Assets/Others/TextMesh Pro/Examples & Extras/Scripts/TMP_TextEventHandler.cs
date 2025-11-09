@@ -217,16 +217,10 @@ namespace TMPro
         }
 
 
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-            //Debug.Log("OnPointerEnter()");
-        }
+		public void OnPointerEnter(PointerEventData eventData) {}
 
 
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            //Debug.Log("OnPointerExit()");
-        }
+		public void OnPointerExit(PointerEventData eventData) {}
 
 
         private void SendOnCharacterSelection(char character, int characterIndex)

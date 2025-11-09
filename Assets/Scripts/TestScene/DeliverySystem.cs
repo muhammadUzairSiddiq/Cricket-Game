@@ -52,10 +52,7 @@ namespace CricketGame
             if (offSpinDelivery == null)
                 offSpinDelivery = GetComponent<OffSpinDelivery>();
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 DELIVERY SYSTEM: Initialized with {currentDeliveryType} delivery");
-            }
+			
         }
         
         /// <summary>
@@ -121,10 +118,7 @@ namespace CricketGame
         {
             currentDeliveryType = newType;
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 DELIVERY SYSTEM: Switched to {currentDeliveryType} delivery");
-            }
+			
         }
         
         /// <summary>
@@ -142,10 +136,7 @@ namespace CricketGame
             if (inswingDelivery != null)
                 inswingDelivery.ResetDelivery();
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 DELIVERY SYSTEM: Reset for new ball ({currentDeliveryType})");
-            }
+			
         }
         
         /// <summary>
@@ -281,15 +272,10 @@ namespace CricketGame
         /// <summary>
         /// Enable/disable delivery system
         /// </summary>
-        public void SetDeliverySystemEnabled(bool enabled)
-        {
-            enableDeliverySystem = enabled;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 DELIVERY SYSTEM: {(enabled ? "Enabled" : "Disabled")}");
-            }
-        }
+		public void SetDeliverySystemEnabled(bool enabled)
+		{
+			enableDeliverySystem = enabled;
+		}
         
         /// <summary>
         /// Check if delivery system is enabled
@@ -301,12 +287,9 @@ namespace CricketGame
         
         // Context menu for testing
         [ContextMenu("Test Current Delivery")]
-        void TestCurrentDelivery()
-        {
-            Debug.Log($"🎯 DELIVERY TEST: {GetDeliveryInfo()}");
-            Debug.Log($"🎯 DELIVERY TEST: Type = {currentDeliveryType}");
-            Debug.Log($"🎯 DELIVERY TEST: Enabled = {enableDeliverySystem}");
-        }
+		void TestCurrentDelivery()
+		{
+		}
         
         [ContextMenu("Switch to Flat")]
         void SwitchToFlatContext()

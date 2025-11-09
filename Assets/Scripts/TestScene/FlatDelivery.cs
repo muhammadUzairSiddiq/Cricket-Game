@@ -25,13 +25,9 @@ namespace CricketGame
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = true;
         
-        void Start()
-        {
-            if (showDebugLogs)
-            {
-                Debug.Log("🎯 FlatDelivery: Ready for straight flat deliveries");
-            }
-        }
+		void Start()
+		{
+		}
         
         /// <summary>
         /// Calculate flat trajectory (straight line to target)
@@ -42,11 +38,6 @@ namespace CricketGame
                 return targetPos;
                 
             // Flat delivery goes straight to target - no modification needed
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 FlatDelivery: Straight trajectory to target at speed {ballSpeed:F1} m/s");
-            }
-            
             return targetPos;
         }
         
@@ -59,14 +50,9 @@ namespace CricketGame
                 return (targetPos - startPos).normalized;
                 
             // Flat delivery direction is straight line to target
-            Vector3 direction = (targetPos - startPos).normalized;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 FlatDelivery: Straight direction vector = {direction}");
-            }
-            
-            return direction;
+			Vector3 direction = (targetPos - startPos).normalized;
+			
+			return direction;
         }
         
         /// <summary>
@@ -74,10 +60,7 @@ namespace CricketGame
         /// </summary>
         public void ResetDelivery()
         {
-            if (showDebugLogs)
-            {
-                Debug.Log("🎯 FlatDelivery: Reset for new ball");
-            }
+			
         }
         
         /// <summary>
@@ -100,15 +83,6 @@ namespace CricketGame
             {
                 float t = (float)i / (straight.Length - 1);
                 straight[i] = Vector3.Lerp(startPos, targetPos, t);
-            }
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 FLAT PATH: Perfectly straight path - {straight.Length} points");
-                Debug.Log($"   Start: {startPos}");
-                Debug.Log($"   Target: {targetPos}");
-                Debug.Log($"   Direction: {(targetPos - startPos).normalized}");
-                Debug.Log($"   ✅ Pure straight line - 100% ACCURATE - works from ANY spawn point!");
             }
             
             return straight;

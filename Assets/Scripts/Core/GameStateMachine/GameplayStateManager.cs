@@ -36,10 +36,7 @@ namespace CricketGame.Core
 			}
 
 			if (stateMachine == null)
-			{
-				Debug.LogError("GameplayStateManager: GameStateMachine not found! Please assign it in Inspector.");
 				return;
-			}
 
 			// Auto-find states if not assigned
 			AutoFindStates();
@@ -89,28 +86,18 @@ namespace CricketGame.Core
 		{
 			if (introCamState != null)
 				stateMachine.RegisterState(introCamState);
-			else
-				Debug.LogWarning("GameplayStateManager: IntroCamState not found!");
 
 			if (pitchCamState != null)
 				stateMachine.RegisterState(pitchCamState);
-			else
-				Debug.LogWarning("GameplayStateManager: PitchCamState not found!");
 
 			if (failedState != null)
 				stateMachine.RegisterState(failedState);
-			else
-				Debug.LogWarning("GameplayStateManager: FailedState not found!");
 
 			if (cameraFollowState != null)
 				stateMachine.RegisterState(cameraFollowState);
-			else
-				Debug.LogWarning("GameplayStateManager: CameraFollowState not found!");
 
 			if (bowlingState != null)
 				stateMachine.RegisterState(bowlingState);
-			else
-				Debug.LogWarning("GameplayStateManager: BowlingState not found!");
 		}
 	}
 }

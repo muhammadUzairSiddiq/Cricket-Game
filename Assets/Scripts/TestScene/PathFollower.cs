@@ -35,31 +35,21 @@ namespace CricketGame
             if (disableObstacles)
             {
                 enableObstacleDetection = false;
-                Debug.Log($"🎯 PATHFOLLOWER: Obstacle detection DISABLED (prevents ground/plane collisions)");
             }
             
             // 🎯 DEBUG: Verify path initialization
-            Debug.Log($"🎯 PATHFOLLOWER INIT:");
-            Debug.Log($"   Path Points: {path.Length}");
-            Debug.Log($"   Start Point: {path[0]}");
-            Debug.Log($"   End Point: {path[path.Length - 1]}");
-            Debug.Log($"   Current Ball Position: {transform.position}");
-            Debug.Log($"   Speed: {pathSpeed} m/s");
-            Debug.Log($"   Arc Height: {addedArcHeight}");
+
         }
 
         public void Begin()
         {
             if (path == null || path.Length < 2)
             {
-                Debug.LogError("🎯 PATHFOLLOWER: Invalid path!");
                 onComplete?.Invoke();
                 // Only destroy PathFollower if auto-destroy is enabled
             if (ShouldDestroyPathFollower()) Destroy(this);
                 return;
             }
-            
-            Debug.Log($"🎯 PATHFOLLOWER BEGIN: Starting to follow path from {transform.position}");
             StopAllCoroutines();
             StartCoroutine(FollowPath());
         }
@@ -70,18 +60,10 @@ namespace CricketGame
             Vector3 pathDirection = (path[path.Length - 1] - path[0]).normalized;
             Vector3 ballToTarget = (path[path.Length - 1] - transform.position).normalized;
             float directionDot = Vector3.Dot(pathDirection, ballToTarget);
-            
-            Debug.Log($"🎯 PATHFOLLOWER DIRECTION CHECK:");
-            Debug.Log($"   Ball Position: {transform.position}");
-            Debug.Log($"   Path Start: {path[0]}");
-            Debug.Log($"   Path End: {path[path.Length - 1]}");
-            Debug.Log($"   Path Direction: {pathDirection}");
-            Debug.Log($"   Ball-to-Target: {ballToTarget}");
-            Debug.Log($"   Direction Match: {directionDot:F2} (1.0 = same direction, -1.0 = opposite)");
+
             
             if (directionDot < 0)
             {
-                Debug.LogError("🚨 PATHFOLLOWER ERROR: Path is REVERSED! Ball will go backwards!");
             }
             
             // Precompute cumulative distances for smooth, non-zigzag motion
@@ -99,8 +81,6 @@ namespace CricketGame
                 if (ShouldDestroyPathFollower()) Destroy(this); 
                 yield break; 
             }
-
-            Debug.Log($"🎯 PATHFOLLOWER: Total path length: {totalLen:F2}m");
 
             float traveled = 0f;
             previousPosition = transform.position; // Initialize previous position
@@ -135,10 +115,8 @@ namespace CricketGame
                         // 🎯 DEBUG: Log all hits for debugging
                         if (hits.Length > 0)
                         {
-                            Debug.Log($"🎯 PATHFOLLOWER CAST: Found {hits.Length} hits at distance {movementDistance:F3}");
                             foreach (var hit in hits)
                             {
-                                Debug.Log($"🎯 PATHFOLLOWER HIT: {hit.collider.name} (Layer: {hit.collider.gameObject.layer}, Tag: {hit.collider.tag}, HasRB: {hit.collider.attachedRigidbody != null})");
                             }
                         }
                         
@@ -160,7 +138,6 @@ namespace CricketGame
                             // Skip if it's a ground/plane object
                             if (isGroundObject)
                             {
-                                Debug.Log($"🎯 PATHFOLLOWER: Ignoring ground object: {hit.collider.name}");
                                 continue;
                             }
                                 
@@ -169,7 +146,6 @@ namespace CricketGame
                             bool isBall = hit.collider.CompareTag("Ball");
                             if (isSolid && !isBall)
                             {
-                                Debug.Log($"🎯 PATHFOLLOWER OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during curved path movement");
                                 
                                 // Check if obstacle is a wicket and trigger breaking
                                 CheckForWicketHit(hit);
@@ -192,8 +168,6 @@ namespace CricketGame
                                     float resumeSpeed = Mathf.Max(8f, speed);
                                     Vector3 resumeVelocity = reflected * resumeSpeed + Vector3.down * 2f;
                                     rb.linearVelocity = resumeVelocity;
-                                    
-                                    Debug.Log($"🎯 PATHFOLLOWER HANDOFF: Physics resumed with velocity {resumeVelocity}");
                                 }
                                 // Stop following the scripted path; physics now takes over
                                 onComplete = null; // prevent delivery callback that repositions to target
@@ -227,7 +201,6 @@ namespace CricketGame
             string objName = hit.collider.name.ToLower();
             if (objName.Contains("stump") || objName.Contains("bail") || objName.Contains("wicket"))
             {
-                Debug.Log($"🎳 PATHFOLLOWER WICKET HIT: {hit.collider.name}");
                 
                 // Find WicketBreakingSystem
                 WicketBreakingSystem wicketSystem = hit.collider.GetComponentInParent<WicketBreakingSystem>();
@@ -246,13 +219,10 @@ namespace CricketGame
                     // Calculate ball velocity from PathFollower's current movement
                     Vector3 ballVelocity = speed * (hit.collider.transform.position - transform.position).normalized;
                     Vector3 hitPoint = hit.point;
-                    
-                    Debug.Log($"🎳 PATHFOLLOWER BREAKING WICKET: Speed={speed:F1}, Velocity={ballVelocity}, Hit={hitPoint}");
                     wicketSystem.BreakWicket(ballVelocity, hitPoint);
                 }
                 else
                 {
-                    Debug.LogWarning($"🎳 PATHFOLLOWER: No WicketBreakingSystem found on {hit.collider.name}");
                 }
             }
         }
@@ -271,8 +241,6 @@ namespace CricketGame
                 Vector3 force = forceDirection * forceMagnitude;
                 
                 obstacleRb.AddForceAtPosition(force, hit.point, ForceMode.Impulse);
-                
-                Debug.Log($"🎯 PATHFOLLOWER OBSTACLE FORCE: Applied {force.magnitude:F1}N force to {hit.collider.name}");
             }
             
             // Optional: Add visual/audio effects here
@@ -288,7 +256,6 @@ namespace CricketGame
             BallSettingsSO ballSettingsSO = FindObjectOfType<BallSettingsSO>();
             if (ballSettingsSO != null && !ballSettingsSO.EnableAutoDestroy)
             {
-                Debug.Log("🏏 PathFollower: Auto-destroy disabled - PathFollower will not be destroyed");
                 return false;
             }
             
@@ -296,5 +263,4 @@ namespace CricketGame
         }
     }
 }
-
 

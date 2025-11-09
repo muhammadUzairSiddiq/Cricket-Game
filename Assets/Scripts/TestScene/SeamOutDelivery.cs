@@ -45,7 +45,6 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 SeamOutDelivery: Ready for seam out deliveries");
             }
         }
         
@@ -60,7 +59,6 @@ namespace CricketGame
             // Seam deliveries use straight path to target for 100% accuracy
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamOutDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
             }
             
             return targetPos;
@@ -79,7 +77,6 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SeamOutDelivery: Straight direction to target");
             }
             
             return straightDirection;
@@ -108,10 +105,7 @@ namespace CricketGame
                 
                 if (showDebugLogs)
                 {
-                    Debug.Log($"🎯 SEAM OUT ANGLE: Target offset {seamAngleOffset:F2}m to the LEFT");
-                    Debug.Log($"   Original Target: {targetPos}");
-                    Debug.Log($"   Adjusted Target: {adjustedTarget}");
-                    Debug.Log($"   Left Direction: {leftDirection}");
+
                 }
             }
             
@@ -125,11 +119,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 SEAM OUT PATH: Straight path with angle - {straight.Length} points");
-                Debug.Log($"   Start: {startPos}");
-                Debug.Log($"   Target (Offset): {adjustedTarget}");
-                Debug.Log($"   Direction: {(adjustedTarget - startPos).normalized}");
-                Debug.Log($"   ✅ Seam angle applied - works from ANY spawn point!");
+
             }
             
             return straight;
@@ -150,7 +140,6 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 SeamOutDelivery: Reset for new ball");
             }
         }
         

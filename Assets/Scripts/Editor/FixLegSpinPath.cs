@@ -16,7 +16,6 @@ namespace CricketGame
             
             if (allLegSpinDeliveries.Length == 0)
             {
-                Debug.LogWarning("⚠️ No LegSpinDelivery components found in the scene!");
                 EditorUtility.DisplayDialog(
                     "No Components Found", 
                     "No LegSpinDelivery components found in the current scene.\n\nMake sure your scene is loaded and has a LegSpinDelivery component.", 
@@ -35,13 +34,7 @@ namespace CricketGame
                     
                     legSpin.enableCurvedPath = false;
                     EditorUtility.SetDirty(legSpin);
-                    
-                    Debug.Log($"✅ Fixed: {legSpin.gameObject.name} - Curved path DISABLED");
                     fixedCount++;
-                }
-                else
-                {
-                    Debug.Log($"✓ Already correct: {legSpin.gameObject.name} - Curved path already disabled");
                 }
             }
             
@@ -62,11 +55,6 @@ namespace CricketGame
                 );
             }
             
-            // Show summary
-            Debug.Log($"🎯 LEG SPIN PATH FIX COMPLETE:");
-            Debug.Log($"   - Found: {allLegSpinDeliveries.Length} LegSpinDelivery component(s)");
-            Debug.Log($"   - Fixed: {fixedCount} component(s)");
-            Debug.Log($"   - Already correct: {allLegSpinDeliveries.Length - fixedCount} component(s)");
         }
         
         [MenuItem("Cricket Game/Check Leg Spin Path Mode")]
@@ -76,7 +64,6 @@ namespace CricketGame
             
             if (allLegSpinDeliveries.Length == 0)
             {
-                Debug.LogWarning("⚠️ No LegSpinDelivery components found in the scene!");
                 EditorUtility.DisplayDialog(
                     "No Components Found", 
                     "No LegSpinDelivery components found in the current scene.", 
@@ -84,9 +71,6 @@ namespace CricketGame
                 );
                 return;
             }
-            
-            Debug.Log($"🎯 LEG SPIN PATH MODE CHECK - Found {allLegSpinDeliveries.Length} component(s):");
-            Debug.Log("═══════════════════════════════════════════════════════");
             
             string message = "";
             foreach (LegSpinDelivery legSpin in allLegSpinDeliveries)
@@ -97,11 +81,8 @@ namespace CricketGame
                                $"  - Enable Curved Path: {legSpin.enableCurvedPath}\n" +
                                $"  - Path Mode: {pathMode}\n";
                 
-                Debug.Log(status);
                 message += status + "\n";
             }
-            
-            Debug.Log("═══════════════════════════════════════════════════════");
             
             EditorUtility.DisplayDialog(
                 "Leg Spin Path Mode", 

@@ -67,8 +67,6 @@ namespace CricketGame.GameplayStates
 			elapsedInState += Time.deltaTime;
 			if (!hasTransitioned && elapsedInState >= fallbackTransitionDelay)
 			{
-				Debug.LogWarning("🎯 BowlingState: Fallback transition triggered (no stop event received)");
-
 				if (useLoadingPulseOnReturn)
 				{
 					CricketGame.UI.LoadingPanelManager.StartPulse();
@@ -77,10 +75,6 @@ namespace CricketGame.GameplayStates
 				if (bowlingController != null)
 				{
 					bowlingController.ResetBowlerToSpawn();
-				}
-				else
-				{
-					Debug.LogWarning("🎯 BowlingState: No BowlingController assigned for fallback reset");
 				}
 
 				if (bowlerFollowCamera != null)

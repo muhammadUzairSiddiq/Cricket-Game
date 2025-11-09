@@ -37,22 +37,15 @@ namespace CricketGame
         {
             if (ballSpawnPoint == null || target == null)
             {
-                Debug.LogError("🚨 TEST: Missing references! Assign ballSpawnPoint and target.");
                 return;
             }
-            
-            Debug.Log("═══════════════════════════════════════════════════════");
-            Debug.Log("🎯 SPAWN POINT TEST - Testing deliveries from multiple positions");
-            Debug.Log("═══════════════════════════════════════════════════════");
+
             
             foreach (Vector3 testPos in testSpawnPositions)
             {
                 TestDeliveryFromPosition(testPos);
             }
-            
-            Debug.Log("═══════════════════════════════════════════════════════");
-            Debug.Log("✅ SPAWN POINT TEST COMPLETE");
-            Debug.Log("═══════════════════════════════════════════════════════");
+
         }
         
         /// <summary>
@@ -68,14 +61,7 @@ namespace CricketGame
             // Calculate lateral direction (works from any spawn point!)
             Vector3 lateralRight = Vector3.Cross(Vector3.up, direction).normalized;
             Vector3 lateralLeft = Vector3.Cross(direction, Vector3.up).normalized;
-            
-            Debug.Log($"");
-            Debug.Log($"📍 Testing from position: {spawnPos}");
-            Debug.Log($"   → Target position: {targetPos}");
-            Debug.Log($"   → Forward direction: {direction}");
-            Debug.Log($"   → Lateral RIGHT: {lateralRight}");
-            Debug.Log($"   → Lateral LEFT: {lateralLeft}");
-            Debug.Log($"   ✅ Lateral directions calculated DYNAMICALLY from spawn-to-target direction");
+
         }
         
         /// <summary>
@@ -86,18 +72,13 @@ namespace CricketGame
         {
             if (ballSpawnPoint == null)
             {
-                Debug.LogError("🚨 TEST: ballSpawnPoint not assigned!");
                 return;
             }
             
             Vector3 oldPos = ballSpawnPoint.position;
             currentTestIndex = (currentTestIndex + 1) % testSpawnPositions.Length;
             ballSpawnPoint.position = testSpawnPositions[currentTestIndex];
-            
-            Debug.Log($"🎯 SPAWN POINT MOVED:");
-            Debug.Log($"   From: {oldPos}");
-            Debug.Log($"   To: {ballSpawnPoint.position}");
-            Debug.Log($"   Position {currentTestIndex + 1}/{testSpawnPositions.Length}");
+
         }
         
         /// <summary>
@@ -108,13 +89,11 @@ namespace CricketGame
         {
             if (ballSpawnPoint == null)
             {
-                Debug.LogError("🚨 TEST: ballSpawnPoint not assigned!");
                 return;
             }
             
             currentTestIndex = 0;
             ballSpawnPoint.position = testSpawnPositions[0];
-            Debug.Log($"🎯 SPAWN POINT RESET to center position: {testSpawnPositions[0]}");
         }
         
         /// <summary>

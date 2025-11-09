@@ -49,7 +49,6 @@ namespace CricketGame
 		{
 			if (showDebugLogs)
 			{
-				Debug.Log("🎯 OutswingDelivery: Ready for out swing deliveries");
 			}
 		}
 		
@@ -63,7 +62,6 @@ namespace CricketGame
 			
 			if (showDebugLogs)
 			{
-				Debug.Log($"🎯 OutswingDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
 			}
 			
 			return swingTarget;
@@ -131,7 +129,6 @@ namespace CricketGame
 				
 				if (showDebugLogs)
 				{
-					Debug.Log($"🎯 OUTSWING PATH: Straight path - {straight.Length} points from {startPos} to {targetPos}");
 				}
 				
 				return straight;
@@ -154,12 +151,7 @@ namespace CricketGame
 			
 			if (showDebugLogs)
 			{
-				Debug.Log($"🎯 OUTSWING PATH GENERATION:");
-				Debug.Log($"   Start: {startPos}, Target: {targetPos}");
-				Debug.Log($"   Bowling Direction: {dir}");
-				Debug.Log($"   Lateral Right: {right}");
-				Debug.Log($"   Control Point Offset: {lateralMeters:F2}m");
-				Debug.Log($"   ✅ Directions calculated DYNAMICALLY - works from ANY spawn point!");
+
 			}
 			
 			int count = Mathf.Max(2, segments + 1);
@@ -183,7 +175,6 @@ namespace CricketGame
 			
 			if (showDebugLogs)
 			{
-				Debug.Log($"🎯 OutswingDelivery: Swing direction calculated - Force: {swingForce:F2}");
 			}
 			
 			return swingDir.normalized;
@@ -205,7 +196,6 @@ namespace CricketGame
 		{
 			if (showDebugLogs)
 			{
-				Debug.Log("🎯 OutswingDelivery: Reset for new ball");
 			}
 		}
 		
@@ -222,7 +212,6 @@ namespace CricketGame
 			
 			if (showDebugLogs)
 			{
-				Debug.Log($"🎯 OutswingDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
 			}
 		}
 		

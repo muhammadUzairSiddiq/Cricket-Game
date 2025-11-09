@@ -43,7 +43,6 @@ namespace CricketGame.GameplayStates
 			// CRITICAL: Force reset transition flag if stuck (safety mechanism)
 			if (stateMachine != null && stateMachine.IsTransitioning())
 			{
-				Debug.LogWarning("🎯 PitchCamState: Entering with stuck transition flag, forcing reset");
 				stateMachine.ForceResetTransition();
 			}
 			
@@ -146,7 +145,6 @@ namespace CricketGame.GameplayStates
 			// CRITICAL: Force reset transition flag if stuck (safety mechanism)
 			if (stateMachine != null && stateMachine.IsTransitioning() && elapsedTime > timeLimit + 1f)
 			{
-				Debug.LogWarning("🎯 PitchCamState: Transition flag stuck, forcing reset");
 				stateMachine.ForceResetTransition();
 			}
 
@@ -260,7 +258,6 @@ namespace CricketGame.GameplayStates
 			}
 			if (targetGO == null)
 			{
-				Debug.LogWarning("🎯 PitchCamState: Target GameObject with 'Target' tag not found!");
 				return;
 			}
 
@@ -313,10 +310,8 @@ namespace CricketGame.GameplayStates
 						}
 						else
 						{
-							// Last resort: use Vector3.one
 							originalSlidesScale = Vector3.one;
 							originalScaleStored = true;
-							Debug.LogWarning("🎯 PitchCamState: Could not determine original Slides scale. Using Vector3.one as fallback.");
 						}
 					}
 				}
@@ -348,7 +343,6 @@ namespace CricketGame.GameplayStates
 			}
 			else
 			{
-				Debug.LogWarning($"🎯 PitchCamState: Could not find 'Slides' or 'Sides' child in Target GameObject!");
 			}
 		}
 

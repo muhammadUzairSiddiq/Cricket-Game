@@ -39,34 +39,25 @@ namespace TMPro.Examples
         }
 
 
-        void OnCharacterSelection(char c, int index)
-        {
-            Debug.Log("Character [" + c + "] at Index: " + index + " has been selected.");
-        }
+		void OnCharacterSelection(char c, int index) {}
 
-        void OnSpriteSelection(char c, int index)
-        {
-            Debug.Log("Sprite [" + c + "] at Index: " + index + " has been selected.");
-        }
+		void OnSpriteSelection(char c, int index) {}
 
-        void OnWordSelection(string word, int firstCharacterIndex, int length)
-        {
-            Debug.Log("Word [" + word + "] with first character index of " + firstCharacterIndex + " and length of " + length + " has been selected.");
-        }
+		void OnWordSelection(string word, int firstCharacterIndex, int length) {}
 
-        void OnLineSelection(string lineText, int firstCharacterIndex, int length)
-        {
-            Debug.Log("Line [" + lineText + "] with first character index of " + firstCharacterIndex + " and length of " + length + " has been selected.");
-        }
+		void OnLineSelection(string lineText, int firstCharacterIndex, int length) {}
 
         void OnLinkSelection(string linkID, string linkText, int linkIndex)
         {
-            if (m_TextComponent != null)
+			if (m_TextComponent == null)
             {
-                TMP_LinkInfo linkInfo = m_TextComponent.textInfo.linkInfo[linkIndex];
+				return;
             }
             
-            Debug.Log("Link Index: " + linkIndex + " with ID [" + linkID + "] and Text \"" + linkText + "\" has been selected.");
+			if (linkIndex < 0 || linkIndex >= m_TextComponent.textInfo.linkInfo.Length)
+			{
+				return;
+			}
         }
 
     }

@@ -16,7 +16,6 @@ namespace CricketGame
         [SerializeField] private bool forceBreakOnLowSpeed = true; // Force break even on low-speed yorkers
         
         [Header("Debug")]
-        [SerializeField] private bool showDebugGizmos = true;
         
         private Rigidbody ballRigidbody;
         private bool hasHitWicket = false;
@@ -26,13 +25,8 @@ namespace CricketGame
         {
             ballRigidbody = GetComponent<Rigidbody>();
             
-            if (showDebugGizmos)
             {
-                Debug.Log($"🎯 BallWicketCollision initialized on: {gameObject.name}");
-                Debug.Log($"🎯 Wicket Layer Mask: {wicketLayerMask}");
-                Debug.Log($"🎯 Min Hit Velocity: {minHitVelocity}");
-                Debug.Log($"🎯 Collision Radius: {collisionRadius}");
-                Debug.Log($"🎯 Force Break On Low Speed: {forceBreakOnLowSpeed}");
+
             }
         }
         
@@ -51,15 +45,12 @@ namespace CricketGame
         
         void OnEnable()
         {
-            if (showDebugGizmos)
             {
-                Debug.Log($"🎯 BallWicketCollision enabled on: {gameObject.name}");
             }
         }
         
         void OnTriggerEnter(Collider other)
         {
-            Debug.Log($"🎯 OnTriggerEnter: {other.name}");
             CheckWicketCollision(other);
         }
         
@@ -72,64 +63,45 @@ namespace CricketGame
         
         void OnCollisionEnter(Collision collision)
         {
-            Debug.Log($"🎯 OnCollisionEnter: {collision.gameObject.name}, Contacts: {collision.contactCount}");
             // Check collision with contact points
             CheckCollisionWithContact(collision);
         }
         
-        void CheckCollisionWithContact(Collision collision)
-        {
-            foreach (ContactPoint contact in collision.contacts)
-            {
-                // Only check collisions with actual wicket parts (stumps/bails)
-                string colliderName = contact.otherCollider.name.ToLower();
-                if (colliderName.Contains("stump") || 
-                    colliderName.Contains("bail") ||
-                    colliderName.Contains("wicket"))
-                {
-                    CheckWicketCollision(contact.otherCollider);
-                }
-                else
-                {
-                    // Log ignored collisions for debugging
-                    if (showDebugGizmos)
-                        Debug.Log($"🎯 Ignoring collision with: {contact.otherCollider.name}");
-                }
-            }
-        }
+		void CheckCollisionWithContact(Collision collision)
+		{
+			foreach (ContactPoint contact in collision.contacts)
+			{
+				// Only check collisions with actual wicket parts (stumps/bails)
+				string colliderName = contact.otherCollider.name.ToLower();
+				if (colliderName.Contains("stump") || 
+					colliderName.Contains("bail") ||
+					colliderName.Contains("wicket"))
+				{
+					CheckWicketCollision(contact.otherCollider);
+				}
+			}
+		}
         
         /// <summary>
         /// Check if collision is with a wicket
         /// </summary>
-        void CheckWicketCollision(Collider other)
-        {
-            // DEBUG: Log all collisions
-            if (showDebugGizmos)
-            {
-                Debug.Log($"🎯 Ball collision detected with: {other.gameObject.name}");
-            }
-            
+		void CheckWicketCollision(Collider other)
+		{
             // Check if we've already hit a wicket
             if (hasHitWicket)
             {
-                if (showDebugGizmos)
-                    Debug.Log("🎯 Already hit wicket, ignoring collision");
                 return;
             }
             
             // Check if collision is with wicket layer (only if not checking any collision)
             if (!checkAnyCollision && ((1 << other.gameObject.layer) & wicketLayerMask) == 0)
             {
-                if (showDebugGizmos)
-                    Debug.Log($"🎯 Collision not on wicket layer: {other.gameObject.layer}");
                 return;
             }
             
             // CRITICAL FIX FOR YORKERS: Check previous velocity or current velocity
             if (ballRigidbody == null)
             {
-                if (showDebugGizmos)
-                    Debug.Log("🎯 Ball has no Rigidbody!");
                 return;
             }
             
@@ -138,26 +110,14 @@ namespace CricketGame
             // For yorkers/full length, use peak velocity if current is too low
             float effectiveSpeed = Mathf.Max(ballSpeed, peakVelocity * 0.3f); // Use 30% of peak as fallback
             
-            // For yorkers/full length, ball might have stopped or slowed down
-            // Check if we have any velocity or if it's touching a stump
-            bool shouldBreak = forceBreakOnLowSpeed || effectiveSpeed >= minHitVelocity || ballSpeed > 0.01f;
-            
-            if (showDebugGizmos)
-                Debug.Log($"🎯 Ball speed: {ballSpeed:F3}, Peak: {peakVelocity:F3}, Effective: {effectiveSpeed:F3}, Should break: {shouldBreak}");
-            
+			// For yorkers/full length, ball might have stopped or slowed down
+			// Check if we have any velocity or if it's touching a stump
+			bool shouldBreak = forceBreakOnLowSpeed || effectiveSpeed >= minHitVelocity || ballSpeed > 0.01f;
+
             // Even at low speed, if ball is touching stump, it should break
             if (!shouldBreak)
             {
-                if (showDebugGizmos)
-                    Debug.Log($"🎯 Skipping - ball speed too low: {ballSpeed:F3}");
                 return;
-            }
-            
-            // Log low-speed yorker scenario
-            if (ballSpeed < minHitVelocity && ballSpeed > 0)
-            {
-                if (showDebugGizmos)
-                    Debug.Log($"🎳 YORKER/FULL LENGTH detected! Low speed ({ballSpeed:F3}), but forcing break!");
             }
             
             // Find WicketBreakingSystem component
@@ -176,25 +136,16 @@ namespace CricketGame
             if (wicketSystem == null)
             {
                 // Don't log error for non-wicket collisions - just ignore them silently
-                if (showDebugGizmos)
-                    Debug.Log($"🎯 No WicketBreakingSystem found on: {other.gameObject.name} (ignoring)");
                 return;
             }
             
             if (wicketSystem.IsBroken())
             {
-                if (showDebugGizmos)
-                    Debug.Log("🎯 Wicket already broken");
                 return;
             }
             
             // Calculate hit point
             Vector3 hitPoint = other.ClosestPoint(transform.position);
-            
-            if (showDebugGizmos)
-            {
-                Debug.Log($"🎯 Breaking wicket! Hit point: {hitPoint}, Speed: {ballSpeed}");
-            }
             
             // Break the wicket
             wicketSystem.BreakWicket(ballRigidbody.linearVelocity, hitPoint);
@@ -219,7 +170,6 @@ namespace CricketGame
         /// </summary>
         void OnDrawGizmos()
         {
-            if (!showDebugGizmos) return;
             
             // Draw collision radius
             Gizmos.color = Color.red;

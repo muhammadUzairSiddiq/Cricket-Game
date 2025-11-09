@@ -48,7 +48,6 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 LegSpinDelivery: Ready for leg spin deliveries");
             }
         }
 
@@ -62,7 +61,6 @@ namespace CricketGame
             {
                 if (showDebugLogs)
                 {
-                    Debug.Log($"🎯 LegSpinDelivery: Straight trajectory - Speed: {ballSpeed:F1} m/s");
                 }
                 return targetPos;
             }
@@ -72,7 +70,6 @@ namespace CricketGame
 
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LegSpinDelivery: Calculated curved trajectory - Speed: {ballSpeed:F1}");
             }
 
             return spinTarget;
@@ -134,11 +131,7 @@ namespace CricketGame
             
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LEG SPIN PATH: Perfectly straight path - {straight.Length} points");
-                Debug.Log($"   Start: {startPos}");
-                Debug.Log($"   Target: {targetPos}");
-                Debug.Log($"   Direction: {(targetPos - startPos).normalized}");
-                Debug.Log($"   ✅ Pure straight line - 100% ACCURATE - works from ANY spawn point!");
+
             }
             
             return straight;
@@ -153,11 +146,9 @@ namespace CricketGame
             Vector3 straightDirection = (targetPos - startPos).normalized;
             if (showDebugLogs)
             {
-                Debug.Log($"🎯 LegSpinDelivery: Straight direction - Spin occurs after bounce");
             }
             return straightDirection;
         }
-
 
         /// <summary>
         /// Check if path follower is enabled
@@ -171,7 +162,6 @@ namespace CricketGame
         {
             if (showDebugLogs)
             {
-                Debug.Log("🎯 LegSpinDelivery: Reset for new ball");
             }
         }
 
@@ -200,7 +190,6 @@ namespace CricketGame
             if (showDebugLogs)
             {
                 string direction = strength > 0 ? "RIGHT" : strength < 0 ? "LEFT" : "NONE";
-                Debug.Log($"🎯 LegSpinDelivery: Updated spin strength to {strength:F2} ({direction})");
             }
         }
 
@@ -211,8 +200,7 @@ namespace CricketGame
         void ForceStraightPath()
         {
             enableCurvedPath = false;
-            Debug.Log("🎯 LegSpinDelivery: Curved path DISABLED - Ball will now follow straight line!");
-            Debug.Log($"🎯 LegSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
+
         }
         
         /// <summary>
@@ -222,8 +210,7 @@ namespace CricketGame
         void ForceCurvedPath()
         {
             enableCurvedPath = true;
-            Debug.Log("🎯 LegSpinDelivery: Curved path ENABLED - Ball will follow Bezier curve!");
-            Debug.Log($"🎯 LegSpinDelivery: IsCurvedPathEnabled = {IsCurvedPathEnabled()}");
+
         }
         
         /// <summary>
@@ -232,17 +219,8 @@ namespace CricketGame
         [ContextMenu("Check Current Path Mode")]
         void CheckPathMode()
         {
-            Debug.Log($"🎯 LegSpinDelivery Path Mode:");
-            Debug.Log($"   - Enable Leg Spin: {enableLegSpin}");
-            Debug.Log($"   - Enable Curved Path: {enableCurvedPath}");
-            Debug.Log($"   - Is Curved Path Enabled: {IsCurvedPathEnabled()}");
-            Debug.Log($"   - Mode: {(IsCurvedPathEnabled() ? "CURVED PATH (Bezier)" : "STRAIGHT PATH")}");
-            Debug.Log($"");
-            Debug.Log($"🎯 LegSpinDelivery Post-Bounce Spin Settings:");
-            Debug.Log($"   - Enable Post-Bounce Spin: {enablePostBounceSpinEffect}");
-            Debug.Log($"   - Spin Strength: {postBounceSpinStrength:F2}");
+
             string spinDir = postBounceSpinStrength > 0 ? "RIGHT →" : postBounceSpinStrength < 0 ? "← LEFT" : "NONE";
-            Debug.Log($"   - Spin Direction: {spinDir}");
         }
         
         /// <summary>
@@ -251,25 +229,10 @@ namespace CricketGame
         [ContextMenu("Show Complete Leg Spin Configuration")]
         void ShowCompleteConfiguration()
         {
-            Debug.Log("═══════════════════════════════════════════════════════");
-            Debug.Log("🎯 LEG SPIN DELIVERY - COMPLETE CONFIGURATION");
-            Debug.Log("═══════════════════════════════════════════════════════");
-            Debug.Log($"");
-            Debug.Log($"📍 PATH SETTINGS:");
-            Debug.Log($"   ✓ Delivery Mode: {(IsCurvedPathEnabled() ? "CURVED PATH" : "STRAIGHT PATH")}");
-            Debug.Log($"   ✓ Path follows: {(IsCurvedPathEnabled() ? "Bezier curve with lateral movement" : "Direct line to target")}");
-            Debug.Log($"");
+
             string spinDirectionText = postBounceSpinStrength > 0 ? "RIGHT →" : postBounceSpinStrength < 0 ? "← LEFT" : "NONE";
             string spinTypeText = postBounceSpinStrength > 0 ? "Leg Spin (away from batsman)" : postBounceSpinStrength < 0 ? "Off Spin (towards batsman)" : "No Spin";
-            Debug.Log($"⚡ POST-BOUNCE SPIN EFFECT:");
-            Debug.Log($"   ✓ Enabled: {enablePostBounceSpinEffect}");
-            Debug.Log($"   ✓ Spin Strength: {postBounceSpinStrength:F2}x");
-            Debug.Log($"   ✓ Spin Direction: {spinDirectionText}");
-            Debug.Log($"   ✓ Spin Type: {spinTypeText}");
-            Debug.Log($"   ✓ Effect: Ball moves sideways AFTER bouncing on pitch");
-            Debug.Log($"   ✓ Realistic Physics: Spin takes effect on bounce (like real cricket!)");
-            Debug.Log($"");
-            Debug.Log("═══════════════════════════════════════════════════════");
+
         }
 
         void OnDrawGizmos()

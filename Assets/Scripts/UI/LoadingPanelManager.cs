@@ -33,7 +33,6 @@ namespace CricketGame.UI
                         GameObject go = new GameObject("LoadingPanelManager");
                         _instance = go.AddComponent<LoadingPanelManager>();
                         DontDestroyOnLoad(go);
-                        Debug.LogWarning("⚠️ LoadingPanelManager: No instance found in scene. Created new one. Please assign Loading Panel reference in Inspector!");
                     }
                 }
                 return _instance;
@@ -84,8 +83,6 @@ namespace CricketGame.UI
         [Tooltip("Ensure panel covers entire screen on Start")]
         [SerializeField] private bool ensureFullScreenCoverage = true;
         
-        [Header("Debug")]
-        [SerializeField] private bool showDebugLogs = false;
         
         #endregion
         
@@ -102,21 +99,29 @@ namespace CricketGame.UI
         
         #region Unity Lifecycle
         
-        private void Awake()
-        {
-            // Ensure singleton pattern
-            if (_instance == null)
-            {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else if (_instance != this)
-            {
-                Debug.LogWarning("⚠️ LoadingPanelManager: Duplicate instance detected. Destroying duplicate.");
-                Destroy(gameObject);
-                return;
-            }
-        }
+		private void Awake()
+		{
+			// Ensure singleton pattern
+			if (_instance == null)
+			{
+				_instance = this;
+
+				Transform rootTransform = transform.root;
+				if (rootTransform != null)
+				{
+					DontDestroyOnLoad(rootTransform.gameObject);
+				}
+				else
+				{
+					DontDestroyOnLoad(gameObject);
+				}
+			}
+			else if (_instance != this)
+			{
+				Destroy(gameObject);
+				return;
+			}
+		}
         
         private void Start()
         {
@@ -133,32 +138,18 @@ namespace CricketGame.UI
         private void InitializeLoadingPanel()
         {
             // Auto-find loading panel if enabled and not assigned
-            if (loadingPanelImage == null && autoFindLoadingPanel)
-            {
-                GameObject loadingPanelGO = GameObject.Find("Loading Panel");
-                if (loadingPanelGO != null)
-                {
-                    loadingPanelImage = loadingPanelGO.GetComponent<Image>();
-                    if (loadingPanelImage != null)
-                    {
-                        if (showDebugLogs)
-                            Debug.Log("✅ LoadingPanelManager: Auto-found Loading Panel Image component");
-                    }
-                    else
-                    {
-                        Debug.LogError("❌ LoadingPanelManager: Found 'Loading Panel' GameObject but no Image component!");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("❌ LoadingPanelManager: Could not find 'Loading Panel' GameObject in scene! Please assign it manually in Inspector.");
-                }
-            }
+			if (loadingPanelImage == null && autoFindLoadingPanel)
+			{
+				GameObject loadingPanelGO = GameObject.Find("Loading Panel");
+				if (loadingPanelGO != null)
+				{
+					loadingPanelImage = loadingPanelGO.GetComponent<Image>();
+				}
+			}
             
             // Validate panel setup
             if (loadingPanelImage == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Loading Panel Image is not assigned! Please assign it in Inspector.");
                 return;
             }
             
@@ -184,8 +175,6 @@ namespace CricketGame.UI
             SetOpacity(minOpacity);
             loadingPanelImage.gameObject.SetActive(true);
             
-            if (showDebugLogs)
-                Debug.Log("✅ LoadingPanelManager: Initialized successfully");
         }
         
         /// <summary>
@@ -198,14 +187,12 @@ namespace CricketGame.UI
             // Check image type
             if (loadingPanelImage.type != Image.Type.Filled)
             {
-                Debug.LogWarning("⚠️ LoadingPanelManager: Loading Panel Image type should be 'Filled'. Setting it now...");
                 loadingPanelImage.type = Image.Type.Filled;
             }
             
             // Check fill method (should be Radial 90)
             if (loadingPanelImage.fillMethod != Image.FillMethod.Radial90)
             {
-                Debug.LogWarning("⚠️ LoadingPanelManager: Loading Panel Fill Method should be 'Radial 90'. Setting it now...");
                 loadingPanelImage.fillMethod = Image.FillMethod.Radial90;
             }
             
@@ -250,7 +237,6 @@ namespace CricketGame.UI
         {
             if (Instance == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot StartPulse - Instance is null!");
                 return;
             }
             
@@ -264,7 +250,6 @@ namespace CricketGame.UI
         {
             if (Instance == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot StartSimple - Instance is null!");
                 return;
             }
 
@@ -278,7 +263,6 @@ namespace CricketGame.UI
         {
             if (Instance == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot PlayAnimation - Instance is null!");
                 return;
             }
 
@@ -292,7 +276,6 @@ namespace CricketGame.UI
         {
             if (Instance == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot PlayAnimation - Instance is null!");
                 return;
             }
 
@@ -373,7 +356,6 @@ namespace CricketGame.UI
         {
             if (loadingPanelImage == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot start pulse - Loading Panel Image is null!");
                 return;
             }
             
@@ -384,8 +366,6 @@ namespace CricketGame.UI
             isAnimationRunning = true;
             activeAnimationCoroutine = StartCoroutine(PulseAnimationCycle());
             
-            if (showDebugLogs)
-                Debug.Log("✅ LoadingPanelManager: Pulse animation started");
         }
 
         /// <summary>
@@ -395,7 +375,6 @@ namespace CricketGame.UI
         {
             if (loadingPanelImage == null)
             {
-                Debug.LogError("❌ LoadingPanelManager: Cannot start simple animation - Loading Panel Image is null!");
                 return;
             }
 
@@ -405,8 +384,6 @@ namespace CricketGame.UI
             isAnimationRunning = true;
             activeAnimationCoroutine = StartCoroutine(SimpleAnimationCycle());
 
-            if (showDebugLogs)
-                Debug.Log("✅ LoadingPanelManager: Simple animation started");
         }
         
         /// <summary>
@@ -426,8 +403,6 @@ namespace CricketGame.UI
             isAnimationRunning = false;
             activeAnimationCoroutine = null;
             
-            if (showDebugLogs)
-                Debug.Log("✅ LoadingPanelManager: Pulse animation completed and stopped");
         }
 
         private IEnumerator SimpleAnimationCycle()
@@ -451,8 +426,6 @@ namespace CricketGame.UI
             isAnimationRunning = false;
             activeAnimationCoroutine = null;
 
-            if (showDebugLogs)
-                Debug.Log("✅ LoadingPanelManager: Simple animation completed and stopped");
         }
  
         /// <summary>

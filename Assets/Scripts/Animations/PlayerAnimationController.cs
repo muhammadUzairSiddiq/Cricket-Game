@@ -56,7 +56,6 @@ public class PlayerAnimationController : MonoBehaviour
         // CRITICAL FIX: Always refresh spawn point reference to ensure we're using scene instance, not prefab
         if (animationSpawnPoint != null)
         {
-            Debug.Log("🎬 🔄 AWAKE: Forcing spawn point reference refresh...");
             ForceRefreshSpawnPointReference();
         }
     }
@@ -108,15 +107,6 @@ public class PlayerAnimationController : MonoBehaviour
         if (bowlingController == null)
         {
             bowlingController = FindObjectOfType<BowlingController>();
-            if (bowlingController != null)
-            {
-                if (enableDebugLogs)
-                    Debug.Log($"🎬 PlayerAnimationController: Auto-found BowlingController: {bowlingController.name}");
-            }
-            else
-            {
-                Debug.LogError("🎬 PlayerAnimationController: No BowlingController found in scene! Please ensure there's a BowlingController in the scene.");
-            }
         }
         
         // Auto-find Animation Spawn Point if not assigned
@@ -142,21 +132,10 @@ public class PlayerAnimationController : MonoBehaviour
             if (rightHand != null)
             {
                 animationSpawnPoint = rightHand;
-                if (enableDebugLogs)
-                    Debug.Log($"🎬 PlayerAnimationController: Auto-found Animation Spawn Point: {rightHand.name}");
-            }
-            else
-            {
-                Debug.LogError($"🎬 PlayerAnimationController: No Animation Spawn Point found! Please assign 'RightHand' transform in the Inspector or ensure it exists as a child of {gameObject.name}.");
             }
         }
         
         // Validate setup
-        if (bowlingController != null && animationSpawnPoint != null)
-        {
-            if (enableDebugLogs)
-                Debug.Log($"🎬 PlayerAnimationController: Setup complete for {gameObject.name} - BowlingController: {bowlingController.name}, Spawn Point: {animationSpawnPoint.name}");
-        }
     }
 
     /// <summary>
@@ -231,7 +210,6 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Test OnBallReleased")]
     public void TestOnBallReleased()
     {
-        Debug.Log($"🧪 Testing OnBallReleased on {gameObject.name}");
         OnBallReleased();
     }
 
@@ -241,19 +219,7 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Check PlayerAnimationController Status")]
     public void CheckPlayerAnimationControllerStatus()
     {
-        Debug.Log($"🎬 === PLAYER ANIMATION CONTROLLER STATUS ===");
-        Debug.Log($"🎬 GameObject: {gameObject.name}");
-        Debug.Log($"🎬 BowlingController: {(bowlingController != null ? bowlingController.name : "NULL")}");
-        Debug.Log($"🎬 Animation Spawn Point: {(animationSpawnPoint != null ? animationSpawnPoint.name : "NULL")}");
-        Debug.Log($"🎬 Enable Debug Logs: {enableDebugLogs}");
         
-        if (animationSpawnPoint != null)
-        {
-            Debug.Log($"🎬 Spawn Point Position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 Spawn Point Parent: {(animationSpawnPoint.parent != null ? animationSpawnPoint.parent.name : "NULL")}");
-        }
-        
-        Debug.Log($"🎬 ==========================================");
     }
 
     [Header("Root Motion Settings")]
@@ -272,8 +238,6 @@ public class PlayerAnimationController : MonoBehaviour
         if (enableManualRootMotion)
         {
             originalPosition = transform.position;
-            if (enableDebugLogs)
-                Debug.Log($"🎬 Animation started - stored original position: {originalPosition}");
         }
     }
     
@@ -285,8 +249,6 @@ public class PlayerAnimationController : MonoBehaviour
         if (enableManualRootMotion && !isMovingRoot)
         {
             StartCoroutine(MoveRootForward());
-            if (enableDebugLogs)
-                Debug.Log($"🎬 Animation midpoint - starting root motion");
         }
     }
     
@@ -295,11 +257,6 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void OnAnimationEnd()
     {
-        if (enableManualRootMotion)
-        {
-            if (enableDebugLogs)
-                Debug.Log($"🎬 Animation ended - root motion complete");
-        }
     }
     
     /// <summary>
@@ -323,8 +280,6 @@ public class PlayerAnimationController : MonoBehaviour
         transform.position = targetPos;
         isMovingRoot = false;
         
-        if (enableDebugLogs)
-            Debug.Log($"🎬 Root motion complete - new position: {transform.position}");
     }
 
     /// <summary>
@@ -332,12 +287,9 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void OnBallCreated()
     {
-        if (enableDebugLogs)
-            Debug.Log("🎬 OnBallCreated() called from animation event");
         
         if (bowlingController == null)
         {
-            Debug.LogError("🎬 PlayerAnimationController: BowlingController not found! Cannot create ball.");
             return;
         }
         
@@ -349,14 +301,9 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void OnDestroyOldBall()
     {
-        if (enableDebugLogs)
-        {
-            Debug.Log("🎬 OnDestroyOldBall() called from animation event");
-        }
         
         if (bowlingController == null)
         {
-            Debug.LogError("🎬 PlayerAnimationController: BowlingController not found! Cannot destroy old ball.");
             return;
         }
         
@@ -364,18 +311,7 @@ public class PlayerAnimationController : MonoBehaviour
         GameObject currentBall = bowlingController.GetCurrentBallInstance();
         if (currentBall != null)
         {
-            if (enableDebugLogs)
-            {
-                Debug.Log("🎬 Destroying old ball instance");
-            }
             Destroy(currentBall);
-        }
-        else
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log("🎬 No old ball to destroy");
-            }
         }
     }
     
@@ -384,12 +320,9 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void OnBallBowled()
     {
-        if (enableDebugLogs)
-            Debug.Log("🎬 OnBallBowled() called from animation event");
         
         if (bowlingController == null)
         {
-            Debug.LogError("🎬 PlayerAnimationController: BowlingController not found! Cannot bowl ball.");
             return;
         }
         
@@ -402,31 +335,19 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void OnBallReleasedSmart()
     {
-        if (enableDebugLogs)
-            Debug.Log("🎬 OnBallReleasedSmart() called from animation event");
         
         if (bowlingController == null)
         {
-            Debug.LogError("🎬 PlayerAnimationController: BowlingController not found! Cannot release ball.");
             return;
         }
         
         // Check if we need to create a new ball (if none exists or previous one is done)
         if (bowlingController.GetCurrentBallInstance() == null)
         {
-            if (enableDebugLogs)
-                Debug.Log("🎬 Creating new ball (none exists)");
             bowlingController.InstantiateNewBall();
-        }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.Log("🎬 Ball already exists - skipping creation");
         }
         
         // Bowl the current ball
-        if (enableDebugLogs)
-            Debug.Log("🎬 Bowling the ball");
         bowlingController.BowlCurrentBall();
     }
     
@@ -459,8 +380,6 @@ public class PlayerAnimationController : MonoBehaviour
         {
             StopCoroutine(MoveRootForward());
             isMovingRoot = false;
-            if (enableDebugLogs)
-                Debug.Log($"🎬 Root motion stopped for spawn position switch");
         }
     }
 
@@ -471,8 +390,6 @@ public class PlayerAnimationController : MonoBehaviour
     {
         StopAllCoroutines();
         isMovingRoot = false;
-        if (enableDebugLogs)
-            Debug.Log($"🎬 All movement coroutines stopped for spawn position switch");
     }
 
     /// <summary>
@@ -487,15 +404,6 @@ public class PlayerAnimationController : MonoBehaviour
             
             // Get the current world position of the animated bone
             Vector3 currentPosition = animationSpawnPoint.position;
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎬 Current animated spawn position: {currentPosition}");
-                Debug.Log($"🎬 Spawn point name: {animationSpawnPoint.name}");
-                Debug.Log($"🎬 Spawn point parent: {(animationSpawnPoint.parent != null ? animationSpawnPoint.parent.name : "NULL")}");
-                Debug.Log($"🎬 Spawn point local position: {animationSpawnPoint.localPosition}");
-                Debug.Log($"🎬 Spawn point world position: {animationSpawnPoint.position}");
-                Debug.Log($"🎬 Spawn point scene: {animationSpawnPoint.gameObject.scene.name}");
-            }
             return currentPosition;
         }
         return Vector3.zero;
@@ -513,11 +421,6 @@ public class PlayerAnimationController : MonoBehaviour
             
             // The transform position should automatically update when the bone moves
             // Just log the current position for debugging
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎬 Current spawn point position: {animationSpawnPoint.position}");
-                Debug.Log($"🎬 Spawn point local position: {animationSpawnPoint.localPosition}");
-            }
         }
     }
     
@@ -533,12 +436,6 @@ public class PlayerAnimationController : MonoBehaviour
             
             string boneName = animationSpawnPoint.name;
             
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎬 Refreshing spawn point reference from: {animationSpawnPoint.name}");
-                Debug.Log($"🎬 Spawn point scene: {animationSpawnPoint.gameObject.scene.name}");
-                Debug.Log($"🎬 Current GameObject scene: {gameObject.scene.name}");
-            }
             
             // CRITICAL FIX: Always find the scene instance bone, even if animationSpawnPoint is pointing to prefab
             Transform sceneInstanceBone = FindChildRecursive(transform, boneName);
@@ -551,24 +448,7 @@ public class PlayerAnimationController : MonoBehaviour
                 if (isFromPrefab || sceneInstanceBone != animationSpawnPoint)
                 {
                     animationSpawnPoint = sceneInstanceBone;
-                    if (enableDebugLogs)
-                    {
-                        Debug.Log($"🎬 ✅ Refreshed spawn point to scene instance: {animationSpawnPoint.name}");
-                        Debug.Log($"🎬 New position: {animationSpawnPoint.position}");
-                        Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");
-                    }
                 }
-                else
-                {
-                    if (enableDebugLogs)
-                    {
-                        Debug.Log($"🎬 ✅ Spawn point already points to scene instance: {animationSpawnPoint.name}");
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError($"🎬 ❌ Could not find scene instance of bone: {boneName}");
             }
         }
     }
@@ -579,17 +459,6 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Check Animation Spawn Point Status")]
     public void CheckAnimationSpawnPointStatus()
     {
-        Debug.Log("🎬 === ANIMATION SPAWN POINT STATUS ===");
-        Debug.Log($"🎬 GameObject: {gameObject.name}");
-        Debug.Log($"🎬 Animation Spawn Point: {(animationSpawnPoint != null ? animationSpawnPoint.name : "NULL - NOT ASSIGNED!")}");
-        if (animationSpawnPoint != null)
-        {
-            Debug.Log($"🎬 Position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 Rotation: {animationSpawnPoint.rotation.eulerAngles}");
-            Debug.Log($"🎬 Scene: {animationSpawnPoint.gameObject.scene.name}");
-        }
-        Debug.Log($"🎬 Bowling Controller: {(bowlingController != null ? bowlingController.name : "NULL")}");
-        Debug.Log("🎬 ======================================");
     }
     
     /// <summary>
@@ -598,50 +467,24 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Force Refresh Spawn Point Reference")]
     public void ForceRefreshSpawnPointReference()
     {
-        Debug.Log("🎬 === FORCE REFRESHING SPAWN POINT REFERENCE ===");
-        Debug.Log($"🎬 Current GameObject: {gameObject.name}");
-        Debug.Log($"🎬 Current GameObject scene: {gameObject.scene.name}");
         
         if (animationSpawnPoint != null)
         {
             string boneName = animationSpawnPoint.name;
-            Debug.Log($"🎬 Current spawn point: {boneName}");
-            Debug.Log($"🎬 Current spawn point scene: {animationSpawnPoint.gameObject.scene.name}");
-            Debug.Log($"🎬 Current spawn point position: {animationSpawnPoint.position}");
             
             // Find the bone in the current scene instance
             Transform sceneInstanceBone = FindChildRecursive(transform, boneName);
             
             if (sceneInstanceBone != null)
             {
-                Debug.Log($"🎬 Found scene instance bone: {sceneInstanceBone.name}");
-                Debug.Log($"🎬 Scene instance bone position: {sceneInstanceBone.position}");
-                Debug.Log($"🎬 Scene instance bone scene: {sceneInstanceBone.gameObject.scene.name}");
                 
                 if (sceneInstanceBone != animationSpawnPoint)
                 {
                     animationSpawnPoint = sceneInstanceBone;
-                    Debug.Log($"🎬 ✅ FORCE REFRESHED to scene instance: {animationSpawnPoint.name}");
-                    Debug.Log($"🎬 New position: {animationSpawnPoint.position}");
-                    Debug.Log($"🎬 New scene: {animationSpawnPoint.gameObject.scene.name}");
-                }
-                else
-                {
-                    Debug.Log($"🎬 ✅ Already using scene instance: {animationSpawnPoint.name}");
                 }
             }
-            else
-            {
-                Debug.LogError($"🎬 ❌ Could not find scene instance of bone: {boneName}");
-                Debug.LogError($"🎬 Available children: {string.Join(", ", GetChildNames(transform))}");
-            }
-        }
-        else
-        {
-            Debug.LogError("🎬 ❌ No spawn point assigned!");
         }
         
-        Debug.Log("🎬 ==============================================");
     }
     
     /// <summary>
@@ -650,24 +493,11 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Auto-Setup for Prefab")]
     public void AutoSetupForPrefab()
     {
-        Debug.Log($"🎬 === AUTO-SETUP FOR {gameObject.name} ===");
         
         // Find BowlingController
         if (bowlingController == null)
         {
             bowlingController = FindObjectOfType<BowlingController>();
-            if (bowlingController != null)
-            {
-                Debug.Log($"🎬 ✅ Auto-assigned BowlingController: {bowlingController.name}");
-            }
-            else
-            {
-                Debug.LogError("🎬 ❌ No BowlingController found in scene!");
-            }
-        }
-        else
-        {
-            Debug.Log($"🎬 ✅ BowlingController already assigned: {bowlingController.name}");
         }
         
         // Find Animation Spawn Point
@@ -677,19 +507,9 @@ public class PlayerAnimationController : MonoBehaviour
             if (rightHand != null)
             {
                 animationSpawnPoint = rightHand;
-                Debug.Log($"🎬 ✅ Auto-assigned Animation Spawn Point: {rightHand.name}");
             }
-            else
-            {
-                Debug.LogError($"🎬 ❌ No RightHand transform found in {gameObject.name} or its children!");
-            }
-        }
-        else
-        {
-            Debug.Log($"🎬 ✅ Animation Spawn Point already assigned: {animationSpawnPoint.name}");
         }
         
-        Debug.Log("🎬 ======================================");
     }
     
     /// <summary>
@@ -698,45 +518,19 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Debug Animated Spawn Point")]
     public void DebugAnimatedSpawnPoint()
     {
-        Debug.Log("🎬 === ANIMATED SPAWN POINT DEBUG ===");
         
         if (animationSpawnPoint != null)
         {
-            Debug.Log($"🎬 Spawn Point Name: {animationSpawnPoint.name}");
-            Debug.Log($"🎬 Spawn Point Position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 Spawn Point Rotation: {animationSpawnPoint.rotation.eulerAngles}");
-            Debug.Log($"🎬 Spawn Point Parent: {(animationSpawnPoint.parent != null ? animationSpawnPoint.parent.name : "NULL")}");
             
             // Check if this is a bone in an armature
             if (animationSpawnPoint.parent != null && animationSpawnPoint.parent.name.Contains("Armature"))
             {
-                Debug.Log("🎬 ✅ This appears to be a bone in an armature");
                 
                 // Check if there's an Animator component
                 Animator animator = GetComponent<Animator>();
-                if (animator != null)
-                {
-                    Debug.Log($"🎬 Animator found: {animator.name}");
-                    Debug.Log($"🎬 Animator Controller: {(animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "NULL")}");
-                    Debug.Log($"🎬 Avatar: {(animator.avatar != null ? animator.avatar.name : "NULL")}");
-                    Debug.Log($"🎬 Apply Root Motion: {animator.applyRootMotion}");
-                }
-                else
-                {
-                    Debug.LogWarning("🎬 ❌ No Animator component found on this GameObject");
-                }
             }
-            else
-            {
-                Debug.LogWarning("🎬 ❌ This doesn't appear to be a bone in an armature");
-            }
-        }
-        else
-        {
-            Debug.LogError("🎬 ❌ No animation spawn point assigned!");
         }
         
-        Debug.Log("🎬 ======================================");
     }
     
     /// <summary>
@@ -766,33 +560,19 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Test Spawn Point Position Update")]
     public void TestSpawnPointPositionUpdate()
     {
-        Debug.Log("🎬 === TESTING SPAWN POINT POSITION UPDATE ===");
         
         if (animationSpawnPoint != null)
         {
-            Debug.Log($"🎬 Initial position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 Initial local position: {animationSpawnPoint.localPosition}");
-            Debug.Log($"🎬 Parent: {(animationSpawnPoint.parent != null ? animationSpawnPoint.parent.name : "NULL")}");
             
             // Check if this is a bone in the avatar
             if (animationSpawnPoint.parent != null)
             {
-                Debug.Log($"🎬 BONE HIERARCHY: {animationSpawnPoint.parent.name} -> {animationSpawnPoint.name}");
-                if (animationSpawnPoint.parent.parent != null)
-                {
-                    Debug.Log($"🎬 BONE HIERARCHY: {animationSpawnPoint.parent.parent.name} -> {animationSpawnPoint.parent.name} -> {animationSpawnPoint.name}");
-                }
             }
             
             // Wait a frame and check again
             StartCoroutine(CheckPositionAfterFrame());
         }
-        else
-        {
-            Debug.LogError("🎬 ❌ No animation spawn point assigned!");
-        }
         
-        Debug.Log("🎬 ============================================");
     }
     
     /// <summary>
@@ -801,64 +581,24 @@ public class PlayerAnimationController : MonoBehaviour
     [ContextMenu("Check Bone Animation Status")]
     public void CheckBoneAnimationStatus()
     {
-        Debug.Log("🎬 === CHECKING BONE ANIMATION STATUS ===");
         
         if (animationSpawnPoint != null)
         {
-            Debug.Log($"🎬 Bone Name: {animationSpawnPoint.name}");
-            Debug.Log($"🎬 Current Position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 Current Local Position: {animationSpawnPoint.localPosition}");
-            Debug.Log($"🎬 Parent: {(animationSpawnPoint.parent != null ? animationSpawnPoint.parent.name : "NULL")}");
             
             // Check if this is a bone in the avatar
             if (animationSpawnPoint.parent != null)
             {
-                Debug.Log($"🎬 BONE HIERARCHY: {animationSpawnPoint.parent.name} -> {animationSpawnPoint.name}");
-                if (animationSpawnPoint.parent.parent != null)
-                {
-                    Debug.Log($"🎬 BONE HIERARCHY: {animationSpawnPoint.parent.parent.name} -> {animationSpawnPoint.parent.name} -> {animationSpawnPoint.name}");
-                }
             }
             
             // Check if the bone is actually a bone in the avatar
             Animator animator = GetComponent<Animator>();
-            if (animator != null)
-            {
-                Debug.Log($"🎬 Animator found: {animator.name}");
-                Debug.Log($"🎬 Avatar: {(animator.avatar != null ? animator.avatar.name : "NULL")}");
-                Debug.Log($"🎬 Controller: {(animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "NULL")}");
-                
-                if (animator.avatar == null)
-                {
-                    Debug.LogError("🎬 ❌ CRITICAL: Avatar is NULL! Bones won't animate without an Avatar!");
-                }
-                else
-                {
-                    Debug.Log("🎬 ✅ Avatar is assigned");
-                }
-            }
-            else
-            {
-                Debug.LogError("🎬 ❌ No Animator component found!");
-            }
-        }
-        else
-        {
-            Debug.LogError("🎬 ❌ No animation spawn point assigned!");
         }
         
-        Debug.Log("🎬 ========================================");
     }
     
     private System.Collections.IEnumerator CheckPositionAfterFrame()
     {
         yield return null; // Wait one frame
-        
-        if (animationSpawnPoint != null)
-        {
-            Debug.Log($"🎬 After frame position: {animationSpawnPoint.position}");
-            Debug.Log($"🎬 After frame local position: {animationSpawnPoint.localPosition}");
-        }
     }
     
     /// <summary>
@@ -886,8 +626,6 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (matchesTrigger)
         {
-            if (enableDebugLogs)
-                Debug.Log($"🎬 PlayerAnimationController: Bowler entered trigger box: {other.name} - Stopping camera follow");
             
             // Stop camera follow
             BowlerEvents.NotifyStopFollowing();
@@ -935,8 +673,6 @@ public class PlayerAnimationController : MonoBehaviour
         
         if (sidesTransform == null)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning($"🎬 PlayerAnimationController: Could not find '{sidesChildName}' child in Target GameObject");
             return false;
         }
         
@@ -1035,10 +771,6 @@ public class PlayerAnimationController : MonoBehaviour
             e.y = targetYRotation;
             cachedTransform.rotation = Quaternion.Euler(e);
             
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎬 Picked new random Y rotation for bowling: {targetYRotation:F3}° (range: {minYRotation} to {maxYRotation})");
-            }
         }
         else
         {
@@ -1093,10 +825,6 @@ public class PlayerAnimationController : MonoBehaviour
         e.y = targetYRotation;
         cachedTransform.rotation = Quaternion.Euler(e);
 
-        if (enableDebugLogs)
-        {
-            Debug.Log($"🎬 Set target Y rotation: {targetYRotation}° (jitter enabled: {enableYawJitter}, base: {baseYRotation}°, range: {minYRotation} to {maxYRotation})");
-        }
     }
     
     /// <summary>

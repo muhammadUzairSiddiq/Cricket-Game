@@ -45,13 +45,9 @@ namespace CricketGame
         public bool showDebugLogs = true;
         public bool showCurvedPathInScene = false; // default off per user request
         
-        void Start()
-        {
-            if (showDebugLogs)
-            {
-                Debug.Log("🎯 InswingDelivery: Ready for in swing deliveries");
-            }
-        }
+		void Start()
+		{
+		}
         
         /// <summary>
         /// Calculate in swing trajectory (curves in towards batsman)
@@ -66,11 +62,6 @@ namespace CricketGame
             
             // Create a curved path using Bezier curve control points
             Vector3 swingTarget = CalculateBezierCurveTarget(startPos, targetPos, swingForce);
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 InswingDelivery: Calculated curved trajectory - Force: {swingForce:F2}, Speed: {ballSpeed:F1}");
-            }
             
             return swingTarget;
         }
@@ -159,11 +150,6 @@ namespace CricketGame
                     straight[i] = Vector3.Lerp(startPos, targetPos, t);
                 }
                 
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 INSWING PATH: Straight path - {straight.Length} points from {startPos} to {targetPos}");
-                }
-                
                 return straight;
             }
 
@@ -181,16 +167,6 @@ namespace CricketGame
             float swing = swingForce * baseSwingForce;
             float lateralMeters = swing * curveIntensity * (distance * bendDistanceScale);
             Vector3 controlPoint = Vector3.Lerp(startPos, targetPos, 0.5f) + left * lateralMeters;
-
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 INSWING PATH GENERATION:");
-                Debug.Log($"   Start: {startPos}, Target: {targetPos}");
-                Debug.Log($"   Bowling Direction: {dir}");
-                Debug.Log($"   Lateral Left: {left}");
-                Debug.Log($"   Control Point Offset: {lateralMeters:F2}m");
-                Debug.Log($"   ✅ Directions calculated DYNAMICALLY - works from ANY spawn point!");
-            }
 
             int count = Mathf.Max(2, segments + 1);
             Vector3[] points = new Vector3[count];
@@ -221,11 +197,6 @@ namespace CricketGame
             // Add leftward curve to the direction
             Vector3 swingDirection = baseDirection + leftDirection * swingForce * 0.3f;
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 InswingDelivery: Swing direction calculated - Force: {swingForce:F2}");
-            }
-            
             return swingDirection.normalized;
         }
         
@@ -254,10 +225,7 @@ namespace CricketGame
         /// </summary>
         public void ResetDelivery()
         {
-            if (showDebugLogs)
-            {
-                Debug.Log("🎯 InswingDelivery: Reset for new ball");
-            }
+			
         }
         
         /// <summary>
@@ -277,10 +245,7 @@ namespace CricketGame
             maxSwingAtSpeed16 = maxSwing;
             baseSwingForce = baseForce;
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 InswingDelivery: Updated settings - Min: {minSwing}, Max: {maxSwing}, Base: {baseForce}");
-            }
+			
         }
         
         /// <summary>

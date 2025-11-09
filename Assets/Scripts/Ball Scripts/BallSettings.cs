@@ -112,12 +112,11 @@ namespace CricketGame
         public void StartDestroyTimer()
         {
             // Check if auto-destroy is enabled from BallSettingsSO
-            BallSettingsSO ballSettingsSO = FindObjectOfType<BallSettingsSO>();
-            if (ballSettingsSO != null && !ballSettingsSO.EnableAutoDestroy)
-            {
-                Debug.Log("🏏 Auto-destroy disabled - ball will not be destroyed automatically");
-                return;
-            }
+			BallSettingsSO ballSettingsSO = FindObjectOfType<BallSettingsSO>();
+			if (ballSettingsSO != null && !ballSettingsSO.EnableAutoDestroy)
+			{
+				return;
+			}
             
             Invoke(nameof(DestroyBall), destroyDelay);
         }
@@ -127,7 +126,6 @@ namespace CricketGame
         /// </summary>
         void DestroyBall()
         {
-            Debug.Log($"🏏 Ball destroyed after {destroyDelay} seconds");
             Destroy(gameObject);
         }
         
@@ -161,12 +159,7 @@ namespace CricketGame
         [ContextMenu("Test Ball Settings")]
         void TestBallSettings()
         {
-            Debug.Log($"🏏 Ball Settings Test:");
-            Debug.Log($"   Global Speed: {globalBallSpeed} m/s");
-            Debug.Log($"   Arc Height: {arcHeight} m");
-            Debug.Log($"   Bounce Force: {bounceForce}");
-            Debug.Log($"   Max Bounces: {maxBounces}");
-            Debug.Log($"   Destroy Delay: {destroyDelay}s");
+			// Intentionally empty: method kept for easy context-menu hookup
         }
         
         [ContextMenu("Destroy Ball Now")]

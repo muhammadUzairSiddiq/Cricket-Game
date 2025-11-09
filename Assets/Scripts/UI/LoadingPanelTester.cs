@@ -30,11 +30,8 @@ namespace CricketGame.UI
         {
             if (LoadingPanelManager.Instance == null)
             {
-                Debug.LogError("❌ LoadingPanelManager not found! Make sure it's set up in the scene.");
                 return;
             }
-            
-            Debug.Log("🧪 Testing Loading Panel Pulse - Starting...");
             LoadingPanelManager.StartPulse();
         }
         
@@ -46,7 +43,6 @@ namespace CricketGame.UI
             // Press 'L' to start one pulse cycle (completes and stops automatically)
             if (Input.GetKeyDown(KeyCode.L))
             {
-                Debug.Log("🧪 Keyboard Test: Starting Pulse Animation (will complete and stop automatically)");
                 LoadingPanelManager.StartPulse();
             }
         }

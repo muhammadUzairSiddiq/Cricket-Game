@@ -40,20 +40,15 @@ namespace CricketGame
         void Start()
         {
             ballRigidbody = GetComponent<Rigidbody>();
-            if (ballRigidbody == null)
-            {
-                Debug.LogError("🎯 BallSpeedBoost: No Rigidbody found on ball!");
-                enabled = false;
-                return;
-            }
+			if (ballRigidbody == null)
+			{
+				enabled = false;
+				return;
+			}
             
             // Don't store initial speed here - it will be set when ball is launched
             initialSpeed = 0f;
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost: Ready to receive speed from bowling system");
-            }
         }
         
         void Update()
@@ -73,11 +68,6 @@ namespace CricketGame
             if (applyBoostOnTargetHit && !boostApplied)
             {
                 hasHitTarget = true;
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 BallSpeedBoost: Target hit! Will apply boost in {boostDelay}s");
-                }
-                
                 // Apply boost after delay
                 Invoke(nameof(ApplySpeedBoost), boostDelay);
             }
@@ -89,10 +79,6 @@ namespace CricketGame
         public void SetInitialSpeed(float speed)
         {
             initialSpeed = speed;
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost: Initial speed set to {initialSpeed:F1} m/s");
-            }
         }
         
         /// <summary>
@@ -100,22 +86,6 @@ namespace CricketGame
         /// </summary>
         public void CheckConfiguration()
         {
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost Configuration:");
-                Debug.Log($"  - Enable Speed Boost: {enableSpeedBoost}");
-                Debug.Log($"  - Boost Multiplier: {boostMultiplier}");
-                Debug.Log($"  - Speed 9 Boost: {speed9Boost}");
-                Debug.Log($"  - Speed 10 Boost: {speed10Boost}");
-                Debug.Log($"  - Speed 11 Boost: {speed11Boost}");
-                Debug.Log($"  - Speed 12 Boost: {speed12Boost}");
-                Debug.Log($"  - Speed 13 Boost: {speed13Boost}");
-                Debug.Log($"  - Speed 14 Boost: {speed14Boost}");
-                Debug.Log($"  - Speed 15 Boost: {speed15Boost}");
-                Debug.Log($"  - Speed 16 Boost: {speed16Boost}");
-                Debug.Log($"  - Apply On Target Hit: {applyBoostOnTargetHit}");
-                Debug.Log($"  - Apply On Bounce: {applyBoostOnBounce}");
-            }
         }
         
         /// <summary>
@@ -139,11 +109,6 @@ namespace CricketGame
             // Get boost amount based on initial speed
             float boostAmount = GetBoostForSpeed(initialSpeed);
             
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost: Initial speed {initialSpeed:F1} m/s → Boost amount {boostAmount:F2} m/s");
-            }
-            
             if (boostAmount > 0f)
             {
                 // Apply boost to current velocity direction
@@ -159,18 +124,6 @@ namespace CricketGame
                 ballRigidbody.linearVelocity = boostedVelocity;
                 
                 boostApplied = true;
-                
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 BallSpeedBoost: Applied {boostAmount:F1} m/s boost! Speed: {currentSpeed:F1} → {newSpeed:F1} m/s");
-                }
-            }
-            else
-            {
-                if (showDebugLogs)
-                {
-                    Debug.Log($"🎯 BallSpeedBoost: No boost for speed {initialSpeed:F1} m/s");
-                }
             }
         }
         
@@ -200,10 +153,6 @@ namespace CricketGame
             hasHitTarget = false;
             initialSpeed = ballRigidbody != null ? ballRigidbody.linearVelocity.magnitude : 0f;
             
-            if (showDebugLogs)
-            {
-                Debug.Log("🎯 BallSpeedBoost: Reset boost system");
-            }
         }
         
         /// <summary>
@@ -212,11 +161,6 @@ namespace CricketGame
         public void SetBoostMultiplier(float multiplier)
         {
             boostMultiplier = Mathf.Clamp(multiplier, 0f, 5f);
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost: Boost multiplier set to {boostMultiplier:F1}");
-            }
         }
         
         /// <summary>
@@ -225,11 +169,6 @@ namespace CricketGame
         public void SetBoostEnabled(bool enabled)
         {
             enableSpeedBoost = enabled;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"🎯 BallSpeedBoost: Speed boost {(enabled ? "enabled" : "disabled")}");
-            }
         }
         
         /// <summary>

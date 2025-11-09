@@ -42,15 +42,12 @@ namespace CricketGame
 				bowlingController.OnTargetTouched(rb);
 				if (showDebugLogs)
 				{
-					Debug.Log($"🎯 TARGET HIT: Notified controller with rigidbody {rb.name}");
 				}
 			}
 			else if (showDebugLogs)
 			{
-				Debug.LogWarning("🎯 TARGET HIT: BowlingController reference not set on TargetHitTrigger");
 			}
 		}
 	}
 }
-
 

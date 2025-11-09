@@ -69,9 +69,9 @@ public class TargetDragger : MonoBehaviour
         // Find wickets (you can assign these in inspector or find them automatically)
         FindWickets();
         
-       // Debug.Log("🏏 Target Dragger initialized!");
-        //Debug.Log($"🏏 Original position: {originalPosition}");
-        //Debug.Log($"🏏 Movement boundaries: Up={maxUpDistance}m, Down={maxDownDistance}m, Side={maxSideDistance}m");
+       //
+        //
+        //
     }
     
     void Update()
@@ -172,11 +172,11 @@ public class TargetDragger : MonoBehaviour
         {
             isDragging = true;
             lastInputPosition = inputPosition;
-          //  Debug.Log("🏏 Started dragging target - raycast hit confirmed");
+          //
         }
         else
         {
-           // Debug.Log("🏏 Click missed target - raycast didn't hit");
+           //
         }
     }
     
@@ -200,7 +200,7 @@ public class TargetDragger : MonoBehaviour
         // Update last input position
         lastInputPosition = inputPosition;
         
-     //   Debug.Log($"🏏 Dragging target to: {targetPosition}");
+     //
     }
     
     /// <summary>
@@ -211,7 +211,7 @@ public class TargetDragger : MonoBehaviour
         if (isDragging)
         {
             isDragging = false;
-          //  Debug.Log("🏏 Stopped dragging target");
+          //
         }
     }
     
@@ -232,12 +232,12 @@ public class TargetDragger : MonoBehaviour
                 // Check if the hit object is this target
                 if (hit.collider.gameObject == gameObject)
                 {
-                   // Debug.Log($"🏏 Raycast hit target at: {hit.point} (Layer filtered)");
+                   //
                     return true;
                 }
                 else
                 {
-                  //  Debug.Log($"🏏 Raycast hit other object in target layer: {hit.collider.gameObject.name}");
+                  //
                     return false;
                 }
             }
@@ -250,19 +250,19 @@ public class TargetDragger : MonoBehaviour
                 // Check if the hit object is this target
                 if (hit.collider.gameObject == gameObject)
                 {
-                   // Debug.Log($"🏏 Raycast hit target at: {hit.point} (Collider filtered)");
+                   //
                     return true;
                 }
                 else
                 {
-                  //  Debug.Log($"🏏 Raycast hit other object: {hit.collider.gameObject.name} - ignoring");
+                  //
                     // Continue raycasting to find target behind other objects
                     return ContinueRaycastToTarget(ray, hit);
                 }
             }
         }
         
-      //  Debug.Log("🏏 Raycast didn't hit anything");
+      //
         return false;
     }
     
@@ -302,19 +302,19 @@ public class TargetDragger : MonoBehaviour
                 // Check if this hit is our target
                 if (newHit.collider.gameObject == gameObject)
                 {
-                 //   Debug.Log($"🏏 Continued raycast hit target at: {newHit.point} (through other objects)");
+                 //
                     return true;
                 }
                 else
                 {
-                 //   Debug.Log($"🏏 Continued raycast hit: {newHit.collider.gameObject.name} - continuing...");
+                 //
                     // Recursively continue raycasting
                     return ContinueRaycastToTarget(ray, newHit);
                 }
             }
         }
         
-     //   Debug.Log("🏏 Raycast didn't find target after going through other objects");
+     //
         return false;
     }
     
@@ -400,10 +400,10 @@ public class TargetDragger : MonoBehaviour
         // Debug boundary constraints
         if (newPosition != constrainedPosition)
         {
-         //   Debug.Log($"🏏 Target constrained to Pitching Area:");
-           // Debug.Log($"🏏 Requested: {newPosition}");
-            //Debug.Log($"🏏 Constrained: {constrainedPosition}");
-            //Debug.Log($"🏏 Pitching Area bounds: {minBound} to {maxBound}");
+         //
+           //
+            //
+            //
         }
         
         return constrainedPosition;
@@ -421,11 +421,11 @@ public class TargetDragger : MonoBehaviour
             BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
             boxCollider.size = new Vector3(1f, 0.1f, 1f); // Flat box for ground target
             boxCollider.center = Vector3.zero;
-         //   Debug.Log("🏏 Added BoxCollider to target for raycast detection");
+         //
         }
         else
         {
-         //   Debug.Log($"🏏 Target already has collider: {targetCollider.GetType().Name}");
+         //
         }
     }
     
@@ -441,8 +441,8 @@ public class TargetDragger : MonoBehaviour
             {
                 // Try to set target to a specific layer for filtering
                 // You can create a custom layer called "Target" in Unity
-              //  Debug.Log($"🏏 Target layer: {LayerMask.LayerToName(gameObject.layer)}");
-              //  Debug.Log($"🏏 Target layer mask: {targetLayerMask.value}");
+              //
+              //
                 
                 // Optional: Auto-set to a specific layer if available
                 int targetLayer = LayerMask.NameToLayer("Target");
@@ -450,11 +450,11 @@ public class TargetDragger : MonoBehaviour
                 {
                     gameObject.layer = targetLayer;
                     targetLayerMask = 1 << targetLayer; // Set layer mask to only this layer
-                //    Debug.Log("🏏 Auto-set target to 'Target' layer for better filtering");
+                //
                 }
                 else
                 {
-                 //   Debug.LogWarning("🏏 'Target' layer not found. Create a layer called 'Target' for better filtering.");
+                 //
                 }
             }
         }
@@ -478,27 +478,27 @@ public class TargetDragger : MonoBehaviour
                     pitchingAreaCenter = pitchingArea.transform.position;
                     pitchingAreaSize = Vector3.Scale(pitchingAreaBounds.size, pitchingArea.transform.localScale);
                     
-                //    Debug.Log($"🏏 Found Pitching Area bounds:");
-               //     Debug.Log($"🏏 Center: {pitchingAreaCenter}");
-                 //   Debug.Log($"🏏 Size: {pitchingAreaSize}");
-                   // Debug.Log($"🏏 Using Pitching Area boundaries for target constraints");
+                //
+               //
+                 //
+                   //
                     
                     // Update movement limits based on pitching area
                     UpdateMovementLimitsFromPitchingArea();
                 }
                 else
                 {
-                    //Debug.LogWarning("🏏 Pitching Area found but no BoxCollider component!");
+                    //
                 }
             }
             else
             {
-                //Debug.LogWarning("🏏 Pitching Area not found! Using fallback boundaries.");
+                //
             }
         }
         else
         {
-            //Debug.Log("🏏 Using manual boundary settings (Pitching Area bounds disabled)");
+            //
         }
     }
     
@@ -549,7 +549,6 @@ public class TargetDragger : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("🏏 Could not find wicket references - using default boundaries");
             }
         }
     }

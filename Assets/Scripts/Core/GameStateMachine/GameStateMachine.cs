@@ -11,9 +11,6 @@ namespace CricketGame.Core
 	/// </summary>
 	public class GameStateMachine : MonoBehaviour
 	{
-		[Header("State Management")]
-		[SerializeField] private bool showDebugLogs = true;
-
 		[Header("Transition Settings")]
 		[SerializeField] private bool useLoadingPanelTransitions = true;
 		[SerializeField] private float transitionDuration = 0.4f;
@@ -32,19 +29,11 @@ namespace CricketGame.Core
 		{
 			if (state == null)
 			{
-				Debug.LogError("GameStateMachine: Cannot register null state!");
 				return;
 			}
 
 			string key = state.StateName;
-			if (registeredStates.ContainsKey(key))
-			{
-				Debug.LogWarning($"GameStateMachine: State '{key}' already registered. Overwriting.");
-			}
-
 			registeredStates[key] = state;
-			if (showDebugLogs)
-				Debug.Log($"✅ GameStateMachine: Registered state '{key}'");
 		}
 
 		/// <summary>
@@ -55,19 +44,16 @@ namespace CricketGame.Core
 			// CRITICAL: Force reset if stuck for too long
 			if (isTransitioning && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
 			{
-				Debug.LogWarning($"GameStateMachine: Transition stuck for {Time.time - transitionStartTime:F1}s, forcing reset");
 				isTransitioning = false;
 			}
 			
 			if (isTransitioning)
 			{
-				Debug.LogWarning($"GameStateMachine: Already transitioning. Ignoring transition to '{stateName}'");
 				return;
 			}
 
 			if (!registeredStates.ContainsKey(stateName))
 			{
-				Debug.LogError($"GameStateMachine: State '{stateName}' not registered!");
 				return;
 			}
 
@@ -82,19 +68,16 @@ namespace CricketGame.Core
 			// CRITICAL: Force reset if stuck for too long
 			if (isTransitioning && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
 			{
-				Debug.LogWarning($"GameStateMachine: Transition stuck for {Time.time - transitionStartTime:F1}s, forcing reset before immediate transition");
 				isTransitioning = false;
 			}
 			
 			if (isTransitioning)
 			{
-				Debug.LogWarning($"GameStateMachine: Already transitioning. Ignoring transition to '{stateName}'");
 				return;
 			}
 
 			if (!registeredStates.ContainsKey(stateName))
 			{
-				Debug.LogError($"GameStateMachine: State '{stateName}' not registered!");
 				return;
 			}
 
@@ -127,7 +110,6 @@ namespace CricketGame.Core
 		{
 			if (isTransitioning)
 			{
-				Debug.LogWarning("GameStateMachine: Force resetting stuck transition flag");
 				isTransitioning = false;
 				transitionStartTime = 0f;
 				
@@ -181,9 +163,6 @@ namespace CricketGame.Core
 		{
 			IGameState newState = registeredStates[stateName];
 
-			if (showDebugLogs)
-				Debug.Log($"🔄 GameStateMachine: Transitioning from '{currentState?.StateName ?? "None"}' to '{newState.StateName}'");
-
 			// CRITICAL: Enable new camera BEFORE disabling old one to prevent "No camera to render" error
 			// Enter new state first (enables new camera)
 			newState.OnEnter();
@@ -203,7 +182,6 @@ namespace CricketGame.Core
 			// CRITICAL: Watchdog timer - auto-reset stuck transitions
 			if (isTransitioning && transitionStartTime > 0f && Time.time - transitionStartTime > MAX_TRANSITION_TIME)
 			{
-				Debug.LogError($"GameStateMachine: WATCHDOG - Transition stuck for {Time.time - transitionStartTime:F1}s! Force resetting.");
 				isTransitioning = false;
 				transitionStartTime = 0f;
 			}

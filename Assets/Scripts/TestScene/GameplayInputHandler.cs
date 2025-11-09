@@ -20,10 +20,6 @@ namespace CricketGame
         [Tooltip("Animation trigger name in the Animator")]
         public string bowlingAnimationTrigger = "StartBow";
         
-        [Header("Debug Settings")]
-        [Tooltip("Show debug logs for input events")]
-        public bool enableDebugLogs = true;
-        
         // Component references
         private BowlingController bowlingController;
         private PlayerAnimationController playerAnimationController;
@@ -40,14 +36,11 @@ namespace CricketGame
             InitializeReferences();
         }
         
-        void Start()
-        {
-            if (enableDebugLogs)
-                Debug.Log("🎮 GameplayInputHandler: Input system initialized");
-            
-            // Wait a frame for bowler instantiation, then refresh references
-            StartCoroutine(RefreshReferencesAfterInstantiation());
-        }
+		void Start()
+		{
+			// Wait a frame for bowler instantiation, then refresh references
+			StartCoroutine(RefreshReferencesAfterInstantiation());
+		}
         
         /// <summary>
         /// Wait for bowler instantiation then refresh references
@@ -57,17 +50,7 @@ namespace CricketGame
             // Wait a few frames for BowlingController to instantiate the bowler
             yield return new WaitForSeconds(0.5f);
             
-            if (enableDebugLogs)
-                Debug.Log("🎮 Refreshing references after bowler instantiation...");
-            
             InitializeReferences();
-            
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎮 Final reference check:");
-                Debug.Log($"🎮   - PlayerAnimationController: {(playerAnimationController != null ? playerAnimationController.name : "NULL")}");
-                Debug.Log($"🎮   - Animator: {(bowlerAnimator != null ? bowlerAnimator.name : "NULL")}");
-            }
         }
         
         void Update()
@@ -80,47 +63,22 @@ namespace CricketGame
         /// <summary>
         /// Initialize component references
         /// </summary>
-        private void InitializeReferences()
-        {
-            // Find BowlingController
-            if (bowlingController == null)
-            {
-                bowlingController = FindObjectOfType<BowlingController>();
-                if (bowlingController != null && enableDebugLogs)
-                {
-                    Debug.Log($"🎮 Found BowlingController: {bowlingController.name}");
-                }
-            }
-            
-            // Get PlayerAnimationController from BowlingController
-            if (bowlingController != null)
-            {
-                playerAnimationController = bowlingController.GetPlayerAnimationController();
-                if (playerAnimationController != null && enableDebugLogs)
-                {
-                    Debug.Log($"🎮 Found PlayerAnimationController: {playerAnimationController.name}");
-                    
-                    // Get the Animator from the PlayerAnimationController's GameObject
-                    bowlerAnimator = playerAnimationController.GetComponent<Animator>();
-                    if (bowlerAnimator != null && enableDebugLogs)
-                    {
-                        Debug.Log($"🎮 Found Animator: {bowlerAnimator.name}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("🎮 No Animator found on PlayerAnimationController GameObject");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning("🎮 No PlayerAnimationController found - make sure bowler is instantiated");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("🎮 No BowlingController found in scene");
-            }
-        }
+		private void InitializeReferences()
+		{
+			if (bowlingController == null)
+			{
+				bowlingController = FindObjectOfType<BowlingController>();
+			}
+
+			if (bowlingController != null)
+			{
+				playerAnimationController = bowlingController.GetPlayerAnimationController();
+				if (playerAnimationController != null)
+				{
+					bowlerAnimator = playerAnimationController.GetComponent<Animator>();
+				}
+			}
+		}
         
         /// <summary>
         /// Handle bowling input (Space key)
@@ -133,16 +91,12 @@ namespace CricketGame
                 // Check cooldown to prevent spam
                 if (Time.time - lastBowlingTime < bowlingCooldown)
                 {
-                    if (enableDebugLogs)
-                        Debug.Log($"🎮 Bowling on cooldown - wait {(bowlingCooldown - (Time.time - lastBowlingTime)):F1} seconds");
                     return;
                 }
                 
                 // Check if bowling animation is already playing
                 if (isBowlingAnimationPlaying)
                 {
-                    if (enableDebugLogs)
-                        Debug.Log("🎮 Bowling animation already playing - ignoring input");
                     return;
                 }
                 
@@ -154,50 +108,30 @@ namespace CricketGame
         /// <summary>
         /// Trigger the bowler's bowling animation
         /// </summary>
-        public void TriggerBowlingAnimation()
-        {
-            if (enableDebugLogs)
-                Debug.Log("🎮 === TRIGGERING BOWLING ANIMATION ===");
-            
-            // Validate components
-            if (bowlerAnimator == null)
-            {
-                Debug.LogError("🎮 ❌ Cannot trigger bowling - no Animator found");
-                return;
-            }
-            
-            if (playerAnimationController == null)
-            {
-                Debug.LogError("🎮 ❌ Cannot trigger bowling - no PlayerAnimationController found");
-                return;
-            }
-            
-            // Check if the bowling animation trigger exists
-            if (!HasAnimationTrigger(bowlingAnimationTrigger))
-            {
-                Debug.LogWarning($"🎮 ⚠️ Animation trigger '{bowlingAnimationTrigger}' not found in Animator Controller");
-                Debug.LogWarning("🎮 Available triggers:");
-                LogAvailableTriggers();
-                return;
-            }
-            
-            // Set cooldown
-            lastBowlingTime = Time.time;
-            isBowlingAnimationPlaying = true;
-            
-            // Trigger the animation
-            bowlerAnimator.SetTrigger(bowlingAnimationTrigger);
-            
-            if (enableDebugLogs)
-            {
-                Debug.Log($"🎮 ✅ Triggered bowling animation: {bowlingAnimationTrigger}");
-                Debug.Log($"🎮 Bowler: {playerAnimationController.gameObject.name}");
-                Debug.Log($"🎮 Animation State: Playing");
-            }
-            
-            // Start monitoring animation state
-            StartCoroutine(MonitorBowlingAnimation());
-        }
+		public void TriggerBowlingAnimation()
+		{
+			if (bowlerAnimator == null)
+			{
+				return;
+			}
+
+			if (playerAnimationController == null)
+			{
+				return;
+			}
+
+			if (!HasAnimationTrigger(bowlingAnimationTrigger))
+			{
+				LogAvailableTriggers();
+				return;
+			}
+
+			lastBowlingTime = Time.time;
+			isBowlingAnimationPlaying = true;
+			bowlerAnimator.SetTrigger(bowlingAnimationTrigger);
+
+			StartCoroutine(MonitorBowlingAnimation());
+		}
         
         /// <summary>
         /// Check if the specified animation trigger exists
@@ -220,26 +154,15 @@ namespace CricketGame
         /// <summary>
         /// Log all available animation triggers for debugging
         /// </summary>
-        private void LogAvailableTriggers()
-        {
-            if (bowlerAnimator == null) return;
-            
-            foreach (AnimatorControllerParameter param in bowlerAnimator.parameters)
-            {
-                if (param.type == AnimatorControllerParameterType.Trigger)
-                {
-                    Debug.Log($"🎮   - {param.name}");
-                }
-            }
-        }
+		private void LogAvailableTriggers()
+		{
+		}
         
         /// <summary>
         /// Monitor bowling animation state
         /// </summary>
         private System.Collections.IEnumerator MonitorBowlingAnimation()
         {
-            if (enableDebugLogs)
-                Debug.Log("🎮 Monitoring bowling animation state...");
             
             // Wait for animation to start
             yield return new WaitForEndOfFrame();
@@ -254,8 +177,6 @@ namespace CricketGame
                 // For now, we'll use a simple timeout
                 if (Time.time - lastBowlingTime > 10f) // 10 second timeout
                 {
-                    if (enableDebugLogs)
-                        Debug.Log("🎮 Bowling animation timeout - resetting state");
                     break;
                 }
                 
@@ -264,8 +185,6 @@ namespace CricketGame
             
             // Reset bowling state
             isBowlingAnimationPlaying = false;
-            if (enableDebugLogs)
-                Debug.Log("🎮 Bowling animation completed - ready for next input");
         }
         
         /// <summary>
@@ -276,8 +195,6 @@ namespace CricketGame
         {
             isBowlingAnimationPlaying = false;
             lastBowlingTime = 0f;
-            if (enableDebugLogs)
-                Debug.Log("🎮 ✅ Bowling state force reset");
         }
         
         /// <summary>
@@ -286,17 +203,7 @@ namespace CricketGame
         [ContextMenu("Check Input System Status")]
         public void CheckInputSystemStatus()
         {
-            Debug.Log("🎮 === INPUT SYSTEM STATUS ===");
-            Debug.Log($"🎮 Input Enabled: {enableInput}");
-            Debug.Log($"🎮 Bowling Key: {bowlingKey}");
-            Debug.Log($"🎮 Animation Trigger: {bowlingAnimationTrigger}");
-            Debug.Log($"🎮 Bowling Controller: {(bowlingController != null ? bowlingController.name : "NULL")}");
-            Debug.Log($"🎮 Player Animation Controller: {(playerAnimationController != null ? playerAnimationController.name : "NULL")}");
-            Debug.Log($"🎮 Animator: {(bowlerAnimator != null ? bowlerAnimator.name : "NULL")}");
-            Debug.Log($"🎮 Is Bowling Animation Playing: {isBowlingAnimationPlaying}");
-            Debug.Log($"🎮 Last Bowling Time: {lastBowlingTime}");
-            Debug.Log($"🎮 Cooldown Remaining: {(Time.time - lastBowlingTime < bowlingCooldown ? (bowlingCooldown - (Time.time - lastBowlingTime)).ToString("F1") + "s" : "Ready")}");
-            Debug.Log("🎮 =========================");
+
         }
         
         /// <summary>
@@ -305,8 +212,6 @@ namespace CricketGame
         [ContextMenu("Manual Trigger Bowling")]
         public void ManualTriggerBowling()
         {
-            if (enableDebugLogs)
-                Debug.Log("🎮 Manual bowling trigger activated");
             TriggerBowlingAnimation();
         }
         
@@ -316,13 +221,8 @@ namespace CricketGame
         [ContextMenu("Refresh Component References")]
         public void RefreshComponentReferences()
         {
-            if (enableDebugLogs)
-                Debug.Log("🎮 Refreshing component references...");
             
             InitializeReferences();
-            
-            if (enableDebugLogs)
-                Debug.Log("🎮 ✅ Component references refreshed");
         }
     }
 }

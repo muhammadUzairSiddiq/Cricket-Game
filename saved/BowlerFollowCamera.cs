@@ -316,8 +316,7 @@ namespace CricketGame
 			// If we got here, no tagged bowler was found. Do not choose anything else.
 			if (target == null)
 			{
-				// no target found; will wait for event
-			}
+}
 		}
 
 		// Home position storage for reset functionality

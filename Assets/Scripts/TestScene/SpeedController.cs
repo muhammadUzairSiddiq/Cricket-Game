@@ -424,16 +424,10 @@ namespace CricketGame
         private void UpdateBallSpeed()
         {
             // Update ball settings ScriptableObject
-            if (ballSettingsSO != null)
-            {
-                Debug.Log($"🎯 SPEED CONTROLLER: Calling SetGlobalBallSpeed({currentSpeed}) on ballSettingsSO");
-                ballSettingsSO.SetGlobalBallSpeed(currentSpeed);
-                Debug.Log($"🎯 SPEED CONTROLLER: Updated ball settings speed to {currentSpeed} m/s");
-            }
-            else
-            {
-                Debug.LogError("🚨 SPEED CONTROLLER: ballSettingsSO is null! Please assign it in the Inspector.");
-            }
+			if (ballSettingsSO != null)
+			{
+				ballSettingsSO.SetGlobalBallSpeed(currentSpeed);
+			}
         }
         
         /// <summary>
@@ -554,9 +548,12 @@ namespace CricketGame
                 isMovingUp = startNormalized < 0.5f;
             }
             
-            // CRITICAL: Force a frame delay to ensure state machine processes the reset
-            // This prevents the state from immediately transitioning if speedConfirmed was true
-            StartCoroutine(DelayedResetConfirmation());
+			// CRITICAL: Force a frame delay to ensure state machine processes the reset
+			// This prevents the state from immediately transitioning if speedConfirmed was true
+			if (isActiveAndEnabled && gameObject.activeInHierarchy)
+			{
+				StartCoroutine(DelayedResetConfirmation());
+			}
         }
         
         /// <summary>
@@ -566,11 +563,10 @@ namespace CricketGame
         {
             yield return null; // Wait one frame
             // Double-check that speedConfirmed is still false after frame delay
-            if (speedConfirmed)
-            {
-                Debug.LogWarning("🎯 SpeedController: speedConfirmed was re-set during reset, forcing to false");
-                speedConfirmed = false;
-            }
+			if (speedConfirmed)
+			{
+				speedConfirmed = false;
+			}
         }
     }
 }

@@ -15,7 +15,6 @@ namespace CricketGame
         [ContextMenu("Test Break Wicket")]
         public void TestBreakWicket()
         {
-            Debug.Log("🎳 TEST: Manually breaking wicket...");
             BreakWicket(Vector3.forward * 10f, transform.position);
         }
         
@@ -156,11 +155,8 @@ namespace CricketGame
             // Only break if not already broken (prevents multiple breaks on same wicket state)
             if (isBroken)
             {
-                Debug.Log("🎳 Wicket already broken, waiting for reset...");
                 return;
             }
-            
-            Debug.Log($"🎳 BREAKING WICKET! Ball speed: {ballVelocity.magnitude}, Hit point: {hitPoint}");
             isBroken = true;
             
             // Play break sound
@@ -180,8 +176,6 @@ namespace CricketGame
             float ballSpeed = ballVelocity.magnitude;
             bool breakAllStumps = ballSpeed > speedForAllStumpsBreak;
             
-            Debug.Log($"🎳 Ball speed: {ballSpeed:F2}, Threshold: {speedForAllStumpsBreak}, Breaking all: {breakAllStumps}");
-            
             // ALWAYS break bails first (they should fly off)
             BreakBails(ballVelocity, hitPoint);
             
@@ -191,12 +185,10 @@ namespace CricketGame
             // This works for ANY length (yorker, full, etc.) because it's speed-based, not length-based
             if (breakAllStumps)
             {
-                Debug.Log($"🎳 BREAKING ALL STUMPS (Speed: {ballSpeed:F2} > {speedForAllStumpsBreak})");
                 BreakAllStumpsWithForce(ballVelocity, hitPoint, true);
             }
             else
             {
-                Debug.Log($"🎳 BREAKING HIT STUMP ONLY (Speed: {ballSpeed:F2} <= {speedForAllStumpsBreak})");
                 BreakOnlyHitStump(ballVelocity, hitPoint);
             }
         }
@@ -209,8 +201,6 @@ namespace CricketGame
             foreach (Transform bail in wicketBails)
             {
                 if (bail == null) continue;
-                
-                Debug.Log($"🎳 Breaking bail: {bail.name}");
                 
             // Add Rigidbody if not present
             Rigidbody bailRb = bail.GetComponent<Rigidbody>();
@@ -237,8 +227,6 @@ namespace CricketGame
             bailRb.AddForce(breakDirection * breakForce, ForceMode.Impulse);
             bailRb.AddTorque(Random.insideUnitSphere * breakTorque, ForceMode.Impulse);
             
-            Debug.Log($"🎳 Applied force to bail: {breakDirection * breakForce}");
-            
             // Reset bail position after lifetime instead of destroying (use stump lifetime for both to synchronize)
             StartCoroutine(ResetBailAfterDelay(bail, stumpLifetime));
             }
@@ -254,22 +242,18 @@ namespace CricketGame
             float minDistance = float.MaxValue;
             int hitIndex = -1;
             int count = 0;
-            
-            Debug.Log($"🎳 Finding hit stump among {wicketStumps.Length} stumps...");
-            Debug.Log($"🎳 Hit point: {hitPoint}");
+
             
             // Loop through all stumps to find the closest (actually hit)
             foreach (Transform stump in wicketStumps)
             {
                 if (stump == null)
                 {
-                    Debug.LogWarning($"🎳 Stump {count} is NULL!");
                     count++;
                     continue;
                 }
                 
                 float distance = Vector3.Distance(hitPoint, stump.position);
-                Debug.Log($"🎳 Stump {count}: {stump.name} at {stump.position}, Distance: {distance:F2}");
                 
                 if (distance < minDistance)
                 {
@@ -283,12 +267,10 @@ namespace CricketGame
             // Break ONLY the stump that was hit with normal force
             if (hitStump != null)
             {
-                Debug.Log($"🎳 ✅ HIT STUMP FOUND: {hitStump.name} (Index: {hitIndex}), Distance: {minDistance:F2}");
                 BreakSingleStumpWithForce(hitStump, ballVelocity, hitPoint, false);
             }
             else
             {
-                Debug.LogError("🎳 ❌ No stump found to break!");
             }
         }
         
@@ -297,7 +279,6 @@ namespace CricketGame
         /// </summary>
         void BreakAllStumpsWithForce(Vector3 ballVelocity, Vector3 hitPoint, bool severe)
         {
-            Debug.Log($"🎳 Breaking ALL 3 stumps with {(severe ? "SEVERE" : "NORMAL")} force!");
             
             // Break all stumps with higher force for severe breaks
             foreach (Transform stump in wicketStumps)
@@ -316,25 +297,19 @@ namespace CricketGame
         {
             if (stump == null)
             {
-                Debug.LogError($"🎳 Cannot break - stump is null!");
                 return;
             }
-            
-            Debug.Log($"🎳 🎳 BREAKING STUMP: {stump.name} 🎳 🎳");
-            Debug.Log($"🎳 Stump position: {stump.position}");
-            Debug.Log($"🎳 Hit point: {hitPoint}");
+
             
             // Add Rigidbody if not present
             Rigidbody stumpRb = stump.GetComponent<Rigidbody>();
             if (stumpRb == null)
             {
                 stumpRb = stump.gameObject.AddComponent<Rigidbody>();
-                Debug.Log($"🎳 Added Rigidbody to {stump.name}");
             }
             
             // CRITICAL: Disable kinematic to allow physics when breaking
             stumpRb.isKinematic = false;
-            Debug.Log($"🎳 Disabled kinematic for {stump.name}");
             
             // Configure rigidbody
             stumpRb.useGravity = enableGravity;
@@ -352,9 +327,7 @@ namespace CricketGame
             Vector3 appliedForce = breakDirection * force * 0.7f;
             stumpRb.AddForce(appliedForce, ForceMode.Impulse);
             stumpRb.AddTorque(Random.insideUnitSphere * torque, ForceMode.Impulse);
-            
-            Debug.Log($"🎳 Applied {(severe ? "SEVERE" : "NORMAL")} force to {stump.name}: {appliedForce}");
-            Debug.Log($"🎳 Stump {stump.name} should now break and fall!");
+
             
             // Reset stump position after lifetime instead of destroying
             StartCoroutine(ResetStumpAfterDelay(stump, stumpLifetime));
@@ -382,10 +355,7 @@ namespace CricketGame
                     if (bailRb != null)
                     {
                         Destroy(bailRb);
-                        Debug.Log($"🎳 Removed Rigidbody from bail {index}");
                     }
-                    
-                    Debug.Log($"🎳 Reset bail {index} to position: {originalBailPositions[index]}");
                 }
             }
         }
@@ -412,10 +382,7 @@ namespace CricketGame
                     if (stumpRb != null)
                     {
                         Destroy(stumpRb);
-                        Debug.Log($"🎳 Removed Rigidbody from stump {index}");
                     }
-                    
-                    Debug.Log($"🎳 Reset stump {index} to position: {originalStumpPositions[index]}");
                     
                     // Reset wicket state to allow breaking again
                     isBroken = false;

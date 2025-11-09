@@ -18,7 +18,6 @@ namespace CricketGame
             WicketBreakingSystem wicketSystem = GetComponent<WicketBreakingSystem>();
             if (wicketSystem == null)
             {
-                Debug.LogError("WicketBreakingSystem component not found!");
                 return;
             }
             
@@ -68,13 +67,11 @@ namespace CricketGame
             if (stumpField != null)
             {
                 stumpField.SetValue(wicketSystem, stumps.ToArray());
-                Debug.Log($"Auto-setup: Found {stumps.Count} stumps");
             }
             
             if (bailField != null)
             {
                 bailField.SetValue(wicketSystem, bails.ToArray());
-                Debug.Log($"Auto-setup: Found {bails.Count} bails");
             }
         }
         

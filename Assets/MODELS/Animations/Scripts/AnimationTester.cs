@@ -86,7 +86,6 @@ namespace CricketBowlingAnimations
         public void UpdateOriginalPosition()
         {
             originalPosition = transform.position;
-            Debug.Log($"🎬 AnimationTester: Updated original position to {originalPosition}");
         }
 
         /// <summary>

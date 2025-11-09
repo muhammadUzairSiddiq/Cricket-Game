@@ -55,10 +55,7 @@ namespace TMPro.Examples
 
                     m_transform.position = m_initial_Position + new Vector3(x, z, y);
 
-                    // Drawing light patterns because they can be cool looking.
-                    //if (Time.frameCount > 1)
-                    //    Debug.DrawLine(m_transform.position, m_prevPOS, m_lightColor, 100f);
-
+					// Drawing light patterns because they can be cool looking.
                     m_prevPOS = m_transform.position;
                     break;
             }

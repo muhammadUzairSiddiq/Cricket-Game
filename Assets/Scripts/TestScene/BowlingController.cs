@@ -124,18 +124,6 @@ namespace CricketGame
             if (selectedBowlerPrefab != null)
             {
                 playerAnimationController = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
-                if (playerAnimationController != null)
-                {
-                    Debug.Log($"🎯 Found PlayerAnimationController in selected bowler: {selectedBowlerPrefab.name}");
-                }
-                else
-                {
-                    Debug.LogWarning($"🎯 No PlayerAnimationController found in selected bowler: {selectedBowlerPrefab.name}");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("🎯 No bowler prefab selected");
             }
         }
         
@@ -238,7 +226,6 @@ namespace CricketGame
                                    controller.transform.rotation,
                                    GetMappingSpawnTransform(controller.gameObject) ?? GetAutoResolvedSpawn(controller.gameObject, false));
             
-            Debug.Log("🎯 Spawn point refreshed after bowler instantiation");
         }
         
         /// <summary>
@@ -250,7 +237,6 @@ namespace CricketGame
             GameplayInputHandler inputHandler = FindObjectOfType<GameplayInputHandler>();
             if (inputHandler != null)
             {
-                Debug.Log("🎯 Notifying GameplayInputHandler that bowler is ready");
                 inputHandler.RefreshComponentReferences();
             }
         }
@@ -263,17 +249,12 @@ namespace CricketGame
             if (availableBowlerPrefabs != null && index >= 0 && index < availableBowlerPrefabs.Length)
             {
                 selectedBowlerPrefab = availableBowlerPrefabs[index];
-                Debug.Log($"🎯 Selected bowler prefab: {selectedBowlerPrefab.name}");
                 
                 // Auto-instantiate if enabled
                 if (autoInstantiateBowler)
                 {
                     InstantiateSelectedBowler();
                 }
-            }
-            else
-            {
-                Debug.LogWarning($"🎯 Invalid bowler prefab index: {index}");
             }
         }
         
@@ -312,34 +293,22 @@ namespace CricketGame
         
         void Start()
         {
-            Debug.Log("🎯 === BOWLING CONTROLLER START ===");
-            Debug.Log($"🎯 Auto-instantiate bowler: {autoInstantiateBowler}");
-            Debug.Log($"🎯 Selected bowler prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
             SetupTest();
             
             // Auto-instantiate bowler if enabled
             if (autoInstantiateBowler && selectedBowlerPrefab != null)
             {
-                Debug.Log("🎯 Auto-instantiation ENABLED - calling InstantiateSelectedBowler()");
                 InstantiateSelectedBowler();
-            }
-            else
-            {
-                Debug.Log("🎯 Auto-instantiation DISABLED or no prefab selected - skipping bowler instantiation");
             }
             
             // Using existing bowling zones (manually created under Pitching Area)
-            Debug.Log("🎯 Using existing bowling zones from Pitching Area");
             
             // Debug current settings
-            Debug.Log($"🎯 DEBUG: enableManualKeyInput = {enableManualKeyInput}");
             PlayerAnimationController animController = GetPlayerAnimationController();
-            Debug.Log($"🎯 DEBUG: playerAnimationController = {(animController != null ? animController.name : "NULL")}");
             if (animController != null)
             {
                 Transform animSpawn = animController.GetAnimationSpawnPoint();
-                Debug.Log($"🎯 DEBUG: animationSpawnPoint = {(animSpawn != null ? animSpawn.name : "NULL")}");
             }
         }
         
@@ -361,19 +330,16 @@ namespace CricketGame
         {
             if (ball == null)
             {
-                Debug.LogError("Ball not assigned! Please assign a ball GameObject.");
                 return;
             }
             
             if (target == null)
             {
-                Debug.LogError("Target not assigned! Please assign a target Transform.");
                 return;
             }
             
             if (ballSpawnPoint == null)
             {
-                Debug.LogError("Ball spawn point not assigned! Please assign a spawn point Transform.");
                 return;
             }
             
@@ -432,23 +398,18 @@ namespace CricketGame
         /// </summary>
         void ApplyDynamicBowlingSettings(BallSettings ballSettings)
         {
-            Debug.Log($"<color=#FF0000>🚨 ApplyDynamicBowlingSettings STARTED!</color>");
-            Debug.Log($"<color=#FFD700>🔍 DEBUGGING DYNAMIC SETTINGS: useDynamicSettings={useDynamicSettings}, target={target != null}, pitchingArea={pitchingArea != null}</color>");
             
             if (!useDynamicSettings || target == null || pitchingArea == null)
             {
-                Debug.Log($"<color=#FF0000>❌ DYNAMIC BOWLING INACTIVE: useDynamicSettings={useDynamicSettings}, target={target != null}, pitchingArea={pitchingArea != null}</color>");
                 // Apply basic settings even if dynamic is disabled
                 ApplyBasicBallSettings(ballSettings);
                 return;
             }
             
-            Debug.Log($"<color=#FFD700>🔍 ZONE REFERENCES: yorkerZone={yorkerZone != null}, fullTossZone={fullTossZone != null}, lengthZone={lengthZone != null}, slotZone={slotZone != null}, shortZone={shortZone != null}</color>");
             
             // Check if ballSettingsSO is assigned
             if (ballSettingsSO == null)
             {
-                Debug.LogError("🚨 ballSettingsSO is not assigned! Please assign the BallSettingsSO ScriptableObject in the Inspector.");
                 return;
             }
             
@@ -466,17 +427,6 @@ namespace CricketGame
             // Apply rotation to spawn point based on bowling length
             ApplyBowlingRotation(lengthCategory);
             
-            // Colorful debug information with before/after comparison
-            string lengthColor = GetLengthColor(lengthCategory);
-            string speedColor = originalSpeed != ballSettingsSO.GlobalBallSpeed ? "<color=#00FF00>" : "<color=#FF0000>";
-            string arcColor = originalArc != ballSettingsSO.ArcHeight ? "<color=#00FF00>" : "<color=#FF0000>";
-            string bounceColor = originalBounce != ballSettingsSO.BounceForce ? "<color=#00FF00>" : "<color=#FF0000>";
-            
-            Debug.Log($"{lengthColor}🎯 BOWLING LENGTH: {lengthCategory} (Zone-based detection)</color>");
-            Debug.Log($"{speedColor}⚡ GLOBAL BALL SPEED: {originalSpeed:F1} → {ballSettingsSO.GlobalBallSpeed:F1} m/s (applies to all lengths)</color>");
-            Debug.Log($"{arcColor}📈 ARC HEIGHT: {originalArc:F1} → {ballSettingsSO.ArcHeight:F1} m</color>");
-            Debug.Log($"{bounceColor}🏀 BOUNCE FORCE: {originalBounce:F2} → {ballSettingsSO.BounceForce:F2}</color>");
-            Debug.Log($"<color=#FFD700>✅ DYNAMIC SETTINGS APPLIED SUCCESSFULLY!</color>");
         }
         
         /// <summary>
@@ -501,18 +451,14 @@ namespace CricketGame
         /// </summary>
         void AdjustBallSettingsForLength(BallSettings targetBallSettings, BowlingLength length)
         {
-            Debug.Log($"<color=#FFD700>🔍 AdjustBallSettingsForLength called for {length}</color>");
-            Debug.Log($"<color=#FFD700>🔍 ballSettingsSO reference: {ballSettingsSO != null}</color>");
             
             if (ballSettingsSO == null)
             {
-                Debug.LogWarning($"⚠️ No BallSettings reference found! Using hardcoded values for {length}.");
                 // Use hardcoded values as fallback
                 ApplyHardcodedSettings(targetBallSettings, length);
                 return;
             }
             
-            Debug.Log($"<color=#FFD700>🔍 Using Inspector BallSettings for {length}</color>");
             
             // Apply global settings (all settings are now global for simplicity)
             targetBallSettings.SetArcHeight(ballSettingsSO.ArcHeight); // Use global arc height
@@ -522,7 +468,6 @@ namespace CricketGame
             targetBallSettings.SetMaxBounces(ballSettingsSO.MaxBounces);
             targetBallSettings.SetUseRealisticPhysics(ballSettingsSO.UseRealisticPhysics);
             
-            Debug.Log($"✅ Applied {length} settings from single BallSettings component");
         }
         
         /// <summary>
@@ -530,7 +475,6 @@ namespace CricketGame
         /// </summary>
         void ApplyBasicBallSettings(BallSettings targetBallSettings)
         {
-            Debug.Log("🎯 Applying basic ball settings (dynamic disabled)");
             
             // Apply default cricket ball settings
             targetBallSettings.SetBallSpeed(12f);
@@ -541,7 +485,6 @@ namespace CricketGame
             targetBallSettings.SetMaxBounces(3);
             targetBallSettings.SetUseRealisticPhysics(true);
             
-            Debug.Log("✅ Basic ball settings applied: Speed=12, Arc=1.2, Bounce=1.0, Physics=true");
         }
         
         /// <summary>
@@ -585,7 +528,6 @@ namespace CricketGame
                     break;
             }
             
-            Debug.Log($"✅ Applied hardcoded {length} settings: Global Speed={targetBallSettings.BallSpeed}, Arc={targetBallSettings.ArcHeight}, Bounce={targetBallSettings.BounceForce}");
         }
         
         /// <summary>
@@ -613,7 +555,6 @@ namespace CricketGame
         {
             if (target == null || pitchingArea == null)
             {
-                Debug.LogWarning("⚠️ Target or Pitching Area is null!");
                 return BowlingLength.GoodLength;
             }
             
@@ -629,7 +570,6 @@ namespace CricketGame
             if (yorkerZone != null)
             {
                 float distance = Vector3.Distance(targetPos, yorkerZone.position);
-                Debug.Log($"🎯 Target distance to Yorker zone: {distance:F2} (Zone pos: {yorkerZone.position})");
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -637,16 +577,11 @@ namespace CricketGame
                     closestZoneName = "Yorker";
                 }
             }
-            else
-            {
-                Debug.LogWarning("⚠️ Yorker zone reference is null!");
-            }
             
             // Check Full Toss zone
             if (fullTossZone != null)
             {
                 float distance = Vector3.Distance(targetPos, fullTossZone.position);
-                Debug.Log($"🎯 Target distance to Full Toss zone: {distance:F2} (Zone pos: {fullTossZone.position})");
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -654,16 +589,11 @@ namespace CricketGame
                     closestZoneName = "Full Toss";
                 }
             }
-            else
-            {
-                Debug.LogWarning("⚠️ Full Toss zone reference is null!");
-            }
             
             // Check Length zone (Good Length)
             if (lengthZone != null)
             {
                 float distance = Vector3.Distance(targetPos, lengthZone.position);
-                Debug.Log($"🎯 Target distance to Length zone: {distance:F2} (Zone pos: {lengthZone.position})");
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -671,16 +601,11 @@ namespace CricketGame
                     closestZoneName = "Length";
                 }
             }
-            else
-            {
-                Debug.LogWarning("⚠️ Length zone reference is null!");
-            }
             
             // Check Slot zone (Short Length)
             if (slotZone != null)
             {
                 float distance = Vector3.Distance(targetPos, slotZone.position);
-                Debug.Log($"🎯 Target distance to Slot zone: {distance:F2} (Zone pos: {slotZone.position})");
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -688,16 +613,11 @@ namespace CricketGame
                     closestZoneName = "Slot";
                 }
             }
-            else
-            {
-                Debug.LogWarning("⚠️ Slot zone reference is null!");
-            }
             
             // Check Short zone (Bouncer)
             if (shortZone != null)
             {
                 float distance = Vector3.Distance(targetPos, shortZone.position);
-                Debug.Log($"🎯 Target distance to Short zone: {distance:F2} (Zone pos: {shortZone.position})");
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -705,13 +625,8 @@ namespace CricketGame
                     closestZoneName = "Short";
                 }
             }
-            else
-            {
-                Debug.LogWarning("⚠️ Short zone reference is null!");
-            }
             
             // Real-time debug output
-            Debug.Log($"🎯 TARGET STATUS: I'm at position {targetPos}, closest to {closestZoneName} zone (distance: {minDistance:F2}), using {closestLength} bowling settings!");
             
             return closestLength;
         }
@@ -735,7 +650,6 @@ namespace CricketGame
             
             // 🎯 CORRECT: Use X rotation for downward angle + Y rotation for left/right aiming
             spawnPoint.rotation = Quaternion.Euler(rotationX, rotationY, spawnPoint.rotation.eulerAngles.z);
-            Debug.Log($"🎯 Applied {length} rotation: X={rotationX}° (downward), Y={rotationY}° (left/right) to spawn point");
         }
         
         /// <summary>
@@ -813,18 +727,7 @@ namespace CricketGame
             trail.enabled = true;
             trail.autodestruct = false;
             
-            Debug.Log("?? Trail renderer FORCED to light white visible color!");
             // FIXED: Use sharedMaterial for prefab access
-            if (trail.sharedMaterial != null)
-            {
-                Debug.Log($"?? Trail material color: {trail.sharedMaterial.color}");
-            }
-            else
-            {
-                Debug.Log("?? Trail material: NULL");
-            }
-            Debug.Log($"?? Trail start color: {trail.startColor}");
-            Debug.Log($"?? Trail end color: {trail.endColor}");
         }
         
         /// <summary>
@@ -861,23 +764,16 @@ namespace CricketGame
             {
                 bounceComponent = ballInstance.AddComponent<CricketBallBounce>();
                 bounceComponent.Initialize(this);
-                Debug.Log("🎳 Bounce component added to ball instance");
             }
             else
             {
                 bounceComponent.Initialize(this);
-                Debug.Log("🎳 Bounce component initialized for ball instance");
             }
             
             // 🎯 CRITICAL: Add BallWicketCollision component for wicket breaking
             if (ballInstance.GetComponent<BallWicketCollision>() == null)
             {
                 ballInstance.AddComponent<BallWicketCollision>();
-                Debug.Log("🎳 BallWicketCollision component added to ball instance");
-            }
-            else
-            {
-                Debug.Log("🎳 BallWicketCollision already exists on ball");
             }
             
             // Add trail renderer for visual effect
@@ -907,12 +803,7 @@ namespace CricketGame
             trail.enabled = true;
             trail.autodestruct = false;
             
-            Debug.Log("?? Instance trail renderer FORCED to light white visible color!");
-            Debug.Log($"?? Trail material color: {trail.material.color}");
-            Debug.Log($"?? Trail start color: {trail.startColor}");
-            Debug.Log($"?? Trail end color: {trail.endColor}");
             
-            Debug.Log("?? Ball instance physics setup complete!");
         }
         
         /// <summary>
@@ -923,21 +814,18 @@ namespace CricketGame
             // ?? NEW: Instantiate new ball with S key (only if manual input enabled)
             if (enableManualKeyInput && Input.GetKeyDown(KeyCode.S))
             {
-                Debug.Log("🎯 S key pressed - Creating new ball");
                 InstantiateNewBall();
             }
             
             // ?? NEW: Bowl current ball with SPACE key (only if manual input enabled)
             if (enableManualKeyInput && Input.GetKeyDown(KeyCode.Space))
             {
-                Debug.Log("🎯 SPACE key pressed - Attempting to bowl ball");
                 BowlCurrentBall();
             }
             
             // Manual ball reset with R key (kept for compatibility)
             if (Input.GetKeyDown(KeyCode.R))
             {
-                Debug.Log("🎯 R key pressed - Resetting ball");
                 ResetBall();
             }
             
@@ -957,7 +845,6 @@ namespace CricketGame
         /// </summary>
         public void InstantiateNewBall()
         {
-            Debug.Log("🎯 InstantiateNewBall called");
             
             // Destroy existing ball instance if any (NOT the prefab reference!)
             // This is needed for manual ball creation (S key) - different from auto-destroy
@@ -965,7 +852,6 @@ namespace CricketGame
             {
                 Destroy(currentBallInstance);
                 currentBallInstance = null;
-                Debug.Log("🎯 Destroyed previous ball instance for new ball creation");
             }
             
             // Instantiate new ball at spawn point
@@ -980,7 +866,6 @@ namespace CricketGame
                     // Use BowlingController's spawn point for manual testing
                     spawnPointToUse = spawnPoint;
                     spawnPointType = "Manual (BowlingController)";
-                    Debug.Log($"🎯 SPAWN POINT: Manual mode enabled - using BowlingController spawn point");
                 }
                 else
                 {
@@ -995,21 +880,18 @@ namespace CricketGame
                         if (spawnPointToUse != null)
                         {
                             spawnPointType = "Animation (PlayerAnimationController)";
-                            Debug.Log($"🎯 SPAWN POINT: Animation mode - using PlayerAnimationController spawn point: {spawnPointToUse.name}");
                             
                             // Refresh the spawn point position to get current world position
                             animController.RefreshSpawnPointPosition();
                             
                             // Get the current animated position
                             Vector3 animatedPosition = animController.GetCurrentAnimatedSpawnPosition();
-                            Debug.Log($"🎯 ANIMATED POSITION: Current {spawnPointToUse.name} position: {animatedPosition}");
                         }
                         else
                         {
                             // Animation spawn point not assigned
                             spawnPointToUse = spawnPoint;
                             spawnPointType = "Fallback (Animation Spawn Point Not Assigned)";
-                            Debug.LogWarning("🎯 PlayerAnimationController found but Animation Spawn Point is not assigned! Using BowlingController spawn point as fallback");
                         }
                     }
                     else
@@ -1017,7 +899,6 @@ namespace CricketGame
                         // Fallback to BowlingController's spawn point if PlayerAnimationController not found
                         spawnPointToUse = spawnPoint;
                         spawnPointType = "Fallback (PlayerAnimationController Not Found)";
-                        Debug.LogWarning("🎯 PlayerAnimationController not found - using BowlingController spawn point as fallback");
                     }
                 }
                 
@@ -1035,18 +916,14 @@ namespace CricketGame
                         if (animController != null)
                         {
                             currentSpawnPosition = animController.GetCurrentAnimatedSpawnPosition();
-                            Debug.Log($"🎯 ANIMATED SPAWN: Using ANIMATED world position: {currentSpawnPosition}");
                         }
                         else
                         {
                             currentSpawnPosition = spawnPointToUse.position;
-                            Debug.Log($"🎯 ANIMATED SPAWN: Fallback to transform position: {currentSpawnPosition}");
                         }
                         
                         currentSpawnRotation = spawnPointToUse.rotation;
                         
-                        Debug.Log($"🎯 ANIMATED SPAWN: Bone {spawnPointToUse.name}, Position: {currentSpawnPosition}");
-                        Debug.Log($"🎯 ANIMATED SPAWN: Spawn point parent: {(spawnPointToUse.parent != null ? spawnPointToUse.parent.name : "NULL")}");
                     }
                     else
                     {
@@ -1056,13 +933,9 @@ namespace CricketGame
                     }
                     
                     currentBallInstance = Instantiate(ball, currentSpawnPosition, currentSpawnRotation);
-                    Debug.Log($"🎯 DYNAMIC SPAWN: Ball instantiated at {spawnPointType} position: {currentSpawnPosition}");
-                    Debug.Log($"🎯 DYNAMIC SPAWN: Spawn rotation: {currentSpawnRotation.eulerAngles}");
-                    Debug.Log($"🎯 Ball instance created: {currentBallInstance != null}");
                 }
                 else
                 {
-                    Debug.LogError("🎯 No spawn point available! Please assign spawn points in the Inspector.");
                     return;
                 }
                 
@@ -1073,7 +946,6 @@ namespace CricketGame
                 
                 // ?? FIXED: Keep original ball prefab reference, only update instance references
                 ballRigidbody = currentBallInstance.GetComponent<Rigidbody>();
-                Debug.Log($"🎯 Ball rigidbody: {ballRigidbody != null}");
                 
                 // ?? CRITICAL: Setup physics for the new ball instance
                 SetupBallPhysicsForInstance(currentBallInstance);
@@ -1082,12 +954,7 @@ namespace CricketGame
                 BallSettings ballSettings = currentBallInstance.GetComponent<BallSettings>();
                 if (ballSettings != null)
                 {
-                    Debug.Log("🎯 BallSettings found on ball instance");
                     ApplyDynamicBowlingSettings(ballSettings);
-                }
-                else
-                {
-                    Debug.LogWarning("🎯 No BallSettings component found on ball instance!");
                 }
                 
                 // Ensure the target has a trigger to notify exact contact
@@ -1101,11 +968,6 @@ namespace CricketGame
                     trigger.GetType().GetField("bowlingController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)?.SetValue(trigger, this);
                 }
 
-                Debug.Log("🎯 Ball ready for bowling! Press SPACE to bowl");
-            }
-            else
-            {
-                Debug.LogError($"🎯 Cannot instantiate ball - ball: {ball != null}, spawnPoint: {spawnPoint != null}");
             }
         }
         
@@ -1142,24 +1004,17 @@ namespace CricketGame
         /// </summary>
         IEnumerator BowlAndDestroy()
         {
-            Debug.Log("🏏 === BOWL AND DESTROY STARTED ===");
             
             // Bowl the ball
-            Debug.Log("🏏 Starting BowlToTarget coroutine...");
             yield return StartCoroutine(BowlToTarget());
             
-            Debug.Log("🏏 ✅ BowlToTarget completed - ball has finished bowling to target");
             
             // Wait for ball to land and bounce
-            Debug.Log("🏏 Starting WaitForLanding coroutine...");
             yield return StartCoroutine(WaitForLanding());
             
-            Debug.Log("🏏 ✅ WaitForLanding completed - ball has landed and finished bouncing");
             
             // Alternative: Simple fixed wait (uncomment if WaitForLanding is problematic)
-            // Debug.Log("🏏 Using simple fixed wait instead of WaitForLanding...");
             // yield return new WaitForSeconds(2f);
-            // Debug.Log("🏏 ✅ Fixed wait completed");
             
             // Reset ball state so new balls can be bowled
             ballIsBowled = false;
@@ -1167,47 +1022,22 @@ namespace CricketGame
             ResetBounceState();
             
             // Check if auto-destroy is enabled
-            Debug.Log($"🏏 Checking auto-destroy: ballSettingsSO = {(ballSettingsSO != null ? "FOUND" : "NULL")}");
-            if (ballSettingsSO != null)
-            {
-                Debug.Log($"🏏 EnableAutoDestroy = {ballSettingsSO.EnableAutoDestroy}");
-                Debug.Log($"🏏 DestroyDelay = {ballSettingsSO.DestroyDelay}");
-            }
             
             if (ballSettingsSO != null && ballSettingsSO.EnableAutoDestroy)
             {
-                Debug.Log($"🏏 ✅ Auto-destroy ENABLED - destroying ball in {ballSettingsSO.DestroyDelay} seconds");
-                Debug.Log($"🏏 Current ball instance: {(currentBallInstance != null ? currentBallInstance.name : "NULL")}");
                 
                 // Wait for destroy delay
                 yield return new WaitForSeconds(ballSettingsSO.DestroyDelay);
                 
-                Debug.Log("🏏 Destroy delay completed - attempting to destroy ball");
                 
                 // Destroy the ball
                 if (currentBallInstance != null)
                 {
-                    Debug.Log($"🏏 🗑️ DESTROYING ball instance: {currentBallInstance.name}");
                     Destroy(currentBallInstance);
                     currentBallInstance = null;
-                    Debug.Log("🏏 ✅ Ball instance destroyed and reference cleared");
-                }
-                else
-                {
-                    Debug.LogError("🏏 ❌ Ball instance is NULL - cannot destroy");
-                }
-            }
-            else
-            {
-                Debug.Log("🏏 ❌ Auto-destroy DISABLED - ball remains in scene");
-                if (ballSettingsSO == null)
-                {
-                    Debug.LogError("🏏 ❌ BallSettingsSO is NULL!");
                 }
             }
             
-            Debug.Log("🏏 === BOWL AND DESTROY COMPLETED ===");
-            Debug.Log("?? Ball state reset - ready for new ball! Press S to create a new ball when ready!");
         }
         
         /// <summary>
@@ -1215,7 +1045,6 @@ namespace CricketGame
         /// </summary>
         public void StartContinuousBowling()
         {
-            Debug.Log("?? Continuous bowling disabled - use S for new ball, SPACE to bowl!");
         }
         
         /// <summary>
@@ -1223,7 +1052,6 @@ namespace CricketGame
         /// </summary>
         public void StopContinuousBowling()
         {
-            Debug.Log("?? Continuous bowling disabled - use S for new ball, SPACE to bowl!");
         }
         
         /// <summary>
@@ -1231,7 +1059,6 @@ namespace CricketGame
         /// </summary>
         IEnumerator BowlToTarget()
         {
-            Debug.Log("?? Bowling ball to target...");
             
             // ?? FIXED: Use current ball instance instead of prefab reference
             GameObject ballToBowl = currentBallInstance != null ? currentBallInstance : ball;
@@ -1239,7 +1066,6 @@ namespace CricketGame
             
             if (ballToBowl == null)
             {
-                Debug.LogError("?? No ball to bowl!");
                 yield break;
             }
             
@@ -1247,7 +1073,6 @@ namespace CricketGame
             BallSettings ballSettings = ballToBowl.GetComponent<BallSettings>();
             if (ballSettings == null)
             {
-                Debug.LogError("?? Ball missing BallSettings component! Please add BallSettings to your BALL prefab.");
                 yield break;
             }
             
@@ -1298,7 +1123,6 @@ namespace CricketGame
             
             if (Vector3.Distance(ballToBowl.transform.position, expectedPosition) > 0.1f)
             {
-                Debug.LogWarning($"?? Ball not at correct spawn position! Forcing reset to current animated position...");
                 ballToBowl.transform.position = expectedPosition;
                 if (ballRigidbodyToUse != null)
                 {
@@ -1331,23 +1155,14 @@ namespace CricketGame
                     // Refresh the spawn point position to get current world position
                     animController.RefreshSpawnPointPosition();
                     startPosition = animController.GetCurrentAnimatedSpawnPosition();
-                    Debug.Log($"🎯 TRAJECTORY: Using current animated spawn position: {startPosition}");
                 }
                 else
                 {
                     startPosition = ballToBowl.transform.position;
-                    Debug.LogWarning("🎯 TRAJECTORY: No PlayerAnimationController found, using ball position as fallback");
                 }
             }
             
             // 🎯 VERIFICATION: Log spawn and start positions
-            Debug.Log($"═══════════════════════════════════════════════════════");
-            Debug.Log($"🎯 DYNAMIC SPAWN VERIFICATION:");
-            Debug.Log($"   Spawn Point Transform Position: {correctSpawnPoint.position}");
-            Debug.Log($"   Ball Current Position: {ballToBowl.transform.position}");
-            Debug.Log($"   Trajectory Start Position: {startPosition}");
-            Debug.Log($"   Target Position: {targetPosition}");
-            Debug.Log($"   Ball vs Trajectory Match: {Vector3.Distance(ballToBowl.transform.position, startPosition) < 0.01f}");
             
             // Calculate horizontal distance to target
             Vector3 horizontalStart = new Vector3(startPosition.x, 0, startPosition.z);
@@ -1357,9 +1172,6 @@ namespace CricketGame
             // 🎯 BOWLING DIRECTION: Calculate actual bowling direction
             Vector3 bowlingDirection = (targetPosition - startPosition).normalized;
             Vector3 bowlingDirectionHorizontal = (horizontalTarget - horizontalStart).normalized;
-            Debug.Log($"   Bowling Direction (3D): {bowlingDirection}");
-            Debug.Log($"   Bowling Direction (Horizontal): {bowlingDirectionHorizontal}");
-            Debug.Log($"═══════════════════════════════════════════════════════");
 
             // ?? LENGTH-BASED LOGIC: compute length factor using wicket references if available
             if (umpireWicket != null && batsmanWicket != null)
@@ -1382,15 +1194,11 @@ namespace CricketGame
             }
             
             // ?? NEW: Apply dynamic bowling settings FIRST
-            Debug.Log($"<color=#FFD700>🔍 CALLING ApplyDynamicBowlingSettings...</color>");
-            Debug.Log($"<color=#FF0000>🚨 CRITICAL DEBUG: ballSettings reference = {ballSettings != null}</color>");
             ApplyDynamicBowlingSettings(ballSettings);
-            Debug.Log($"<color=#FFD700>🔍 ApplyDynamicBowlingSettings completed!</color>");
             
             // Check if ballSettingsSO is assigned
             if (ballSettingsSO == null)
             {
-                Debug.LogError("🚨 ballSettingsSO is not assigned in BowlToTarget! Please assign the BallSettingsSO ScriptableObject in the Inspector.");
                 yield break; // Exit the coroutine
             }
             
@@ -1399,12 +1207,10 @@ namespace CricketGame
             if (speedController != null)
             {
                 ballSpeed = speedController.GetCurrentSpeed();
-                Debug.Log($"🎯 SPEED FROM SLIDER: {ballSpeed} m/s");
             }
             else
             {
                 ballSpeed = ballSettingsSO.GlobalBallSpeed;
-                Debug.Log($"🎯 SPEED FROM BALL SETTINGS: {ballSpeed} m/s");
             }
             float arcHeight = ballSettingsSO.ArcHeight;
             // Use global gravity (no longer per-section)
@@ -1443,7 +1249,6 @@ namespace CricketGame
                     Vector3 horizontalVel = new Vector3(initialVelocity.x, 0, initialVelocity.z);
                     horizontalVel *= 0.92f; // 8% horizontal speed reduction for speed 12
                     initialVelocity = new Vector3(horizontalVel.x, initialVelocity.y, horizontalVel.z);
-                    Debug.Log($"🎯 SPEED 12 FIX: Applied extra horizontal damping, new speed = {initialVelocity.magnitude:F1}");
                 }
             }
             
@@ -1472,7 +1277,6 @@ namespace CricketGame
                 horizontalDirection.y = 0f;
                 horizontalDirection = horizontalDirection.normalized;
                 
-                Debug.Log($"🎯 ROTATION APPLIED: Spawn rotation {trajectorySpawnPoint.rotation.eulerAngles}, Forward direction {trajectorySpawnPoint.forward}, Horizontal direction {horizontalDirection}");
             }
             else
             {
@@ -1490,10 +1294,6 @@ namespace CricketGame
             float adjustedYVelocity = initialVelocity.y + (rotationEffect * ballSpeed * rotationMultiplier);
 
             // Debug log using correct spawn point
-            if (trajectorySpawnPoint != null && Mathf.Abs(trajectorySpawnPoint.rotation.eulerAngles.x) > 1f)
-            {
-                Debug.Log($"🎯 X ROTATION: {trajectorySpawnPoint.rotation.eulerAngles.x:F1}°, Effect: {rotationEffect:F3}, Y Velocity: {preAdjustY:F2} → {adjustedYVelocity:F2}");
-            }
 
             // 🎯 HIGH-SPEED DOWNWARD ASSIST: ensure >14 m/s lands on target by adding extra downward component
             if (ballSpeed >= 14f)
@@ -1502,14 +1302,9 @@ namespace CricketGame
                 float overspeed = Mathf.Clamp01((ballSpeed - 14f) / 8f); // 0..1 around 14..22 m/s
                 float downwardAssist = overspeed * ballSpeed * 0.08f; // gentle but effective
                 adjustedYVelocity -= downwardAssist;
-                Debug.Log($"🎯 HIGH-SPEED ASSIST: speed={ballSpeed:F1}, overspeed={overspeed:F2}, assist={downwardAssist:F2}, Y={preAdjustY:F2}->{adjustedYVelocity:F2}");
             }
             
             // 🎯 DEBUG: Log rotation effect
-            if (spawnPoint != null && Mathf.Abs(spawnPoint.rotation.eulerAngles.x) > 1f)
-            {
-                Debug.Log($"🎯 X ROTATION: {spawnPoint.rotation.eulerAngles.x:F1}°, Effect: {rotationEffect:F3}, Y Velocity: {preAdjustY:F2} → {adjustedYVelocity:F2}");
-            }
             
             // 🎯 SPEED-BASED CORRECTION: mild damping at very high speeds
             float horizontalSpeed = new Vector2(initialVelocity.x, initialVelocity.z).magnitude;
@@ -1531,13 +1326,11 @@ namespace CricketGame
                 horizontalVelocity = horizontalVelocity.normalized * horizontalSpeed;
             }
             
-            Debug.Log($"🎯 SPEED CORRECTION: BallSpeed={ballSpeed:F1}, CorrectionFactor={speedCorrectionFactor:F2}, FinalHorizontalSpeed={horizontalSpeed:F1}");
             
             // 🎯 BOUNCER FIX: Ensure minimum horizontal velocity even with extreme rotations
             float minHorizontalSpeed = 2f; // Minimum horizontal speed to prevent ball from going straight down
             if (horizontalVelocity.magnitude < minHorizontalSpeed)
             {
-                Debug.LogWarning($"🎯 BOUNCER FIX: Horizontal velocity too low ({horizontalVelocity.magnitude:F2}), applying minimum speed");
                 horizontalVelocity = horizontalDirection * minHorizontalSpeed;
             }
             
@@ -1570,14 +1363,9 @@ namespace CricketGame
             }
             
             // 🎯 DEBUG: Log trajectory calculations
-            Debug.Log($"🎯 TRAJECTORY CALC: Distance={horizontalDistance:F1}m, Time={timeToReach:F2}s, HorizontalSpeed={horizontalSpeed:F1}m/s, YVelocity={adjustedYVelocity:F1}m/s");
             
-            Debug.Log($"🎯 ROTATION EFFECT: X rotation {spawnPoint?.rotation.eulerAngles.x ?? 0f}°, Rotation effect {rotationEffect:F3}, Y velocity {preAdjustY:F2} → {adjustedYVelocity:F2}");
             
             // Apply velocity to ball with smooth movement
-            Debug.Log($"🎯 APPLYING VELOCITY: UseRealisticPhysics={ballSettingsSO.UseRealisticPhysics}, useSmoothMovement={useSmoothMovement}");
-            Debug.Log($"🎯 VELOCITY VALUES: initialVelocity={initialVelocity}, magnitude={initialVelocity.magnitude:F2}");
-            Debug.Log($"🎯 RIGIDBODY STATUS: ballRigidbodyToUse={ballRigidbodyToUse != null}, isKinematic={ballRigidbodyToUse?.isKinematic}");
             
             // 🎯 SPEED BOOST: Set initial speed for speed boost system
             BallSpeedBoost ballSpeedBoost = currentBallInstance?.GetComponent<BallSpeedBoost>();
@@ -1585,10 +1373,6 @@ namespace CricketGame
             {
                 // Try to add BallSpeedBoost component if missing
                 ballSpeedBoost = currentBallInstance?.AddComponent<BallSpeedBoost>();
-                if (ballSpeedBoost != null)
-                {
-                    Debug.Log($"🎯 SPEED BOOST: Added BallSpeedBoost component to ball instance");
-                }
             }
             
             if (ballSpeedBoost != null)
@@ -1596,12 +1380,6 @@ namespace CricketGame
                 ballSpeedBoost.SetInitialSpeed(ballSpeed);
                 ballSpeedBoost.CheckConfiguration(); // Debug configuration
                 DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
-                Debug.Log($"🎯 SPEED BOOST: Set initial speed to {ballSpeed:F1} m/s for {currentDelivery} delivery");
-                Debug.Log($"🎯 DELIVERY TYPE: Currently using {currentDelivery} delivery system");
-            }
-            else
-            {
-                Debug.LogWarning($"🎯 SPEED BOOST: Could not add BallSpeedBoost component! Speed boost will not work.");
             }
             
             // 🎯 SWING TRAJECTORY: Calculate swing-modified trajectory (already calculated above)
@@ -1657,11 +1435,6 @@ namespace CricketGame
                     if (curvedEnabled)
                     {
                         useKinematicForCurvedPath = true;
-                        Debug.Log("🎯 CURVED PATH: Using PathFollower for curved delivery");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"🎯 PATH FOLLOWER: Delivery not found or path disabled for {currentDelivery}");
                     }
                 }
             }
@@ -1671,12 +1444,10 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 DeliveryType currentType = deliverySystem.GetCurrentDeliveryType();
-                Debug.Log($"🎯 CURRENT DELIVERY TYPE: {currentType}");
             }
             
             if (useKinematicForCurvedPath)
             {
-                Debug.Log("🎯 Using PathFollower for delivery path (100% ACCURACY guaranteed)");
                 
                 // Use normal ball speed for all deliveries
                 float effectiveSpeed = ballSpeed;
@@ -1691,7 +1462,6 @@ namespace CricketGame
                     {
                         path = flatDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
                         addedArc = flatDelivery.pathArcHeight;
-                        Debug.Log("🎯 FLAT DELIVERY: Straight path generated (100% accurate)");
                     }
                 }
                 else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.SeamIn)
@@ -1701,7 +1471,6 @@ namespace CricketGame
                     {
                         path = seamInDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
                         addedArc = seamInDelivery.pathArcHeight;
-                        Debug.Log("🎯 SEAM IN DELIVERY: Straight path generated (100% accurate)");
                     }
                 }
                 else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.SeamOut)
@@ -1711,7 +1480,6 @@ namespace CricketGame
                     {
                         path = seamOutDelivery.GetCurvedPathPoints(startPosition, targetPosition, ballSpeed, 30);
                         addedArc = seamOutDelivery.pathArcHeight;
-                        Debug.Log("🎯 SEAM OUT DELIVERY: Straight path generated (100% accurate)");
                     }
                 }
                 else if (deliverySystem.GetCurrentDeliveryType() == DeliveryType.Inswing)
@@ -1754,12 +1522,6 @@ namespace CricketGame
                 if (path != null)
                 {
                     // 🎯 PATH VERIFICATION: Show path details
-                    Debug.Log($"🎯 PATH GENERATED SUCCESSFULLY:");
-                    Debug.Log($"   Path Points: {path.Length}");
-                    Debug.Log($"   Start Point: {path[0]}");
-                    Debug.Log($"   End Point: {path[path.Length - 1]}");
-                    Debug.Log($"   Mid Point: {path[path.Length / 2]}");
-                    Debug.Log($"   ✅ Path created from current spawn position to current target!");
                     
                     // Ensure physics won't fight the scripted motion
                     Rigidbody rbFollow = currentBallInstance.GetComponent<Rigidbody>();
@@ -1802,21 +1564,11 @@ namespace CricketGame
                         OffSpinDelivery offSpinDel = deliverySystem.GetComponent<OffSpinDelivery>();
                         shouldDisableObstacles = offSpinDel != null && !offSpinDel.enableCurvedPath; // Disable for straight off spin only if requested
                     }
-                    
-                    if (shouldDisableObstacles)
-                    {
-                        Debug.Log($"🎯 OBSTACLE DETECTION: Will be DISABLED for {currentDel} delivery");
-                    }
-                    else
-                    {
-                        Debug.Log($"🎯 OBSTACLE DETECTION: ENABLED for {currentDel} delivery (ignores ground/plane automatically)");
-                    }
 
                     var follower = currentBallInstance.AddComponent<PathFollower>();
                     follower.Initialize(path, effectiveSpeed, addedArc, () =>
                     {
                         hasLanded = true;
-                        Debug.Log("🎯 PathFollower complete");
                         // Re-enable physics so the ball can bounce and roll towards wicket
                         if (rbFollow != null)
                         {
@@ -1836,8 +1588,6 @@ namespace CricketGame
                     }, shouldDisableObstacles); // 🎯 PASS disable obstacles flag!
                     
                     // 🎯 DEBUG: Verify PathFollower initialization
-                    Debug.Log($"🎯 PATHFOLLOWER INIT: Speed={effectiveSpeed}, Arc={addedArc}, PathLength={path.Length}");
-                    Debug.Log($"🎯 PATHFOLLOWER SETTINGS: ObstacleDetection={follower.IsObstacleDetectionEnabled}, Radius={follower.ObstacleCheckRadius}");
                     
                     follower.Begin();
                 }
@@ -1849,7 +1599,6 @@ namespace CricketGame
             }
             else if (!ballSettingsSO.UseRealisticPhysics)
             {
-                Debug.Log("🎯 Using kinematic movement");
                 StartCoroutine(MoveBallKinematic(startPosition, targetPosition, timeToReach));
             }
             else
@@ -1857,21 +1606,15 @@ namespace CricketGame
             // 🎯 USE PHYSICS FOR STRAIGHT DELIVERIES
                 if (useSmoothMovement)
                 {
-                    Debug.Log("🎯 Using smooth velocity application");
                     // Apply velocity smoothly over time
                     StartCoroutine(ApplySmoothVelocity(ballRigidbodyToUse, initialVelocity));
                 }
                 else
                 {
-                    Debug.Log("🎯 Using direct velocity application");
                 ballRigidbodyToUse.linearVelocity = initialVelocity;
                 }
             }
             
-            Debug.Log($"?? Ball launched with velocity: {initialVelocity.magnitude:F1} m/s");
-            Debug.Log($"?? Expected time to target: {timeToReach:F2} seconds");
-            Debug.Log($"<color=#00FF00>✅ FINAL BALL SETTINGS: Speed={ballSpeed}, Arc={arcHeight}, Gravity={gravity}</color>");
-            Debug.Log($"<color=#FFD700>🎯 Using ball settings: Speed={ballSpeed}, Arc={arcHeight}, Bounce={ballSettingsSO.BounceForce}, Gravity={gravity}</color>");
             
             // Wait for ball to reach target area
             float waitTime = Mathf.Clamp(timeToReach, 0.1f, 5f);
@@ -1879,7 +1622,6 @@ namespace CricketGame
             
             // Mark as landed (time-based fallback). Exact contact handled by TargetHitTrigger.
             hasLanded = true;
-            Debug.Log("?? Ball reached target window (time-based)");
 
             // Also trigger speed boost here as a fallback (exact event may also trigger it)
             TryApplySpeedBoostOnTargetHit(ballSpeed);
@@ -1893,13 +1635,11 @@ namespace CricketGame
         {
             if (deliverySystem == null)
             {
-                Debug.LogWarning("🎯 DELIVERY: No delivery system assigned, using flat delivery");
                 return targetPos;
             }
             
             Vector3 deliveryTarget = deliverySystem.CalculateTrajectory(startPos, targetPos, ballSpeed);
             
-            Debug.Log($"🎯 DELIVERY: {deliverySystem.GetCurrentDeliveryType()} trajectory calculated at speed {ballSpeed:F1} m/s");
             
             return deliveryTarget;
         }
@@ -1912,7 +1652,6 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.ResetDelivery();
-                Debug.Log("🎯 DELIVERY: Reset delivery system for new ball");
             }
         }
         
@@ -1924,7 +1663,6 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.SetDeliveryType(DeliveryType.Flat);
-                Debug.Log("🎯 DELIVERY: Switched to Flat delivery");
             }
         }
         
@@ -1937,7 +1675,6 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.SetDeliveryType(DeliveryType.Inswing);
-                Debug.Log("🎯 DELIVERY: Switched to Inswing delivery");
             }
         }
         
@@ -1949,7 +1686,6 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.SetDeliveryType(DeliveryType.SeamOut);
-                Debug.Log("🎯 DELIVERY: Switched to Seam Out delivery");
             }
         }
 
@@ -1961,7 +1697,6 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.SetDeliveryType(type);
-                Debug.Log($"🎯 DELIVERY: Set via external request to {type}");
             }
         }
 
@@ -1972,7 +1707,6 @@ namespace CricketGame
         {
             if (currentBowlerInstance == null)
             {
-                Debug.LogWarning("🎯 No current bowler instance to switch spawn position");
                 return;
             }
 
@@ -1980,7 +1714,6 @@ namespace CricketGame
             BowlerSpawnMapping mapping = GetSpawnMappingForBowler(currentBowlerInstance);
             if (mapping == null)
             {
-                Debug.LogWarning($"🎯 No spawn mapping found for current bowler: {currentBowlerInstance.name}");
                 return;
             }
 
@@ -1990,7 +1723,6 @@ namespace CricketGame
 
             if (newSpawnPoint != null)
             {
-                Debug.Log($"🎯 Switching spawn point for {currentBowlerInstance.name} to {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {newSpawnPoint.position}");
                 // Disable any movement systems that might interfere
                 Rigidbody rb = currentBowlerInstance.GetComponent<Rigidbody>();
                 if (rb != null)
@@ -2043,7 +1775,6 @@ namespace CricketGame
                 {
                     DeliveryType defaultDelivery = profile.GetDefaultDeliveryType();
                     deliverySystem.SetDeliveryType(defaultDelivery);
-                    Debug.Log($"🎯 DELIVERY: Reset to bowler default: {defaultDelivery} when switching spawn position");
                 }
 
                 // Update AnimationTester's original position to match new spawn position
@@ -2051,14 +1782,8 @@ namespace CricketGame
                 if (animationTester != null)
                 {
                     animationTester.UpdateOriginalPosition();
-                    Debug.Log($"🎬 AnimationTester: Updated original position to new spawn position");
                 }
 
-                Debug.Log($"🏏 Switched {currentBowlerInstance.name} to {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} at {newSpawnPoint.name}");
-            }
-            else
-            {
-                Debug.LogError($"🎯 Spawn position {(mapping.useSpawn01 ? "Spawn01" : "Spawn02")} is null for {currentBowlerInstance.name}");
             }
         }
 
@@ -2155,14 +1880,12 @@ namespace CricketGame
         {
             if (currentBowlerInstance == null)
             {
-                Debug.LogWarning("🎯 No current bowler instance to reset");
                 return;
             }
 
             Transform spawnPos = GetCurrentBowlerSpawnPosition();
             if (spawnPos == null)
             {
-                Debug.LogWarning("🎯 No spawn position found for current bowler");
                 return;
             }
 
@@ -2221,8 +1944,6 @@ namespace CricketGame
             // Re-enable systems
             StartCoroutine(ReEnableSystemsAfterDelay(rb, animator, wasRootMotionEnabled));
 
-            Debug.Log($"🏏 Reset {currentBowlerInstance.name} to spawn position: {spawnPos.name} at {spawnPos.position}");
-            Debug.Log($"🏏 Updated spawnPoint and ballSpawnPoint references to: {spawnPoint.name}");
         }
 
         /// <summary>
@@ -2245,7 +1966,6 @@ namespace CricketGame
                 animator.applyRootMotion = wasRootMotionEnabled;
             }
 
-            Debug.Log($"🏏 Systems re-enabled after instant position change");
         }
 
         /// <summary>
@@ -2257,23 +1977,8 @@ namespace CricketGame
             if (deliverySystem != null)
             {
                 deliverySystem.SwitchToLegSpinDelivery();
-                Debug.Log("🎯 TEST: Switched to LegSpin delivery");
                 
                 LegSpinDelivery legSpin = deliverySystem.GetComponent<LegSpinDelivery>();
-                if (legSpin != null)
-                {
-                    Debug.Log($"🎯 TEST: LegSpin component found");
-                    Debug.Log($"🎯 TEST: Post-bounce spin enabled: {legSpin.enablePostBounceSpinEffect}");
-                    Debug.Log($"🎯 TEST: Post-bounce spin strength: {legSpin.postBounceSpinStrength:F2}");
-                }
-                else
-                {
-                    Debug.LogError("🎯 TEST: LegSpin component NOT found!");
-                }
-            }
-            else
-            {
-                Debug.LogError("🎯 TEST: DeliverySystem not found!");
             }
         }
 
@@ -2293,7 +1998,6 @@ namespace CricketGame
             {
                 targetSpeedBoost.OnTargetHit();
                 DeliveryType currentDelivery = deliverySystem?.GetCurrentDeliveryType() ?? DeliveryType.Flat;
-                Debug.Log($"🎯 SPEED BOOST: Triggered for {currentDelivery} delivery with initial speed {ballSpeed:F1} m/s");
             }
         }
         
@@ -2398,7 +2102,6 @@ namespace CricketGame
                 trajectoryDirection.y = 0f;
                 trajectoryDirection = trajectoryDirection.normalized;
                 
-                Debug.Log($"🎯 KINEMATIC ROTATION: Applied spawn rotation {currentSpawnForTrajectory.rotation.eulerAngles} to trajectory direction {trajectoryDirection}");
             }
             else
             {
@@ -2423,7 +2126,6 @@ namespace CricketGame
                     if (inswingDelivery != null && inswingDelivery.IsCurvedPathEnabled())
                     {
                         useCurvedPath = true;
-                        Debug.Log($"🎯 CURVED PATH: Using curved path for Inswing delivery");
                     }
                 }
                 else if (currentDelivery == DeliveryType.LegSpin)
@@ -2432,7 +2134,6 @@ namespace CricketGame
                     if (legSpinDelivery != null && legSpinDelivery.IsCurvedPathEnabled())
                     {
                         useCurvedPath = true;
-                        Debug.Log($"🎯 CURVED PATH: Using curved path for LegSpin delivery");
                     }
                 }
             }
@@ -2519,7 +2220,6 @@ namespace CricketGame
                         // Check if this is an obstacle (has Rigidbody or specific tag)
                         if (hit.collider.attachedRigidbody != null || hit.collider.CompareTag("Obstacle"))
                         {
-                            Debug.Log($"🎯 OBSTACLE HIT: Ball hit obstacle {hit.collider.name} during kinematic movement");
                             
                             // Apply physics response to the obstacle
                             ApplyObstaclePhysicsResponse(hit, movementDirection, ballSpeed);
@@ -2536,7 +2236,6 @@ namespace CricketGame
                             trajectoryDirection.y = 0f; // Keep horizontal
                             trajectoryDirection = trajectoryDirection.normalized;
                             
-                            Debug.Log($"🎯 OBSTACLE DEFLECTION: New direction {trajectoryDirection}");
                             break; // Only handle first obstacle hit
                         }
                     }
@@ -2567,7 +2266,6 @@ namespace CricketGame
                 
                 obstacleRb.AddForceAtPosition(force, hit.point, ForceMode.Impulse);
                 
-                Debug.Log($"🎯 OBSTACLE FORCE: Applied {force.magnitude:F1}N force to {hit.collider.name}");
             }
             
             // Optional: Add visual/audio effects here
@@ -2579,12 +2277,9 @@ namespace CricketGame
         /// </summary>
         IEnumerator WaitForLanding()
         {
-            Debug.Log("?? Waiting for ball to finish bouncing and settle...");
-            Debug.Log($"?? Initial state: isBouncing={isBouncing}, currentBounces={currentBounces}");
             
             // Wait for initial landing
             yield return new WaitForSeconds(0.3f);
-            Debug.Log($"?? After 0.3s wait: isBouncing={isBouncing}, currentBounces={currentBounces}");
             
             // Wait for bounces to complete
             int waitCount = 0;
@@ -2592,12 +2287,10 @@ namespace CricketGame
             {
                 yield return new WaitForSeconds(0.1f);
                 waitCount++;
-                Debug.Log($"?? Waiting for bounce completion: isBouncing={isBouncing}, currentBounces={currentBounces}, waitCount={waitCount}");
                 
                 // Safety break to prevent infinite loop
                 if (waitCount > 50) // 5 seconds max
                 {
-                    Debug.Log("?? ⚠️ WAIT FOR LANDING TIMEOUT - forcing completion");
                     break;
                 }
             }
@@ -2605,13 +2298,11 @@ namespace CricketGame
             // Additional wait to ensure ball has settled
             yield return new WaitForSeconds(0.5f);
             
-            Debug.Log($"?? Ball has settled after {currentBounces} bounces");
             
             // ?? FORCE: Stop bouncing if still bouncing
             if (isBouncing)
             {
                 isBouncing = false;
-                Debug.Log("?? Force stopped bouncing - ball ready to return");
             }
             
             // ?? CRITICAL: Ensure ball is ready for return
@@ -2620,7 +2311,6 @@ namespace CricketGame
                 // Force stop any remaining movement
                 ballRigidbody.linearVelocity = Vector3.zero;
                 ballRigidbody.angularVelocity = Vector3.zero;
-                Debug.Log("?? Ball movement stopped - ready for return");
             }
         }
         
@@ -2633,8 +2323,6 @@ namespace CricketGame
             isBouncing = true;
             lastBouncePosition = bouncePosition;
             
-            Debug.Log($"?? Ball bounced! Bounce #{currentBounces} at {bouncePosition}");
-            Debug.Log($"?? Bounce velocity: {bounceVelocity.magnitude:F1} m/s");
             
             // ?? NEW: Get bounce settings from BallSettings component
             GameObject ballToBounce = currentBallInstance != null ? currentBallInstance : ball;
@@ -2707,9 +2395,6 @@ namespace CricketGame
                             newVelocity += lateralSpinVelocity;
                             
                             string spinDirection = spinStrength > 0 ? "RIGHT →" : spinStrength < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 LEG SPIN BOUNCE SWING: Applied lateral spin {spinStrength:F2} m/s (strength: {legSpinDelivery.postBounceSpinStrength:F2})");
-                            Debug.Log($"🎯 LEG SPIN: Ball speed {ballSpeed:F1} → Lateral movement {spinStrength:F2} {spinDirection}");
-                            Debug.Log($"🎯 LEG SPIN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                     // Check for Off Spin
@@ -2735,9 +2420,6 @@ namespace CricketGame
                             newVelocity += lateralSpinVelocity;
                             
                             string spinDirection = spinStrength > 0 ? "RIGHT →" : spinStrength < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 OFF SPIN BOUNCE SWING: Applied lateral spin {spinStrength:F2} m/s (strength: {offSpinDelivery.postBounceSpinStrength:F2})");
-                            Debug.Log($"🎯 OFF SPIN: Ball speed {ballSpeed:F1} → Lateral movement {spinStrength:F2} {spinDirection}");
-                            Debug.Log($"🎯 OFF SPIN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                     // Check for Seam In
@@ -2761,9 +2443,6 @@ namespace CricketGame
                             newVelocity += lateralSeamVelocity;
                             
                             string seamDirection = seamStrength > 0 ? "RIGHT →" : seamStrength < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 SEAM IN BOUNCE: Applied lateral seam {seamStrength:F2} m/s (strength: {seamInDelivery.postBounceSeamStrength:F2})");
-                            Debug.Log($"🎯 SEAM IN: Ball speed {ballSpeed:F1} → Lateral movement {seamStrength:F2} {seamDirection}");
-                            Debug.Log($"🎯 SEAM IN: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                     // Check for Seam Out
@@ -2788,9 +2467,6 @@ namespace CricketGame
                             newVelocity += lateralSeamVelocity;
                             
                             string seamDirection = seamStrength > 0 ? "RIGHT →" : seamStrength < 0 ? "← LEFT" : "NONE";
-                            Debug.Log($"🎯 SEAM OUT BOUNCE: Applied lateral seam {seamStrength:F2} m/s (strength: {seamOutDelivery.postBounceSeamStrength:F2})");
-                            Debug.Log($"🎯 SEAM OUT: Ball speed {ballSpeed:F1} → Lateral movement {seamStrength:F2} {seamDirection}");
-                            Debug.Log($"🎯 SEAM OUT: Forward: {forwardDirection}, Lateral: {lateralDirection}");
                         }
                     }
                 }
@@ -2802,16 +2478,12 @@ namespace CricketGame
                     ballRigidbodyToBounce.linearVelocity = newVelocity;
                 }
                 
-                Debug.Log($"?? Enhanced bounce physics applied! Bounce #{currentBounces}");
-                Debug.Log($"?? Enhanced bounce force (length {currentLength01:F2}): {enhancedBounceForce:F2}");
-                Debug.Log($"?? New velocity: {newVelocity.magnitude:F1} m/s");
             }
             
             // Stop bouncing if max bounces reached
             if (ballSettings != null && currentBounces >= ballSettingsSO.MaxBounces)
             {
                 isBouncing = false;
-                Debug.Log("?? Max bounces reached - ball settling");
             }
         }
         
@@ -2838,7 +2510,6 @@ namespace CricketGame
         /// </summary>
         IEnumerator ReturnBallToOriginal()
         {
-            Debug.Log("?? AGGRESSIVE: Returning ball to original position...");
             
             isReturning = true;
             
@@ -2848,8 +2519,6 @@ namespace CricketGame
             float distance = Vector3.Distance(currentPos, targetPos);
             float timeToReturn = distance / returnSpeed;
             
-            Debug.Log($"?? Distance to return: {distance:F2}m, Time: {timeToReturn:F2}s");
-            Debug.Log($"?? From: {currentPos} To: {targetPos}");
             
             // ?? AGGRESSIVE STOP: Completely disable physics
             if (ballRigidbody != null)
@@ -2889,17 +2558,12 @@ namespace CricketGame
                 }
                 
                 // Debug position every few frames
-                if (Mathf.FloorToInt(elapsed * 10) % 5 == 0)
-                {
-                    Debug.Log($"?? Return progress: {t:P0} - Position: {newPosition}");
-                }
                 
                 yield return null;
             }
             
             // ?? FORCE FINAL: Ensure exact positioning
             ball.transform.position = targetPos;
-            Debug.Log($"?? Final position: {ball.transform.position}");
             
             // ?? RESET: Re-enable physics with clean state
             if (ballRigidbody != null)
@@ -2916,12 +2580,10 @@ namespace CricketGame
             // ?? VERIFY: Double-check position
             if (Vector3.Distance(ball.transform.position, targetPos) > 0.01f)
             {
-                Debug.LogWarning("?? Position mismatch! Forcing final position...");
                 ball.transform.position = targetPos;
             }
             
             isReturning = false;
-            Debug.Log("?? Ball successfully returned to original position!");
         }
         
         /// <summary>
@@ -2931,7 +2593,6 @@ namespace CricketGame
         {
             if (ball != null)
             {
-                Debug.Log("?? FORCE RESET: Ball to original position...");
                 
                 // ?? FORCE: Stop all physics immediately
                 if (ballRigidbody != null)
@@ -2956,7 +2617,6 @@ namespace CricketGame
                 }
                 
                 ResetBounceState();
-                Debug.Log("?? Ball FORCE RESET to original position!");
             }
         }
         
@@ -3012,21 +2672,17 @@ namespace CricketGame
         /// </summary>
         public void CleanUpAllBowlers()
         {
-            Debug.Log("🎯 === CLEANING UP ALL BOWLERS ===");
             
             // Find all PlayerAnimationController components in the scene
             PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
-            Debug.Log($"🎯 Found {allBowlers.Length} existing bowlers to clean up");
             
             foreach (PlayerAnimationController bowler in allBowlers)
             {
                 if (bowler != null && bowler.gameObject != null)
                 {
-                    Debug.Log($"🎯 🗑️ CLEANING UP bowler: {bowler.gameObject.name}");
                     
                     // Check if this is a scene object (editor-created) or runtime object
                     bool isSceneObject = bowler.gameObject.scene.IsValid();
-                    Debug.Log($"🎯   Scene object: {isSceneObject}, Scene: {bowler.gameObject.scene.name}");
                     
                     // CRITICAL FIX: Handle editor-created objects differently at runtime
                     if (Application.isPlaying)
@@ -3034,7 +2690,6 @@ namespace CricketGame
                         if (isSceneObject)
                         {
                             // Editor-created objects: Set inactive instead of destroying
-                            Debug.Log($"🎯   Setting editor-created bowler inactive: {bowler.gameObject.name}");
                             bowler.gameObject.SetActive(false);
                             
                             // Also disable the PlayerAnimationController to prevent interference
@@ -3043,7 +2698,6 @@ namespace CricketGame
                         else
                         {
                             // Runtime-created objects: Can be destroyed normally
-                            Debug.Log($"🎯   Destroying runtime-created bowler: {bowler.gameObject.name}");
                             Destroy(bowler.gameObject);
                         }
                     }
@@ -3059,7 +2713,6 @@ namespace CricketGame
             currentBowlerInstance = null;
             playerAnimationController = null;
             
-            Debug.Log("🎯 ✅ ALL BOWLERS CLEANED UP");
         }
         
         /// <summary>
@@ -3067,11 +2720,9 @@ namespace CricketGame
         /// </summary>
         public void DeactivateEditorBowlers()
         {
-            Debug.Log("🎯 === DEACTIVATING EDITOR BOWLERS ===");
             
             // Find all PlayerAnimationController components in the scene
             PlayerAnimationController[] allBowlers = FindObjectsOfType<PlayerAnimationController>();
-            Debug.Log($"🎯 Found {allBowlers.Length} bowlers in scene");
             
             foreach (PlayerAnimationController bowler in allBowlers)
             {
@@ -3079,28 +2730,20 @@ namespace CricketGame
                 {
                     // Check if this is a scene object (editor-created)
                     bool isSceneObject = bowler.gameObject.scene.IsValid();
-                    Debug.Log($"🎯 Bowler: {bowler.gameObject.name}, Scene object: {isSceneObject}");
                     
                     if (isSceneObject)
                     {
-                        Debug.Log($"🎯 🚫 DEACTIVATING editor-created bowler: {bowler.gameObject.name}");
                         bowler.gameObject.SetActive(false);
                         bowler.enabled = false;
-                    }
-                    else
-                    {
-                        Debug.Log($"🎯 ✅ KEEPING runtime bowler active: {bowler.gameObject.name}");
                     }
                 }
             }
             
-            Debug.Log("🎯 ✅ EDITOR BOWLERS DEACTIVATED");
         }
         
         [ContextMenu("Show Status")]
         void ShowStatusContext()
         {
-            Debug.Log(GetTestStatus());
         }
         
         // Context menu methods for zone creation removed - using existing manually created zones
@@ -3199,47 +2842,21 @@ namespace CricketGame
         [ContextMenu("Debug Spawn Point Logic")]
         public void DebugSpawnPointLogic()
         {
-            Debug.Log("🎯 === SPAWN POINT DEBUG ===");
-            Debug.Log($"🎯 enableManualKeyInput: {enableManualKeyInput}");
             PlayerAnimationController animController = GetPlayerAnimationController();
-            Debug.Log($"🎯 playerAnimationController: {(animController != null ? animController.name : "NULL")}");
-            Debug.Log($"🎯 spawnPoint: {(spawnPoint != null ? spawnPoint.name : "NULL")}");
             
             if (animController != null)
             {
                 Transform animSpawn = animController.GetAnimationSpawnPoint();
-                Debug.Log($"🎯 animationSpawnPoint: {(animSpawn != null ? animSpawn.name : "NULL")}");
-                if (animSpawn != null)
-                {
-                    Debug.Log($"🎯 animationSpawnPoint position: {animSpawn.position}");
-                }
             }
             
             // Simulate the logic
-            if (enableManualKeyInput)
-            {
-                Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (Manual mode)");
-            }
             else
             {
                 if (animController != null)
                 {
                     Transform animSpawn = animController.GetAnimationSpawnPoint();
-                    if (animSpawn != null)
-                    {
-                        Debug.Log("🎯 LOGIC RESULT: Would use PlayerAnimationController spawn point (Animation mode)");
-                    }
-                    else
-                    {
-                        Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (Animation spawn point not assigned)");
-                    }
-                }
-                else
-                {
-                    Debug.Log("🎯 LOGIC RESULT: Would use BowlingController spawn point (PlayerAnimationController not found)");
                 }
             }
-            Debug.Log("🎯 =========================");
         }
         
         /// <summary>
@@ -3248,7 +2865,6 @@ namespace CricketGame
         [ContextMenu("Test Spawn Point During Animation")]
         public void TestSpawnPointDuringAnimation()
         {
-            Debug.Log("🎯 === TESTING SPAWN POINT DURING ANIMATION ===");
             
             PlayerAnimationController animController = GetPlayerAnimationController();
             if (animController != null)
@@ -3256,24 +2872,12 @@ namespace CricketGame
                 Transform animSpawnPoint = animController.GetAnimationSpawnPoint();
                 if (animSpawnPoint != null)
                 {
-                    Debug.Log($"🎯 Initial RightHand position: {animSpawnPoint.position}");
-                    Debug.Log($"🎯 Initial RightHand local position: {animSpawnPoint.localPosition}");
-                    Debug.Log($"🎯 RightHand parent: {(animSpawnPoint.parent != null ? animSpawnPoint.parent.name : "NULL")}");
                     
                     // Start coroutine to check position changes
                     StartCoroutine(MonitorSpawnPointPosition(animSpawnPoint));
                 }
-                else
-                {
-                    Debug.LogError("🎯 ❌ No animation spawn point assigned!");
-                }
-            }
-            else
-            {
-                Debug.LogError("🎯 ❌ No PlayerAnimationController found!");
             }
             
-            Debug.Log("🎯 ===========================================");
         }
         
         private System.Collections.IEnumerator MonitorSpawnPointPosition(Transform spawnPoint)
@@ -3289,17 +2893,14 @@ namespace CricketGame
                 Vector3 currentPosition = spawnPoint.position;
                 if (Vector3.Distance(currentPosition, lastPosition) > 0.01f)
                 {
-                    Debug.Log($"🎯 FRAME {frameCount}: RightHand moved from {lastPosition} to {currentPosition}");
                     lastPosition = currentPosition;
                 }
                 
                 if (frameCount % 60 == 0) // Log every second
                 {
-                    Debug.Log($"🎯 FRAME {frameCount}: RightHand position: {currentPosition}");
                 }
             }
             
-            Debug.Log("🎯 Spawn point monitoring completed");
         }
         
         /// <summary>
@@ -3308,25 +2909,15 @@ namespace CricketGame
         [ContextMenu("Check PlayerAnimationController Status")]
         public void CheckPlayerAnimationControllerStatus()
         {
-            Debug.Log("🎯 === PLAYER ANIMATION CONTROLLER STATUS ===");
-            Debug.Log($"🎯 enableManualKeyInput: {enableManualKeyInput}");
             PlayerAnimationController animController = GetPlayerAnimationController();
-            Debug.Log($"🎯 playerAnimationController: {(animController != null ? animController.name : "NULL - Will auto-find at runtime")}");
             
             if (animController != null)
             {
                 Transform animSpawn = animController.GetAnimationSpawnPoint();
-                Debug.Log($"🎯 animationSpawnPoint: {(animSpawn != null ? animSpawn.name : "NULL")}");
-                if (animSpawn != null)
-                {
-                    Debug.Log($"🎯 animationSpawnPoint position: {animSpawn.position}");
-                }
             }
             
             // Show current selected bowler info
-            Debug.Log($"🎯 Selected Bowler Prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
-            Debug.Log("🎯 ==========================================");
         }
         
         /// <summary>
@@ -3350,51 +2941,20 @@ namespace CricketGame
         [ContextMenu("Check Current Bowler")]
         public void CheckCurrentBowler()
         {
-            Debug.Log("🎯 === CURRENT BOWLER STATUS ===");
-            Debug.Log($"🎯 Selected Bowler Prefab: {(selectedBowlerPrefab != null ? selectedBowlerPrefab.name : "NULL")}");
             
             if (selectedBowlerPrefab != null)
             {
                 PlayerAnimationController controller = selectedBowlerPrefab.GetComponent<PlayerAnimationController>();
                 if (controller != null)
                 {
-                    Debug.Log($"🎯 ✅ PlayerAnimationController found in {selectedBowlerPrefab.name}");
                     
                     Transform spawnPoint = controller.GetAnimationSpawnPoint();
-                    if (spawnPoint != null)
-                    {
-                        Debug.Log($"🎯 ✅ Animation Spawn Point: {spawnPoint.name} at {spawnPoint.position}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"🎯 ❌ No Animation Spawn Point found in {selectedBowlerPrefab.name}");
-                    }
                     
                     BowlerProfile profile = selectedBowlerPrefab.GetComponent<BowlerProfile>();
-                    if (profile != null)
-                    {
-                        Debug.Log($"🎯 ✅ BowlerProfile found in {selectedBowlerPrefab.name}");
-                        Debug.Log($"🎯 Default Delivery: {profile.GetDefaultDeliveryType()}");
-                        Debug.Log($"🎯 Allowed Deliveries: {string.Join(", ", profile.GetAllowedDeliveryTypes())}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"🎯 ❌ No BowlerProfile found in {selectedBowlerPrefab.name}");
-                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"🎯 ❌ No PlayerAnimationController found in {selectedBowlerPrefab.name}");
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"🎯 ❌ No bowler prefab selected");
             }
             
             PlayerAnimationController animController = GetPlayerAnimationController();
-            Debug.Log($"🎯 PlayerAnimationController Reference: {(animController != null ? animController.name : "NULL")}");
-            Debug.Log("🎯 ==============================");
         }
 
         [ContextMenu("Select Bowler 0")]
@@ -3433,9 +2993,7 @@ namespace CricketGame
         [ContextMenu("Instantiate Selected Bowler")]
         public void InstantiateSelectedBowlerContext()
         {
-            Debug.Log("🎯 === MANUALLY INSTANTIATING SELECTED BOWLER ===");
             InstantiateSelectedBowler();
-            Debug.Log("🎯 ============================================");
         }
         
         /// <summary>
@@ -3444,20 +3002,12 @@ namespace CricketGame
         [ContextMenu("Destroy Current Bowler Instance")]
         public void DestroyCurrentBowlerInstance()
         {
-            Debug.Log("🎯 === DESTROYING CURRENT BOWLER INSTANCE ===");
             if (currentBowlerInstance != null)
             {
-                Debug.Log($"🎯 Destroying: {currentBowlerInstance.name}");
                 DestroyImmediate(currentBowlerInstance);
                 currentBowlerInstance = null;
                 playerAnimationController = null;
-                Debug.Log("🎯 ✅ Bowler instance destroyed and references cleared");
             }
-            else
-            {
-                Debug.Log("🎯 No bowler instance to destroy");
-            }
-            Debug.Log("🎯 =========================================");
         }
         
         /// <summary>
@@ -3467,7 +3017,6 @@ namespace CricketGame
         public void ToggleAutoInstantiation()
         {
             autoInstantiateBowler = !autoInstantiateBowler;
-            Debug.Log($"🎯 Auto-instantiation: {(autoInstantiateBowler ? "ENABLED" : "DISABLED")}");
         }
         
         /// <summary>
@@ -3476,29 +3025,14 @@ namespace CricketGame
         [ContextMenu("Manually Destroy Current Ball")]
         public void ManuallyDestroyCurrentBall()
         {
-            Debug.Log("🏏 === MANUAL BALL DESTRUCTION ===");
-            Debug.Log($"🏏 Current ball instance: {(currentBallInstance != null ? currentBallInstance.name : "NULL")}");
-            Debug.Log($"🏏 BallSettingsSO: {(ballSettingsSO != null ? "FOUND" : "NULL")}");
-            if (ballSettingsSO != null)
-            {
-                Debug.Log($"🏏 EnableAutoDestroy: {ballSettingsSO.EnableAutoDestroy}");
-                Debug.Log($"🏏 DestroyDelay: {ballSettingsSO.DestroyDelay}");
-            }
             
             if (currentBallInstance != null)
             {
-                Debug.Log($"🏏 🗑️ MANUALLY DESTROYING ball: {currentBallInstance.name}");
                 Destroy(currentBallInstance);
                 currentBallInstance = null;
                 ballIsBowled = false;
                 hasLanded = false;
-                Debug.Log("🏏 ✅ Ball manually destroyed and state reset");
             }
-            else
-            {
-                Debug.Log("🏏 ❌ No ball to destroy");
-            }
-            Debug.Log("🏏 ================================");
         }
 
         private Transform GetFallbackSpawnTransform(PlayerAnimationController controller)
