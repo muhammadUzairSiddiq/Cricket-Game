@@ -109,6 +109,7 @@ namespace CricketGame
         private readonly Dictionary<int, InstanceSpawnSnapshot> bowlerInstanceSnapshots = new Dictionary<int, InstanceSpawnSnapshot>();
         private readonly Dictionary<string, bool> autoSpawnToggle = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         private Transform spawnPointsRoot;
+        private static Material sharedTrailMaterial;
         
         void Awake()
         {
@@ -714,10 +715,12 @@ namespace CricketGame
             if (trail.minVertexDistance <= 0f) trail.minVertexDistance = 0.1f; // Only set default if not configured
             trail.emitting = true; // Always ensure trail is emitting
             
-            // ?? FORCE: Create and apply light white visible material
-            Material trailMaterial = new Material(Shader.Find("Sprites/Default"));
-            trailMaterial.color = new Color(1f, 1f, 1f, 0.6f); // Light white with 60% opacity
-            trail.sharedMaterial = trailMaterial;
+            // Apply shared trail material once to prevent per-instance allocation
+            Material trailMaterial = GetSharedTrailMaterial();
+            if (trailMaterial != null)
+            {
+                trail.sharedMaterial = trailMaterial;
+            }
             
             // ?? FORCE: Set trail colors to light white and moderately transparent
             trail.startColor = new Color(1f, 1f, 1f, 0.7f); // Light white with 70% opacity
@@ -790,10 +793,12 @@ namespace CricketGame
             if (trail.minVertexDistance <= 0f) trail.minVertexDistance = 0.1f; // Only set default if not configured
             trail.emitting = true; // Always ensure trail is emitting
             
-            // ?? FORCE: Create and apply light white visible material
-            Material trailMaterial = new Material(Shader.Find("Sprites/Default"));
-            trailMaterial.color = new Color(1f, 1f, 1f, 0.6f); // Light white with 60% opacity
-            trail.sharedMaterial = trailMaterial;
+            // Apply shared trail material once to prevent per-instance allocation
+            Material trailMaterial = GetSharedTrailMaterial();
+            if (trailMaterial != null)
+            {
+                trail.sharedMaterial = trailMaterial;
+            }
             
             // ?? FORCE: Set trail colors to light white and moderately transparent
             trail.startColor = new Color(1f, 1f, 1f, 0.7f); // Light white with 70% opacity
@@ -805,6 +810,28 @@ namespace CricketGame
             
             
         }
+
+		private static Material GetSharedTrailMaterial()
+		{
+			if (sharedTrailMaterial != null)
+			{
+				return sharedTrailMaterial;
+			}
+
+			Shader trailShader = Shader.Find("Sprites/Default");
+			if (trailShader == null)
+			{
+				return null;
+			}
+
+			sharedTrailMaterial = new Material(trailShader)
+			{
+				name = "BowlingTrailSharedMaterial",
+				color = new Color(1f, 1f, 1f, 0.6f)
+			};
+
+			return sharedTrailMaterial;
+		}
         
         /// <summary>
         /// Handle input controls

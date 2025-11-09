@@ -41,6 +41,13 @@ namespace CricketGame
         private bool isMovingUp = true;
         private Coroutine resumeCoroutine;
         private bool isProgrammaticallyChangingValue = false; // Track when we're changing value via script
+		private RectTransform speedSliderRect;
+		private Canvas speedSliderCanvas;
+		private Camera speedSliderCamera;
+		private RectTransform speedPanelRect;
+		private Canvas speedPanelCanvas;
+		private Camera speedPanelCamera;
+		private static Camera cachedMainCamera;
         
         void Start()
         {
@@ -67,6 +74,7 @@ namespace CricketGame
             // Update initial display
             UpdateSpeedDisplay();
             UpdateBallSpeed();
+			CacheUIReferences();
         }
         
         void Update()
@@ -103,6 +111,8 @@ namespace CricketGame
         /// </summary>
         private void CheckUserInteraction()
         {
+			CacheUIReferences();
+
             if (speedSlider == null) return;
             
             bool inputDetected = false;
@@ -208,26 +218,14 @@ namespace CricketGame
         /// </summary>
         private bool IsPointOverSlider(Vector2 screenPoint)
         {
-            if (speedSlider == null) return false;
-            
-            RectTransform sliderRect = speedSlider.GetComponent<RectTransform>();
-            if (sliderRect == null) return false;
-            
-            Canvas canvas = speedSlider.GetComponentInParent<Canvas>();
-            if (canvas == null) return false;
-            
-            // Handle different canvas render modes
-            Camera cam = null;
-            if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
-            {
-                cam = canvas.worldCamera;
-                if (cam == null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
-                {
-                    cam = Camera.main;
-                }
-            }
-            
-            return RectTransformUtility.RectangleContainsScreenPoint(sliderRect, screenPoint, cam);
+			CacheUIReferences();
+
+			if (speedSliderRect == null)
+			{
+				return false;
+			}
+
+			return RectTransformUtility.RectangleContainsScreenPoint(speedSliderRect, screenPoint, speedSliderCamera);
         }
         
         /// <summary>
@@ -235,31 +233,14 @@ namespace CricketGame
         /// </summary>
         private bool IsPointOverSpeedUI(Vector2 screenPoint)
         {
-            // Check if point is over the speed panel root
-            if (speedPanelRoot != null)
+			CacheUIReferences();
+
+			if (speedPanelRect != null)
             {
-                RectTransform panelRect = speedPanelRoot.GetComponent<RectTransform>();
-                if (panelRect != null)
-                {
-                    Canvas canvas = speedPanelRoot.GetComponentInParent<Canvas>();
-                    if (canvas != null)
-                    {
-                        Camera cam = null;
-                        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
-                        {
-                            cam = canvas.worldCamera;
-                            if (cam == null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
-                            {
-                                cam = Camera.main;
-                            }
-                        }
-                        
-                        if (RectTransformUtility.RectangleContainsScreenPoint(panelRect, screenPoint, cam))
-                        {
-                            return true;
-                        }
-                    }
-                }
+				if (RectTransformUtility.RectangleContainsScreenPoint(speedPanelRect, screenPoint, speedPanelCamera))
+				{
+					return true;
+				}
             }
             
             // Fallback: check slider
@@ -316,6 +297,64 @@ namespace CricketGame
                 handleTrigger.triggers.Add(drag);
             }
         }
+
+		private void CacheUIReferences()
+		{
+			if (speedSlider != null)
+			{
+				if (speedSliderRect == null)
+				{
+					speedSliderRect = speedSlider.GetComponent<RectTransform>();
+				}
+				if (speedSliderCanvas == null)
+				{
+					speedSliderCanvas = speedSlider.GetComponentInParent<Canvas>();
+				}
+				speedSliderCamera = ResolveCanvasCamera(speedSliderCanvas);
+			}
+
+			if (speedPanelRoot != null)
+			{
+				if (speedPanelRect == null)
+				{
+					speedPanelRect = speedPanelRoot.GetComponent<RectTransform>();
+				}
+				if (speedPanelCanvas == null)
+				{
+					speedPanelCanvas = speedPanelRoot.GetComponentInParent<Canvas>();
+				}
+				speedPanelCamera = ResolveCanvasCamera(speedPanelCanvas);
+			}
+		}
+
+		private Camera ResolveCanvasCamera(Canvas canvas)
+		{
+			if (canvas == null)
+			{
+				return GetMainCamera();
+			}
+
+			switch (canvas.renderMode)
+			{
+				case RenderMode.ScreenSpaceOverlay:
+					return null;
+				case RenderMode.ScreenSpaceCamera:
+				case RenderMode.WorldSpace:
+					return canvas.worldCamera != null ? canvas.worldCamera : GetMainCamera();
+				default:
+					return GetMainCamera();
+			}
+		}
+
+		private static Camera GetMainCamera()
+		{
+			if (cachedMainCamera == null)
+			{
+				cachedMainCamera = Camera.main;
+			}
+
+			return cachedMainCamera;
+		}
         
         /// <summary>
         /// Called when user starts interacting with slider
@@ -508,6 +547,8 @@ namespace CricketGame
             {
                 speedConfirmed = false;
             }
+
+			CacheUIReferences();
         }
 
         /// <summary>
