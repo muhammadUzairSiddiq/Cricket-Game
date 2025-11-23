@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 433b8a829b5949c48b238bcfd2014c28, type: 3}
   m_Name: BallSettings
   m_EditorClassIdentifier: 
-  globalBallSpeed: 12
+  globalBallSpeed: 14
   arcHeight: 1
   gravity: 10.8
   mass: 0.16
@@ -22,6 +22,6 @@ MonoBehaviour:
   useRealisticPhysics: 1
   destroyDelay: 0
   enableAutoDestroy: 1
-  bounceForce: 0.6
+  bounceForce: 0.8
   bounceFriction: 0.9
   maxBounces: 3
