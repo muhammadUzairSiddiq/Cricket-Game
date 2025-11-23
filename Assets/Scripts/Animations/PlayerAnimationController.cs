@@ -18,9 +18,11 @@ public class PlayerAnimationController : MonoBehaviour
     
     [Header("Target Hide Settings")]
     [SerializeField, Tooltip("Tag for Target GameObject")] private string targetTag = "Target";
-    [SerializeField, Tooltip("Child name to hide (e.g., 'Sides' or 'Slides')")] private string sidesChildName = "Slides";
+    [SerializeField, Tooltip("Child name to hide (e.g., 'Sides' or 'Slides')")] private string sidesChildName = "Sides";
     [SerializeField, Tooltip("Duration to shrink/hide target")] private float hideDuration = 0.3f;
     [SerializeField, Tooltip("Duration to show/restore target")] private float showDuration = 0.3f;
+    [SerializeField, Tooltip("Scale increase before hiding (e.g., 1.2 = 20% larger)")] private float scaleIncreaseAmount = 1.2f;
+    [SerializeField, Tooltip("Duration to increase scale before hiding")] private float scaleIncreaseDuration = 0.15f;
     
     [Header("Y Rotation Control")]
     [SerializeField, Tooltip("Enable to allow random Y rotation variation between min and max degrees. Disable to keep Y rotation at 0.")]
@@ -626,7 +628,6 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (matchesTrigger)
         {
-            
             // Stop camera follow
             BowlerEvents.NotifyStopFollowing();
             
@@ -641,9 +642,22 @@ public class PlayerAnimationController : MonoBehaviour
     private bool FindTargetSides()
     {
         // Use cached reference if already found and still valid
-        if (targetSidesTransform != null && targetSidesTransform.gameObject.activeInHierarchy)
+        // NOTE: We check activeInHierarchy, but we'll still search if explicitly reset
+        if (targetSidesTransform != null && targetSidesTransform.gameObject != null)
         {
-            return true;
+            // Verify the transform is still valid (not destroyed)
+            try
+            {
+                if (targetSidesTransform.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Transform was destroyed, clear cache
+                targetSidesTransform = null;
+            }
         }
         
         // Find Target by tag (handles late instantiation)
@@ -671,6 +685,27 @@ public class PlayerAnimationController : MonoBehaviour
             sidesTransform = FindChildRecursive(targetGO.transform, sidesChildName);
         }
         
+        // Fallback: Try alternative names if primary search fails
+        if (sidesTransform == null)
+        {
+            string[] alternativeNames = { "Sides", "Slides", "Side" };
+            foreach (string altName in alternativeNames)
+            {
+                if (altName.Equals(sidesChildName, System.StringComparison.OrdinalIgnoreCase))
+                    continue; // Skip if already tried
+                    
+                sidesTransform = targetGO.transform.Find(altName);
+                if (sidesTransform == null)
+                {
+                    sidesTransform = FindChildRecursive(targetGO.transform, altName);
+                }
+                if (sidesTransform != null)
+                {
+                    break;
+                }
+            }
+        }
+        
         if (sidesTransform == null)
         {
             return false;
@@ -689,22 +724,44 @@ public class PlayerAnimationController : MonoBehaviour
     }
     
     /// <summary>
-    /// Smoothly hide target Sides by shrinking scale
+    /// Smoothly hide target Sides by first increasing scale, then shrinking to zero
     /// </summary>
     private void HideTargetSides()
     {
+        // Force fresh search to ensure we have the latest target reference
+        targetSidesTransform = null;
+        
         if (!FindTargetSides())
         {
-            return; // Target not found - no error, just skip
+            // Target not found - try to find it again next time
+            return;
+        }
+        
+        // CRITICAL: Ensure target is still valid before animating
+        if (targetSidesTransform == null)
+        {
+            return;
+        }
+        
+        // CRITICAL: Ensure target GameObject is active (PitchCamState might have disabled it)
+        if (!targetSidesTransform.gameObject.activeSelf)
+        {
+            targetSidesTransform.gameObject.SetActive(true);
         }
         
         // Stop any ongoing animation
         if (currentScaleCoroutine != null)
         {
             StopCoroutine(currentScaleCoroutine);
+            currentScaleCoroutine = null;
         }
         
-        currentScaleCoroutine = StartCoroutine(AnimateTargetScale(Vector3.zero, hideDuration));
+        // CRITICAL: Ensure we're on an active GameObject before starting coroutine
+        if (isActiveAndEnabled && gameObject.activeInHierarchy)
+        {
+            // Start scale increase then hide sequence
+            currentScaleCoroutine = StartCoroutine(ScaleIncreaseThenHide());
+        }
     }
     
     /// <summary>
@@ -712,18 +769,167 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void ShowTargetSides()
     {
-        if (!FindTargetSides() || !originalScaleStored)
+        // CRITICAL: Reset cache and find target fresh
+        targetSidesTransform = null;
+        
+        if (!FindTargetSides())
         {
-            return; // Target not found or scale not stored
+            // Target not found - try again later
+            return;
+        }
+        
+        // CRITICAL: Ensure GameObject is active (PitchCamState might have disabled it)
+        if (targetSidesTransform != null && !targetSidesTransform.gameObject.activeSelf)
+        {
+            targetSidesTransform.gameObject.SetActive(true);
+        }
+        
+        // CRITICAL: Ensure original scale was stored
+        if (!originalScaleStored)
+        {
+            if (targetSidesTransform != null)
+            {
+                Vector3 currentScale = targetSidesTransform.localScale;
+                // If current scale is near zero, use Vector3.one as fallback
+                if (currentScale.magnitude < 0.01f)
+                {
+                    originalSidesScale = Vector3.one;
+                }
+                else
+                {
+                    originalSidesScale = currentScale;
+                }
+                originalScaleStored = true;
+            }
+            else
+            {
+                return; // Can't proceed without scale
+            }
+        }
+        
+        // CRITICAL: Ensure target is still valid before animating
+        if (targetSidesTransform == null)
+        {
+            return;
         }
         
         // Stop any ongoing animation
         if (currentScaleCoroutine != null)
         {
             StopCoroutine(currentScaleCoroutine);
+            currentScaleCoroutine = null;
         }
         
-        currentScaleCoroutine = StartCoroutine(AnimateTargetScale(originalSidesScale, showDuration));
+        // CRITICAL: Ensure we're on an active GameObject before starting coroutine
+        if (isActiveAndEnabled && gameObject.activeInHierarchy)
+        {
+            currentScaleCoroutine = StartCoroutine(AnimateTargetScale(originalSidesScale, showDuration));
+        }
+    }
+    
+    /// <summary>
+    /// Scale increase then hide sequence
+    /// </summary>
+    private System.Collections.IEnumerator ScaleIncreaseThenHide()
+    {
+        if (targetSidesTransform == null)
+        {
+            currentScaleCoroutine = null;
+            yield break;
+        }
+        
+        // Ensure GameObject is active
+        if (!targetSidesTransform.gameObject.activeSelf)
+        {
+            targetSidesTransform.gameObject.SetActive(true);
+        }
+        
+        // Get original scale - use stored value if available, otherwise use current
+        Vector3 originalScale;
+        if (originalScaleStored && originalSidesScale.magnitude > 0.01f)
+        {
+            originalScale = originalSidesScale;
+        }
+        else
+        {
+            // If current scale is near zero, use Vector3.one as fallback
+            Vector3 currentScale = targetSidesTransform.localScale;
+            if (currentScale.magnitude < 0.01f)
+            {
+                originalScale = Vector3.one;
+            }
+            else
+            {
+                originalScale = currentScale;
+            }
+            // Store it for future use
+            originalSidesScale = originalScale;
+            originalScaleStored = true;
+        }
+        
+        Vector3 increasedScale = originalScale * scaleIncreaseAmount;
+        Vector3 startScale = targetSidesTransform.localScale;
+        
+        // Phase 1: Increase scale (only if scaleIncreaseAmount > 1.0)
+        if (scaleIncreaseAmount > 1.01f && scaleIncreaseDuration > 0.01f)
+        {
+            float elapsed = 0f;
+            while (elapsed < scaleIncreaseDuration)
+            {
+                // CRITICAL: Check target is still valid each frame
+                if (targetSidesTransform == null)
+                {
+                    currentScaleCoroutine = null;
+                    yield break;
+                }
+                
+                // Ensure GameObject stays active
+                if (!targetSidesTransform.gameObject.activeSelf)
+                {
+                    targetSidesTransform.gameObject.SetActive(true);
+                }
+                
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / scaleIncreaseDuration);
+                t = Mathf.SmoothStep(0f, 1f, t);
+                targetSidesTransform.localScale = Vector3.Lerp(startScale, increasedScale, t);
+                yield return null;
+            }
+            startScale = increasedScale;
+        }
+        
+        // Phase 2: Hide (scale to zero)
+        float elapsed2 = 0f;
+        while (elapsed2 < hideDuration)
+        {
+            // CRITICAL: Check target is still valid each frame
+            if (targetSidesTransform == null)
+            {
+                currentScaleCoroutine = null;
+                yield break;
+            }
+            
+            // Ensure GameObject stays active during animation
+            if (!targetSidesTransform.gameObject.activeSelf)
+            {
+                targetSidesTransform.gameObject.SetActive(true);
+            }
+            
+            elapsed2 += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed2 / hideDuration);
+            t = Mathf.SmoothStep(0f, 1f, t);
+            targetSidesTransform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+            yield return null;
+        }
+        
+        // Ensure final value (check one more time)
+        if (targetSidesTransform != null)
+        {
+            targetSidesTransform.localScale = Vector3.zero;
+            // Note: We keep GameObject active so it can be shown again later
+            // PitchCamState might disable it, but ShowTargetSides will re-enable it
+        }
+        currentScaleCoroutine = null;
     }
     
     /// <summary>
@@ -731,9 +937,17 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     private System.Collections.IEnumerator AnimateTargetScale(Vector3 targetScale, float duration)
     {
+        // CRITICAL: Double-check target is valid at start
         if (targetSidesTransform == null)
         {
+            currentScaleCoroutine = null;
             yield break;
+        }
+        
+        // Ensure GameObject is active
+        if (!targetSidesTransform.gameObject.activeSelf)
+        {
+            targetSidesTransform.gameObject.SetActive(true);
         }
         
         Vector3 startScale = targetSidesTransform.localScale;
@@ -741,6 +955,19 @@ public class PlayerAnimationController : MonoBehaviour
         
         while (elapsed < duration)
         {
+            // CRITICAL: Check target is still valid each frame
+            if (targetSidesTransform == null)
+            {
+                currentScaleCoroutine = null;
+                yield break;
+            }
+            
+            // Ensure GameObject stays active during animation
+            if (!targetSidesTransform.gameObject.activeSelf)
+            {
+                targetSidesTransform.gameObject.SetActive(true);
+            }
+            
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             
@@ -751,8 +978,12 @@ public class PlayerAnimationController : MonoBehaviour
             yield return null;
         }
         
-        // Ensure final value
-        targetSidesTransform.localScale = targetScale;
+        // Ensure final value (check one more time)
+        if (targetSidesTransform != null)
+        {
+            targetSidesTransform.localScale = targetScale;
+        }
+        
         currentScaleCoroutine = null;
     }
     
@@ -841,6 +1072,25 @@ public class PlayerAnimationController : MonoBehaviour
         {
             euler.y = targetYRotation;
             cachedTransform.rotation = Quaternion.Euler(euler);
+        }
+    }
+    
+    /// <summary>
+    /// Test method to verify target finding (Editor context menu)
+    /// </summary>
+    [ContextMenu("Test Find Target Sides")]
+    public void TestFindTargetSides()
+    {
+        // Reset cache to force fresh search
+        targetSidesTransform = null;
+        bool found = FindTargetSides();
+        if (found && targetSidesTransform != null)
+        {
+            Debug.Log($"✅ Target found! Child: {targetSidesTransform.name}, Scale: {targetSidesTransform.localScale}, Original Scale Stored: {originalScaleStored}");
+        }
+        else
+        {
+            Debug.LogWarning($"❌ Target NOT found! Tag: '{targetTag}', Child Name: '{sidesChildName}'. Check that Target GameObject has the correct tag and contains a child with this name.");
         }
     }
 }
